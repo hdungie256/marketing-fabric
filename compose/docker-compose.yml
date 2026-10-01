@@ -1,0 +1,210 @@
+name: marketing-fabric
+
+x-om-env: &om-env
+  SERVER_HOST_API_URL: http://openmetadata-server:8585/api
+  PIPELINE_SERVICE_CLIENT_ENDPOINT: http://openmetadata-ingestion:8080
+  PIPELINE_SERVICE_CLIENT_ENABLED: "true"
+  AIRFLOW_USERNAME: ${AIRFLOW_ADMIN_USER}
+  AIRFLOW_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+  AUTHORIZER_ADMIN_PRINCIPALS: "[${OM_ADMIN_USER}]"
+  DB_DRIVER_CLASS: org.postgresql.Driver
+  DB_SCHEME: postgresql
+  DB_PARAMS: allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC
+  DB_HOST: postgresql
+  DB_PORT: 5432
+  DB_USER: openmetadata_user
+  DB_USER_PASSWORD: ${OM_DB_PASSWORD}
+  OM_DATABASE: openmetadata_db
+  ELASTICSEARCH_HOST: elasticsearch
+  ELASTICSEARCH_PORT: 9200
+  SEARCH_TYPE: elasticsearch
+
+x-fabric-env: &fabric-env
+  FABRIC_CONTROL_MODE: ${FABRIC_CONTROL_MODE:-online}
+  SERVING_DB_DSN: postgresql://serving_user:${SERVING_DB_PASSWORD}@postgresql:5432/serving
+  SOURCES_DB_DSN: postgresql://sources_user:${SOURCES_DB_PASSWORD}@postgresql:5432/sources
+  S3_ENDPOINT: http://seaweedfs:8333
+  S3_BUCKET: ${S3_BUCKET}
+  AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
+  AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
+  OM_URL: http://openmetadata-server:8585/api
+  AIRFLOW_URL: http://openmetadata-ingestion:8080
+  API_URL: http://api:8000
+
+services:
+  postgresql:
+    profiles: [core, dev]
+    image: docker.getcollate.io/openmetadata/postgresql:2.0.2
+    command: --work_mem=10MB
+    mem_limit: 1g
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      SOURCES_DB_PASSWORD: ${SOURCES_DB_PASSWORD}
+      SERVING_DB_PASSWORD: ${SERVING_DB_PASSWORD}
+    ports: ["5432:5432"]
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+      - ./pg-init:/pg-init:ro
+      - ./pg-init/init.sh:/docker-entrypoint-initdb.d/zz-fabric.sh:ro
+    healthcheck:
+      test: psql -U postgres -tAc 'select 1' -d serving
+      interval: 10s
+      timeout: 5s
+      retries: 15
+
+  elasticsearch:
+    profiles: [core]
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.3.0
+    mem_limit: 1536m
+    environment:
+      discovery.type: single-node
+      ES_JAVA_OPTS: -Xms1g -Xmx1g
+      xpack.security.enabled: "false"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: curl -s http://localhost:9200/_cluster/health | grep -qE '"status":"(green|yellow)"'
+      interval: 15s
+      timeout: 10s
+      retries: 10
+
+  openmetadata-migrate:
+    profiles: [core]
+    image: docker.getcollate.io/openmetadata/server:2.0.2
+    command: ./bootstrap/openmetadata-ops.sh migrate
+    environment: *om-env
+    depends_on:
+      postgresql: {condition: service_healthy}
+      elasticsearch: {condition: service_healthy}
+
+  openmetadata-server:
+    profiles: [core]
+    image: docker.getcollate.io/openmetadata/server:2.0.2
+    restart: unless-stopped
+    mem_limit: 2g
+    environment: *om-env
+    ports: ["8585:8585", "8586:8586"]
+    depends_on:
+      openmetadata-migrate: {condition: service_completed_successfully}
+    healthcheck:
+      test: wget -q --spider http://localhost:8586/healthcheck
+      interval: 15s
+      timeout: 10s
+      retries: 20
+
+  openmetadata-ingestion:
+    profiles: [core]
+    image: docker.getcollate.io/openmetadata/ingestion:2.0.2
+    restart: unless-stopped
+    mem_limit: 2g
+    entrypoint: /bin/bash
+    command: [/opt/airflow/ingestion_dependency.sh]
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER}
+      AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+      DB_HOST: postgresql
+      DB_PORT: 5432
+      AIRFLOW_DB: airflow_db
+      DB_USER: airflow_user
+      DB_PASSWORD: ${AIRFLOW_DB_PASSWORD}
+      DB_SCHEME: postgresql+psycopg2
+      FABRIC_JOBS_IMAGE: marketing-fabric/fabric-jobs:latest
+    group_add: ["${DOCKER_GID:-0}"]
+    ports: ["8080:8080"]
+    volumes:
+      - airflow-dags:/opt/airflow/dags
+      - airflow-dag-configs:/opt/airflow/dag_generated_configs
+      - ../pipelines/dags:/opt/airflow/dags/fabric:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      openmetadata-server: {condition: service_healthy}
+
+  seaweedfs:
+    profiles: [core, dev]
+    image: chrislusf/seaweedfs:4.47
+    mem_limit: 512m
+    entrypoint: /bin/sh
+    command:
+      - -c
+      - >-
+        printf '{"identities":[{"name":"fabric","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}'
+        "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" > /tmp/s3.json
+        && exec weed server -dir=/data -s3 -s3.port=8333 -s3.config=/tmp/s3.json
+    environment:
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY}
+      S3_SECRET_KEY: ${S3_SECRET_KEY}
+    ports: ["8333:8333"]
+    volumes:
+      - seaweed-data:/data
+    healthcheck:
+      test: wget -q --spider http://localhost:9333/cluster/status
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    profiles: [core]
+    build:
+      context: ..
+      dockerfile: compose/images/python/Dockerfile
+      args: {GROUP: api}
+    image: marketing-fabric/api:latest
+    mem_limit: 256m
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    environment:
+      <<: *fabric-env
+      AIRFLOW_USER: ${AIRFLOW_ADMIN_USER}
+      AIRFLOW_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+    ports: ["8000:8000"]
+    volumes:
+      - ..:/srv:ro
+    depends_on:
+      postgresql: {condition: service_healthy}
+
+  streamlit:
+    profiles: [core, dev]
+    build:
+      context: ..
+      dockerfile: compose/images/python/Dockerfile
+      args: {GROUP: app}
+    image: marketing-fabric/app:latest
+    mem_limit: 512m
+    command: streamlit run app/main.py --server.address=0.0.0.0 --server.port=8501
+    environment:
+      <<: *fabric-env
+      MARKETING_ANALYST_DB_PASSWORD: ${MARKETING_ANALYST_DB_PASSWORD}
+      CRM_MARKETING_DB_PASSWORD: ${CRM_MARKETING_DB_PASSWORD}
+      MARKETING_MANAGER_DB_PASSWORD: ${MARKETING_MANAGER_DB_PASSWORD}
+      FINANCE_CONTROLLER_DB_PASSWORD: ${FINANCE_CONTROLLER_DB_PASSWORD}
+      DATA_STEWARD_DB_PASSWORD: ${DATA_STEWARD_DB_PASSWORD}
+      DATA_OPS_DB_PASSWORD: ${DATA_OPS_DB_PASSWORD}
+    ports: ["8501:8501"]
+    volumes:
+      - ..:/srv:ro
+    depends_on:
+      postgresql: {condition: service_healthy}
+      seaweedfs: {condition: service_healthy}
+
+  fabric-jobs:
+    profiles: [jobs]
+    build:
+      context: ..
+      dockerfile: compose/images/fabric-jobs/Dockerfile
+    image: marketing-fabric/fabric-jobs:latest
+    mem_limit: 3g
+    environment:
+      <<: *fabric-env
+      OM_ADMIN_USER: ${OM_ADMIN_USER}
+      OM_ADMIN_PASSWORD: ${OM_ADMIN_PASSWORD}
+      SPARK_DRIVER_MEMORY: 2g
+    volumes:
+      - ..:/srv:ro
+
+volumes:
+  pg-data:
+  es-data:
+  seaweed-data:
+  airflow-dags:
+  airflow-dag-configs:

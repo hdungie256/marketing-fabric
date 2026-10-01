@@ -4,8 +4,20 @@ version = "0.1.0"
 requires-python = ">=3.11"
 dependencies = ["pyyaml"]
 
-[project.optional-dependencies]
-dev = ["pytest"]
+[dependency-groups]
+jobs = [
+    "pyyaml",
+    "pyspark==3.5.9",
+    "delta-spark==3.3.3",
+    "great-expectations==1.23.2",
+    "numpy<2",
+    "openlineage-python==1.53.0",
+    "psycopg[binary]==3.3.6",
+    "yoyo-migrations==9.0.0",
+]
+app = ["pyyaml", "streamlit==1.64.0", "psycopg[binary]==3.3.6"]
+api = ["pyyaml", "fastapi==0.141.1", "uvicorn", "psycopg[binary]==3.3.6"]
+dev = ["pyyaml", "pytest"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
