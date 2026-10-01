@@ -1,0 +1,53 @@
+from fabric_control.decisions.scoring import score
+from fabric_control.data_quality import check, gate, report_dq
+from fabric_control.metadata import (
+    catalog,
+    effective_matrix,
+    emit_lineage,
+    latest_score,
+    lineage,
+    register,
+    search,
+    sync_glossary,
+    sync_tags,
+    term,
+)
+from fabric_control.migrations import run_migrations
+from fabric_control.models import DQResult, GateFailed, RuleResult
+from fabric_control.ops import record_timing, trigger
+from fabric_control.policy import can_export, sync_policies, verify_policies
+from fabric_control.refresh import affected_by, status
+from fabric_control.registry import RegistryError, load_registry
+from fabric_control.run import Run, run
+
+__all__ = [
+    "DQResult",
+    "GateFailed",
+    "RegistryError",
+    "RuleResult",
+    "Run",
+    "affected_by",
+    "can_export",
+    "catalog",
+    "check",
+    "effective_matrix",
+    "emit_lineage",
+    "gate",
+    "latest_score",
+    "lineage",
+    "load_registry",
+    "record_timing",
+    "register",
+    "report_dq",
+    "run",
+    "run_migrations",
+    "score",
+    "search",
+    "status",
+    "sync_glossary",
+    "sync_policies",
+    "sync_tags",
+    "term",
+    "trigger",
+    "verify_policies",
+]
