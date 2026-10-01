@@ -1,0 +1,9 @@
+rules:
+  - rule_id: id_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: id}
+    severity: critical
+  - rule_id: id_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: id}
+    severity: critical

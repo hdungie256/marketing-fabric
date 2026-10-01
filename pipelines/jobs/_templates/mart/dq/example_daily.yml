@@ -1,0 +1,5 @@
+rules:
+  - rule_id: example_metric_not_negative
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: example_metric, min_value: 0}
+    severity: warning
