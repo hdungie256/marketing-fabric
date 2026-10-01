@@ -17,8 +17,15 @@ jobs = [
 ]
 app = ["pyyaml", "streamlit==1.64.0", "psycopg[binary]==3.3.6"]
 api = ["pyyaml", "fastapi==0.141.1", "uvicorn", "psycopg[binary]==3.3.6"]
-dev = ["pyyaml", "pytest"]
+dev = ["pyyaml", "pytest", "ruff==0.16.9"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]

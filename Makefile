@@ -2,7 +2,7 @@ PYTHON ?= python3
 COMPOSE := docker compose -f compose/docker-compose.yml
 JOBS := $(COMPOSE) run --rm fabric-jobs
 
-.PHONY: up up-dev down test migrate reset demo-ready
+.PHONY: up up-dev down test format lint migrate reset demo-ready
 
 up:
 	$(COMPOSE) --profile core up -d --build
@@ -15,6 +15,14 @@ down:
 
 test:
 	$(PYTHON) -m pytest
+
+format:
+	ruff format .
+	ruff check --fix .
+
+lint:
+	ruff format --check .
+	ruff check .
 
 migrate:
 	$(JOBS) python -c "import fabric_control as fc; fc.run_migrations(); fc.sync_tags(); fc.sync_policies()"

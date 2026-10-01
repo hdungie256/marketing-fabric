@@ -1,0 +1,4 @@
+- [ ] Only my own folders changed
+- [ ] Contracts updated
+- [ ] Migration number in my range
+- [ ] `make test` green

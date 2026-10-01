@@ -1,7 +1,7 @@
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fabric_control.config import log, stub
@@ -10,7 +10,7 @@ from fabric_control.models import Scope
 
 class Run:
     def __init__(self, job_id: str, scope: Scope):
-        dag_run_id = os.environ.get("FABRIC_DAG_RUN_ID") or f"manual__{datetime.now(timezone.utc):%Y%m%dT%H%M%S}"
+        dag_run_id = os.environ.get("FABRIC_DAG_RUN_ID") or f"manual__{datetime.now(UTC):%Y%m%dT%H%M%S}"
         self.job_id = job_id
         self.scope = scope
         self.run_id = f"{dag_run_id}:{job_id}"

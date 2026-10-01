@@ -4,7 +4,9 @@ from fabric_control import DataQualityResult, GateFailed, RuleResult, gate, scor
 
 
 def result(*rules: tuple[str, bool]) -> DataQualityResult:
-    return DataQualityResult("unified/orders", {"mode": "full"}, [RuleResult(f"r{i}", sev, ok) for i, (sev, ok) in enumerate(rules)])
+    return DataQualityResult(
+        "unified/orders", {"mode": "full"}, [RuleResult(f"r{i}", sev, ok) for i, (sev, ok) in enumerate(rules)]
+    )
 
 
 def test_no_rules_is_green():
