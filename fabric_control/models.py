@@ -19,7 +19,7 @@ class RuleResult:
 
 
 @dataclass
-class DQResult:
+class DataQualityResult:
     dataset_id: str
     scope: Scope
     rules: list[RuleResult] = field(default_factory=list)

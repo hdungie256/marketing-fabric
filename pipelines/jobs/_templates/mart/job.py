@@ -15,7 +15,7 @@ def main(scope: dict) -> None:
     with fc.run(JOB_ID, scope) as run:
         df = transforms.transform(io.read_delta(INPUTS[0]))
         result = fc.check(OUTPUTS[0], df, scope)
-        fc.report_dq(result)
+        fc.report_data_quality(result)
         fc.gate(result)
         if scope["mode"] == "full":
             io.write_pg_full(OUTPUTS[0], df, run.run_id)

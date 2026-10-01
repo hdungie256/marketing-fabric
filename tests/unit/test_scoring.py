@@ -1,10 +1,10 @@
 import pytest
 
-from fabric_control import DQResult, GateFailed, RuleResult, gate, score
+from fabric_control import DataQualityResult, GateFailed, RuleResult, gate, score
 
 
-def result(*rules: tuple[str, bool]) -> DQResult:
-    return DQResult("unified/orders", {"mode": "full"}, [RuleResult(f"r{i}", sev, ok) for i, (sev, ok) in enumerate(rules)])
+def result(*rules: tuple[str, bool]) -> DataQualityResult:
+    return DataQualityResult("unified/orders", {"mode": "full"}, [RuleResult(f"r{i}", sev, ok) for i, (sev, ok) in enumerate(rules)])
 
 
 def test_no_rules_is_green():

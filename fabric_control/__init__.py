@@ -1,5 +1,5 @@
 from fabric_control.decisions.scoring import score
-from fabric_control.data_quality import check, gate, report_dq
+from fabric_control.data_quality import check, gate, report_data_quality
 from fabric_control.metadata import (
     catalog,
     effective_matrix,
@@ -13,7 +13,7 @@ from fabric_control.metadata import (
     term,
 )
 from fabric_control.migrations import run_migrations
-from fabric_control.models import DQResult, GateFailed, RuleResult
+from fabric_control.models import DataQualityResult, GateFailed, RuleResult
 from fabric_control.ops import record_timing, trigger
 from fabric_control.policy import can_export, sync_policies, verify_policies
 from fabric_control.refresh import affected_by, status
@@ -21,7 +21,7 @@ from fabric_control.registry import RegistryError, load_registry
 from fabric_control.run import Run, run
 
 __all__ = [
-    "DQResult",
+    "DataQualityResult",
     "GateFailed",
     "RegistryError",
     "RuleResult",
@@ -38,7 +38,7 @@ __all__ = [
     "load_registry",
     "record_timing",
     "register",
-    "report_dq",
+    "report_data_quality",
     "run",
     "run_migrations",
     "score",

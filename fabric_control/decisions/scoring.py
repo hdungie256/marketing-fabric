@@ -1,9 +1,9 @@
-from fabric_control.models import DQResult, Status
+from fabric_control.models import DataQualityResult, Status
 
 PASS_THRESHOLD = 90.0
 
 
-def score(result: DQResult) -> tuple[float, Status]:
+def score(result: DataQualityResult) -> tuple[float, Status]:
     if not result.rules:
         return 100.0, "Green"
     passed = sum(r.passed for r in result.rules)
