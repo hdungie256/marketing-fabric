@@ -1,0 +1,16 @@
+shared_metrics:
+  - dataset_id: mart_shared.campaign_attributed_daily
+    grain: [campaign_id, date]
+    metrics: [attributed_orders, attributed_gross_value, buyers, first_observed_buyers]
+  - dataset_id: mart_shared.campaign_spend_allocated
+    grain: [campaign_id, date]
+    metrics: [allocated, unallocated]
+  - dataset_id: mart_shared.spend_reconciliation
+    grain: []
+    metrics: []
+  - dataset_id: mart_shared.exceptions
+    grain: [exception_id]
+    metrics: []
+  - dataset_id: unified/product_cost
+    grain: []
+    metrics: []

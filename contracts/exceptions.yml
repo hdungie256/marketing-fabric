@@ -1,0 +1,10 @@
+schema_version: 0.1.0
+exception_id: sha1(class || '|' || natural_key)
+classes: [shared_transaction_id, coupon_plan_mismatch]
+columns:
+  - {name: exception_id, type: string, nullable: false}
+  - {name: class, type: string, nullable: false}
+  - {name: natural_key, type: string, nullable: false}
+  - {name: dataset_id, type: string, nullable: false}
+  - {name: detail, type: string, nullable: true}
+  - {name: detected_at, type: timestamp, nullable: false}
