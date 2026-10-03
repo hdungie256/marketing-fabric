@@ -19,6 +19,7 @@ Docker Desktop memory ≥ 12GB.
 |---|---|
 | `make up` | Start full stack |
 | `make up-dev` | Start Postgres, SeaweedFS, Streamlit (offline) |
+| `make up-benchmark` | Start benchmark stack (pinned MinIO) |
 | `make down` | Stop stack |
 | `make reset` | Delete volumes and restart |
 | `make migrate` | Run migrations, sync tags and policies |
@@ -37,6 +38,7 @@ Docker Desktop memory ≥ 12GB.
 | SeaweedFS S3 | http://localhost:8333 (S3 clients only) |
 | SeaweedFS Filer | http://localhost:8888 |
 | Postgres | localhost:5432 |
+| MinIO (benchmark) | http://localhost:9001 |
 
 OpenMetadata login: `admin@open-metadata.org` / `admin`.
 Airflow login: `AIRFLOW_ADMIN_USER` / `AIRFLOW_ADMIN_PASSWORD` from `compose/.env`.
