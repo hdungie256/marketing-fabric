@@ -4,6 +4,8 @@ Demo data platform for campaign intelligence.
 
 ## Setup
 
+Python 3.11, pip ≥ 25.1.
+
 ```bash
 cp compose/.env.example compose/.env
 pip install --group dev
@@ -35,11 +37,15 @@ Docker Desktop memory ≥ 12GB.
 | SeaweedFS S3 | http://localhost:8333 |
 | Postgres | localhost:5432 |
 
+OpenMetadata login: `admin@open-metadata.org` / `admin`.
+Airflow login: `AIRFLOW_ADMIN_USER` / `AIRFLOW_ADMIN_PASSWORD` from `compose/.env`.
+
 ## Structure
 
 ```text
 api/              Simulated Campaign, Coupon and Spend API
-app/              Streamlit app
+app/              Streamlit shell, pages, services, repositories
+benchmark/        Benchmark profile work
 compose/          Docker Compose, images, Postgres init
 contracts/        Dataset registry, schemas, constants, fixtures
 fabric_control/   Client for OpenMetadata, Airflow and Postgres admin
@@ -47,5 +53,6 @@ governance/       Glossary, tags, mappings
 migrations/       Serving database migrations
 pipelines/        DAGs, IO and jobs
 scripts/          Repo checks
+sources/          Source seeds and fault toggles
 tests/            Unit, reconcile and e2e tests
 ```
