@@ -4,10 +4,13 @@ JOBS := $(COMPOSE) run --rm fabric-jobs
 
 .PHONY: up up-dev down test format lint migrate reset demo-ready
 
-up:
+compose/.env:
+	cp compose/.env.example $@
+
+up: compose/.env
 	$(COMPOSE) --profile core up -d --build
 
-up-dev:
+up-dev: compose/.env
 	FABRIC_CONTROL_MODE=offline $(COMPOSE) --profile dev up -d --build
 
 down:
