@@ -135,7 +135,7 @@ services:
     environment:
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
-    ports: ["8333:8333"]
+    ports: ["8333:8333", "8888:8888"]
     volumes:
       - seaweed-data:/data
     healthcheck:

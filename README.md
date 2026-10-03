@@ -34,7 +34,8 @@ Docker Desktop memory ≥ 12GB.
 | API | http://localhost:8000/docs |
 | OpenMetadata | http://localhost:8585 |
 | Airflow | http://localhost:8080 |
-| SeaweedFS S3 | http://localhost:8333 |
+| SeaweedFS S3 | http://localhost:8333 (S3 clients only) |
+| SeaweedFS Filer | http://localhost:8888 |
 | Postgres | localhost:5432 |
 
 OpenMetadata login: `admin@open-metadata.org` / `admin`.
