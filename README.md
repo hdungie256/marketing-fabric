@@ -4,14 +4,13 @@ Demo data platform for campaign intelligence.
 
 ## Setup
 
-Python 3.11, pip ≥ 25.1.
+Docker Desktop with memory ≥ 12GB. Every `make` target runs in Docker; no local Python needed.
 
 ```bash
 cp compose/.env.example compose/.env
-pip install --group dev
 ```
 
-Docker Desktop memory ≥ 12GB.
+Editor support (optional): Python 3.11, `pip install --group dev`.
 
 ## Commands
 
@@ -25,11 +24,11 @@ Docker Desktop memory ≥ 12GB.
 | `make bootstrap` | Rerun bootstrap (also runs on `make up`): seed, catalog, migrations, `full_refresh` |
 | `make seed` | Reseed sources from `sources/data/*.xlsx` (bumps `source_version`) |
 | `make migrate` | Run migrations, sync tags and policies |
-| `make test` | Run unit and reconcile tests |
+| `make test` | Run unit and reconcile tests (in Docker) |
 | `make test-jobs` | Run unit tests in `fabric-jobs`, including Spark tests |
 | `make test-e2e` | Run e2e tests against the running stack |
-| `make format` | Format and fix lint |
-| `make lint` | Check format and lint |
+| `make format` | Format and fix lint (in Docker) |
+| `make lint` | Check format and lint (in Docker) |
 
 ## Local URLs
 

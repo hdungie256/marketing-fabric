@@ -1,6 +1,6 @@
-PYTHON ?= python3
 COMPOSE := docker compose -f compose/docker-compose.yml
 JOBS := $(COMPOSE) run --rm fabric-jobs
+DEV := $(COMPOSE) --profile tools run --rm --build dev
 
 .PHONY: up up-dev up-benchmark down bootstrap seed test test-jobs test-e2e format lint migrate reset demo-ready
 
@@ -25,8 +25,8 @@ bootstrap:
 seed:
 	$(JOBS) python -m sources.seed
 
-test:
-	$(PYTHON) -m pytest
+test: compose/.env
+	$(DEV) python -m pytest -p no:cacheprovider
 
 test-jobs:
 	$(JOBS) python -m pytest -p no:cacheprovider tests/unit
@@ -34,13 +34,11 @@ test-jobs:
 test-e2e:
 	$(JOBS) env FABRIC_E2E=1 python -m pytest -p no:cacheprovider tests/e2e
 
-format:
-	ruff format .
-	ruff check --fix .
+format: compose/.env
+	$(DEV) sh -c "ruff format . && ruff check --fix ."
 
-lint:
-	ruff format --check .
-	ruff check .
+lint: compose/.env
+	$(DEV) sh -c "ruff format --check . && ruff check ."
 
 migrate:
 	$(JOBS) python -c "import fabric_control as fc; fc.run_migrations(); fc.sync_tags(); fc.sync_policies()"

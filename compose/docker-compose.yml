@@ -216,6 +216,16 @@ services:
       - ..:/srv:ro
       - om-secrets:/run/om
 
+  dev:
+    profiles: [tools]
+    build:
+      context: ..
+      dockerfile: compose/images/python/Dockerfile
+      args: {GROUP: dev}
+    image: marketing-fabric/dev:latest
+    volumes:
+      - ..:/srv
+
   bootstrap:
     profiles: [core]
     build:
