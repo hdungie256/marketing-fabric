@@ -5,6 +5,7 @@ from typing import Any
 from psycopg.conninfo import conninfo_to_dict
 
 from fabric_control.clients import airflow, openmetadata
+from fabric_control.migrations import run_migrations
 
 LAYERS = ("raw", "unified")
 WRITE_POOL = "fabric_writes"
@@ -40,6 +41,8 @@ def main() -> None:
     admin = openmetadata.admin_token(os.environ["OM_ADMIN_USER"], os.environ["OM_ADMIN_PASSWORD"])
     log.info("bot token written to %s", openmetadata.write_bot_token(admin))
     openmetadata.put_rule_definition()
+    run_migrations()
+    log.info("migrations applied")
     for name, service_type, config in [*(delta_service(layer) for layer in LAYERS), serving_service()]:
         service = openmetadata.put_database_service(name, service_type, config)
         state = openmetadata.run_ingestion(openmetadata.put_ingestion_pipeline(service))
