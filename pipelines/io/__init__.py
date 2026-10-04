@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from pipelines.io import ops, raw
 from pipelines.io.scope import Scope, scope_predicate
 from pipelines.io.spark import get_spark
 from pipelines.io.storage import table_path
@@ -9,11 +10,42 @@ from pipelines.io.storage import table_path
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
-__all__ = ["Scope", "get_spark", "read_delta", "read_raw", "upsert_pg", "vacuum", "write_delta", "write_pg_full"]
+__all__ = [
+    "Scope",
+    "append_raw",
+    "delta_version",
+    "get_spark",
+    "read_delta",
+    "read_raw",
+    "upsert_pg",
+    "vacuum",
+    "write_delta",
+    "write_pg_full",
+]
 
 
 def read_raw(dataset_id: str) -> DataFrame:
-    raise NotImplementedError("read_raw")
+    from pyspark.sql import functions as F
+
+    from fabric_control.registry import load_registry
+
+    keys = load_registry()[dataset_id]["natural_key"]
+    loads = read_delta(dataset_id).filter(F.col("_load_id").isin(ops.passed_loads(dataset_id)))
+    return raw.latest_per_key(loads, keys)
+
+
+def append_raw(dataset_id: str, df: DataFrame, run_id: str, source: str, load_kind: str, source_version: int) -> str:
+    if not dataset_id.startswith("raw/"):
+        raise ValueError(f"{dataset_id} is not a raw dataset")
+    load_id = raw.new_load_id()
+    write_delta(dataset_id, raw.stamp(df, load_id, source, load_kind, source_version), run_id)
+    return load_id
+
+
+def delta_version(dataset_id: str) -> int:
+    from delta.tables import DeltaTable
+
+    return DeltaTable.forPath(get_spark(), table_path(dataset_id)).history(1).collect()[0].version
 
 
 def read_delta(dataset_id: str, version: int | None = None) -> DataFrame:

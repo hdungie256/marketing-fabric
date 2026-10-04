@@ -15,7 +15,14 @@ def offline_mode(monkeypatch):
 def registry(monkeypatch, tmp_path):
     def write(entries: dict[str, str]) -> None:
         datasets = [
-            {"dataset_id": d, "om_fqn": fqn, "openlineage": {}, "job_id": "e2e", "tags": []}
+            {
+                "dataset_id": d,
+                "om_fqn": fqn,
+                "openlineage": {},
+                "job_id": "e2e",
+                "tags": [],
+                "natural_key": ["order_id"],
+            }
             for d, fqn in entries.items()
         ]
         (tmp_path / "datasets").mkdir(exist_ok=True)

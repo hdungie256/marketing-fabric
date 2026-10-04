@@ -24,3 +24,10 @@ def test_scope_predicate():
 def test_invalid_scope(scope):
     with pytest.raises(ValueError):
         scope_predicate(scope)
+
+
+def test_append_raw_rejects_non_raw_dataset():
+    from pipelines import io
+
+    with pytest.raises(ValueError, match="not a raw dataset"):
+        io.append_raw("unified/orders", None, "r", "src", "full", 1)

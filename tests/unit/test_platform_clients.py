@@ -8,7 +8,14 @@ from fabric_control.models import DataQualityResult, RuleResult
 
 
 def entry(dataset_id: str, om_fqn: str) -> dict:
-    return {"dataset_id": dataset_id, "om_fqn": om_fqn, "openlineage": {}, "job_id": "x", "tags": []}
+    return {
+        "dataset_id": dataset_id,
+        "om_fqn": om_fqn,
+        "openlineage": {},
+        "job_id": "x",
+        "tags": [],
+        "natural_key": ["id"],
+    }
 
 
 @pytest.fixture

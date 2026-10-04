@@ -37,3 +37,11 @@ def test_missing_field_fails(tmp_path):
 
 def test_repo_registry_loads():
     assert isinstance(load_registry(), dict)
+
+
+def test_raw_dataset_needs_natural_key(tmp_path):
+    write(tmp_path / "a.yml", "raw/sales/lines")
+    with pytest.raises(RegistryError, match="natural_key"):
+        load_registry(tmp_path)
+    (tmp_path / "a.yml").write_text((tmp_path / "a.yml").read_text() + "    natural_key: [line_id]\n")
+    assert "raw/sales/lines" in load_registry(tmp_path)

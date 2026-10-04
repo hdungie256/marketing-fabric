@@ -2,7 +2,7 @@ PYTHON ?= python3
 COMPOSE := docker compose -f compose/docker-compose.yml
 JOBS := $(COMPOSE) run --rm fabric-jobs
 
-.PHONY: up up-dev up-benchmark down bootstrap test test-e2e format lint migrate reset demo-ready
+.PHONY: up up-dev up-benchmark down bootstrap test test-jobs test-e2e format lint migrate reset demo-ready
 
 compose/.env:
 	cp compose/.env.example $@
@@ -24,6 +24,9 @@ bootstrap:
 
 test:
 	$(PYTHON) -m pytest
+
+test-jobs:
+	$(JOBS) python -m pytest -p no:cacheprovider tests/unit
 
 test-e2e:
 	$(JOBS) env FABRIC_E2E=1 python -m pytest -p no:cacheprovider tests/e2e
