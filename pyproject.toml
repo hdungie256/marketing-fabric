@@ -7,7 +7,6 @@ dependencies = ["pyyaml"]
 [dependency-groups]
 jobs = [
     "pyyaml",
-    "boto3",
     "pyspark==3.5.9",
     "delta-spark==3.3.3",
     "great-expectations==1.23.2",
