@@ -16,6 +16,7 @@ jobs = [
     "boto3",
     "psycopg[binary]==3.3.6",
     "yoyo-migrations==9.0.0",
+    "pytest",
 ]
 app = ["pyyaml", "streamlit==1.64.0", "psycopg[binary]==3.3.6"]
 api = ["pyyaml", "fastapi==0.141.1", "uvicorn", "psycopg[binary]==3.3.6"]
