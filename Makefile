@@ -2,7 +2,7 @@ COMPOSE := docker compose -f compose/docker-compose.yml
 JOBS := $(COMPOSE) run --rm fabric-jobs
 DEV := $(COMPOSE) --profile tools run --rm --build dev
 
-.PHONY: up up-dev up-benchmark down bootstrap seed test test-jobs test-e2e format lint migrate reset demo-ready
+.PHONY: up up-dev up-benchmark down bootstrap seed test test-jobs test-e2e test-e2e-full format lint migrate reset demo-ready
 
 compose/.env:
 	cp compose/.env.example $@
@@ -26,13 +26,16 @@ seed:
 	$(JOBS) python -m sources.seed
 
 test: compose/.env
-	$(DEV) python -m pytest -p no:cacheprovider
+	$(DEV) python -m pytest -p no:cacheprovider $(ARGS)
 
 test-jobs:
-	$(JOBS) python -m pytest -p no:cacheprovider tests/unit
+	$(JOBS) python -m pytest -p no:cacheprovider tests/unit $(ARGS)
 
 test-e2e:
-	$(JOBS) env FABRIC_E2E=1 python -m pytest -p no:cacheprovider tests/e2e
+	$(JOBS) env FABRIC_E2E=1 python -m pytest -p no:cacheprovider tests/e2e $(ARGS)
+
+test-e2e-full:
+	$(JOBS) env FABRIC_E2E=1 FABRIC_E2E_FULL=1 python -m pytest -p no:cacheprovider tests/e2e $(ARGS)
 
 format: compose/.env
 	$(DEV) sh -c "ruff format . && ruff check --fix ."

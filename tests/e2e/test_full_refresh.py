@@ -20,8 +20,21 @@ def query(sql: str, *params):
         return conn.execute(sql, params).fetchall()
 
 
+def source_versions() -> dict[str, int]:
+    with psycopg.connect(os.environ["SOURCES_DB_DSN"]) as conn:
+        return dict(conn.execute("SELECT source, version FROM meta.source_versions").fetchall())
+
+
+def latest_success() -> str | None:
+    runs = airflow.call("GET", f"/api/v2/dags/{DAG_ID}/dagRuns?state=success&order_by=-start_date&limit=1")
+    return runs["dag_runs"][0]["dag_run_id"] if runs["dag_runs"] else None
+
+
 @pytest.fixture(scope="module")
 def refresh():
+    run_id = None if os.environ.get("FABRIC_E2E_FULL") == "1" else latest_success()
+    if run_id:
+        return run_id, source_versions()
     versions = seed()
     run_id = fc.trigger(DAG_ID, {})
     assert airflow.wait(DAG_ID, run_id, timeout=1800, poll=10) == "success"
