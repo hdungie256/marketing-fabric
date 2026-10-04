@@ -29,16 +29,28 @@ def read_raw(dataset_id: str) -> DataFrame:
 
     from fabric_control.registry import load_registry
 
-    keys = load_registry()[dataset_id]["natural_key"]
+    entry = load_registry()[dataset_id]
+    if entry.get("derived"):
+        raise ValueError(f"{dataset_id} is derived at the source and must not be read as a fact")
+    keys = entry["natural_key"]
     loads = read_delta(dataset_id).filter(F.col("_load_id").isin(ops.passed_loads(dataset_id)))
     return raw.latest_per_key(loads, keys)
 
 
-def append_raw(dataset_id: str, df: DataFrame, run_id: str, source: str, load_kind: str, source_version: int) -> str:
+def append_raw(
+    dataset_id: str,
+    df: DataFrame,
+    run_id: str,
+    source: str,
+    load_kind: str,
+    source_version: int,
+    schema_version: str,
+    load_id: str | None = None,
+) -> str:
     if not dataset_id.startswith("raw/"):
         raise ValueError(f"{dataset_id} is not a raw dataset")
-    load_id = raw.new_load_id()
-    write_delta(dataset_id, raw.stamp(df, load_id, source, load_kind, source_version), run_id)
+    load_id = load_id or raw.new_load_id()
+    write_delta(dataset_id, raw.stamp(df, load_id, source, load_kind, source_version, schema_version), run_id)
     return load_id
 
 

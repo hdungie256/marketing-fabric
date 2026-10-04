@@ -24,6 +24,12 @@ class Run:
     def record_change(self, dataset_id: str, before: Any, after: Any) -> None:
         stub("record_change", run_id=self.run_id, dataset_id=dataset_id)
 
+    def warn(self, message: str) -> None:
+        if mode() == "offline":
+            log.warning("run %s: %s", self.run_id, message)
+            return
+        postgres.add_alert(self.run_id, self.job_id, "warning", message)
+
     def finish(self, status: str, failing_step: str | None = None) -> None:
         postgres.end_run(self.run_id, status, self.rows_in, self.rows_out, failing_step, self.delta_version)
 

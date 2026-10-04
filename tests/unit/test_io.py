@@ -30,4 +30,4 @@ def test_append_raw_rejects_non_raw_dataset():
     from pipelines import io
 
     with pytest.raises(ValueError, match="not a raw dataset"):
-        io.append_raw("unified/orders", None, "r", "src", "full", 1)
+        io.append_raw("unified/orders", None, "r", "src", "snapshot", 1, "1.0.0")

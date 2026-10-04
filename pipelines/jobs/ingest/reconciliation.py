@@ -32,6 +32,45 @@ class LoadCheck:
     reason: str | None
 
 
+@dataclass(frozen=True)
+class SchemaDiff:
+    missing: list[str]
+    retyped: list[str]
+    extra: list[str]
+
+    @property
+    def drift(self) -> bool:
+        return bool(self.missing or self.retyped)
+
+
+def compare_schema(expected: list[tuple[str, str]], actual: dict[str, str | None]) -> SchemaDiff:
+    names = dict(expected)
+    return SchemaDiff(
+        missing=[name for name, _ in expected if name not in actual],
+        retyped=[
+            f"{name} {actual[name]} != {kind}"
+            for name, kind in expected
+            if name in actual and actual[name] is not None and actual[name] != kind
+        ],
+        extra=[name for name in actual if name not in names],
+    )
+
+
+def schema_drift(load_id: str, dataset_id: str, source_rows: int, baseline: int | None, diff: SchemaDiff) -> LoadCheck:
+    details = [f"missing {diff.missing}" if diff.missing else "", f"retyped {diff.retyped}" if diff.retyped else ""]
+    return LoadCheck(
+        load_id=load_id,
+        dataset_id=dataset_id,
+        source_rows=source_rows,
+        raw_rows=0,
+        baseline_rows=baseline,
+        source_checksum="",
+        raw_checksum="",
+        passed=False,
+        reason="schema_drift: " + "; ".join(d for d in details if d),
+    )
+
+
 def profile(df: DataFrame) -> Profile:
     from pyspark.sql import functions as F
 

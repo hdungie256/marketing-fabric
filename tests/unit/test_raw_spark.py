@@ -28,7 +28,7 @@ def test_latest_per_key_breaks_ties_by_ingested_at(spark):
 
 def test_profile_ignores_order_and_metadata_columns(spark):
     a = spark.createDataFrame([(1, "x"), (2, "y")], "id INT, v STRING")
-    b = stamp(spark.createDataFrame([(2, "y"), (1, "x")], "id INT, v STRING"), "l1", "src", "full", 7)
+    b = stamp(spark.createDataFrame([(2, "y"), (1, "x")], "id INT, v STRING"), "l1", "src", "snapshot", 7, "1.0.0")
     assert profile(a) == profile(b)
     assert profile(a).rows == 2
 
@@ -40,7 +40,8 @@ def test_profile_detects_changed_value(spark):
 
 
 def test_stamp_adds_load_columns(spark):
-    df = stamp(spark.createDataFrame([(1,)], "id INT"), "l1", "crm", "full", 3)
+    df = stamp(spark.createDataFrame([(1,)], "id INT"), "l1", "crm", "snapshot", 3, "1.2.0")
     assert set(LOAD_COLUMNS) <= set(df.columns)
     row = df.first()
-    assert (row._load_id, row._source, row._load_kind, row._source_version) == ("l1", "crm", "full", 3)
+    values = (row._load_id, row._source, row._load_kind, row._source_version, row._schema_version)
+    assert values == ("l1", "crm", "snapshot", 3, "1.2.0")

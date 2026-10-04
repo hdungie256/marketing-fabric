@@ -6,10 +6,12 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
-LOAD_COLUMNS = ("_load_id", "_ingested_at", "_source", "_load_kind", "_source_version")
+LOAD_COLUMNS = ("_load_id", "_ingested_at", "_source", "_load_kind", "_source_version", "_schema_version")
 
 
-def stamp(df: DataFrame, load_id: str, source: str, load_kind: str, source_version: int) -> DataFrame:
+def stamp(
+    df: DataFrame, load_id: str, source: str, load_kind: str, source_version: int, schema_version: str
+) -> DataFrame:
     from pyspark.sql import functions as F
 
     return (
@@ -18,6 +20,7 @@ def stamp(df: DataFrame, load_id: str, source: str, load_kind: str, source_versi
         .withColumn("_source", F.lit(source))
         .withColumn("_load_kind", F.lit(load_kind))
         .withColumn("_source_version", F.lit(source_version).cast("bigint"))
+        .withColumn("_schema_version", F.lit(schema_version))
     )
 
 
