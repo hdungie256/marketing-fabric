@@ -6,6 +6,7 @@ from psycopg.conninfo import conninfo_to_dict
 
 from fabric_control.clients import airflow, openmetadata
 from fabric_control.migrations import run_migrations
+from pipelines.io.storage import ensure_bucket
 from sources.seed import seed
 
 LAYERS = ("raw", "unified")
@@ -41,6 +42,7 @@ def main() -> None:
     airflow.put_pool(WRITE_POOL, 1)
     log.info("airflow pool %s ready", WRITE_POOL)
     log.info("sources seeded, versions %s", seed())
+    ensure_bucket()
     admin = openmetadata.admin_token(os.environ["OM_ADMIN_USER"], os.environ["OM_ADMIN_PASSWORD"])
     log.info("bot token written to %s", openmetadata.write_bot_token(admin))
     openmetadata.put_rule_definition()
