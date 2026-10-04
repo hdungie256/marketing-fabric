@@ -3,6 +3,7 @@ from typing import Any
 from fabric_control.clients import openmetadata
 from fabric_control.clients.http import HttpError
 from fabric_control.config import log, mode, stub
+from fabric_control.contracts import columns, load_schema
 from fabric_control.models import Status
 from fabric_control.registry import load_registry
 
@@ -31,8 +32,35 @@ def emit_lineage(job_id: str, inputs: list[str], outputs: list[str]) -> None:
         log.warning("lineage for %s not recorded: %s", job_id, e)
 
 
+RAW_COLUMNS = [
+    ("_load_id", "string"),
+    ("_ingested_at", "timestamp"),
+    ("_source", "string"),
+    ("_load_kind", "string"),
+    ("_source_version", "bigint"),
+    ("_schema_version", "string"),
+    ("_run_id", "string"),
+]
+DELTA_COLUMNS = [("_run_id", "string")]
+
+
+def delta_columns(dataset_id: str) -> list[tuple[str, str]]:
+    extra = RAW_COLUMNS if dataset_id.startswith("raw/") else DELTA_COLUMNS
+    return columns(load_schema(dataset_id)) + extra
+
+
 def register(dataset_id: str) -> None:
-    stub("register", dataset_id=dataset_id)
+    if mode() == "offline":
+        stub("register", dataset_id=dataset_id)
+        return
+    openmetadata.put_table(load_registry()[dataset_id]["om_fqn"], delta_columns(dataset_id))
+
+
+def register_all() -> list[str]:
+    datasets = [d for d, entry in load_registry().items() if entry["om_fqn"].startswith("lake_")]
+    for dataset_id in datasets:
+        register(dataset_id)
+    return datasets
 
 
 def catalog(filter: dict[str, Any] | None = None) -> list[dict[str, Any]]:

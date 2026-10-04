@@ -1,5 +1,6 @@
 import base64
 import os
+import re
 import time
 import urllib.parse
 from pathlib import Path
@@ -13,6 +14,15 @@ BOT = "ingestion-bot"
 PIPELINE_SERVICE = "fabric"
 RULE_DEFINITION = "fabricRule"
 INGESTION_DONE = ("success", "failed", "partialSuccess")
+COLUMN_TYPES = {
+    "string": "STRING",
+    "int": "INT",
+    "bigint": "BIGINT",
+    "double": "DOUBLE",
+    "boolean": "BOOLEAN",
+    "date": "DATE",
+    "timestamp": "TIMESTAMP",
+}
 
 
 def url(path: str) -> str:
@@ -71,6 +81,35 @@ def write_bot_token(admin: str) -> Path:
     path.write_text(jwt)
     path.chmod(0o600)
     return path
+
+
+def column(name: str, kind: str) -> dict[str, Any]:
+    decimal = re.fullmatch(r"decimal\((\d+),(\d+)\)", kind)
+    if decimal:
+        precision, scale = int(decimal[1]), int(decimal[2])
+        return {"name": name, "dataType": "DECIMAL", "precision": precision, "scale": scale, "dataTypeDisplay": kind}
+    return {"name": name, "dataType": COLUMN_TYPES[kind], "dataTypeDisplay": kind}
+
+
+def put_table(table_fqn: str, columns: list[tuple[str, str]]) -> str:
+    service, database, schema, name = table_fqn.split(".")
+    call("PUT", "databases", {"name": database, "service": service})
+    call("PUT", "databaseSchemas", {"name": schema, "database": f"{service}.{database}"})
+    body = {
+        "name": name,
+        "databaseSchema": f"{service}.{database}.{schema}",
+        "tableType": "Regular",
+        "columns": [column(n, k) for n, k in columns],
+    }
+    return call("PUT", "tables", body)["id"]
+
+
+def delete_ingestion_pipeline(fqn: str) -> None:
+    try:
+        call("DELETE", f"services/ingestionPipelines/name/{quote(fqn)}?hardDelete=true")
+    except HttpError as e:
+        if e.status != 404:
+            raise
 
 
 def table_id(fqn: str) -> str:
@@ -157,20 +196,32 @@ def trigger_ingestion(pipeline_id: str, timeout: float = 120, poll: float = 5) -
             time.sleep(poll)
 
 
-def run_ingestion(pipeline: dict[str, Any], timeout: float = 600, poll: float = 5) -> str:
-    call("POST", f"services/ingestionPipelines/deploy/{pipeline['id']}")
-    started = int(time.time() * 1000) - 5000
-    trigger_ingestion(pipeline["id"])
+def latest_state(pipeline: dict[str, Any], since: int) -> str | None:
     path = f"services/ingestionPipelines/{quote(pipeline['fullyQualifiedName'])}/pipelineStatus"
+    end = int(time.time() * 1000) + 60000
+    runs = call("GET", f"{path}?startTs={since}&endTs={end}").get("data", [])
+    states = [r["pipelineState"] for r in runs if r.get("startDate", 0) >= since]
+    return states[0] if states else None
+
+
+def run_ingestion(
+    pipeline: dict[str, Any], timeout: float = 600, poll: float = 5, retrigger_after: float = 60, attempts: int = 3
+) -> str:
+    if not pipeline.get("deployed"):
+        call("POST", f"services/ingestionPipelines/deploy/{pipeline['id']}")
     deadline = time.monotonic() + timeout
-    while time.monotonic() < deadline:
-        end = int(time.time() * 1000) + 60000
-        runs = call("GET", f"{path}?startTs={started}&endTs={end}").get("data", [])
-        states = [r["pipelineState"] for r in runs if r.get("startDate", 0) >= started]
-        if states and states[0] in INGESTION_DONE:
-            return states[0]
-        time.sleep(poll)
-    raise TimeoutError(f"ingestion {pipeline['fullyQualifiedName']} not finished after {timeout}s")
+    for _ in range(attempts):
+        since = int(time.time() * 1000) - 5000
+        trigger_ingestion(pipeline["id"])
+        quiet_until = time.monotonic() + retrigger_after
+        while time.monotonic() < min(deadline, quiet_until):
+            state = latest_state(pipeline, since)
+            if state in INGESTION_DONE:
+                return state
+            if state:
+                quiet_until = deadline
+            time.sleep(poll)
+    raise TimeoutError(f"ingestion {pipeline['fullyQualifiedName']} not finished after {attempts} attempts")
 
 
 def ingest(service_name: str, timeout: float = 600) -> str:

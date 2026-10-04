@@ -25,7 +25,7 @@ def setup(registry):
     fc.run_migrations()
     ensure_bucket()
     registry(
-        {DATASET: f"lake_raw.default.lake.{DATASET.rsplit('/', 1)[1]}"},
+        {DATASET: f"lake_e2e.default.lake.{DATASET.rsplit('/', 1)[1]}"},
         {DATASET: [("order_id", "int"), ("status", "string")]},
     )
 

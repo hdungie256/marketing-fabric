@@ -5,6 +5,7 @@ from dataclasses import asdict
 from typing import TYPE_CHECKING
 
 import fabric_control as fc
+from fabric_control.clients.http import HttpError
 from fabric_control.contracts import columns, load_schema
 from fabric_control.models import GateFailed
 from fabric_control.run import Run
@@ -76,6 +77,11 @@ def run_ingest(job_id: str, source: str, extracts: dict[str, Callable[[], Extrac
             run.step = f"extract {dataset_id}"
             data = extract()
             checks.append(ingest_load(run, dataset_id, data.df, source, data.version, baselines, data.typed))
+        for dataset_id in extracts:
+            try:
+                fc.register(dataset_id)
+            except (HttpError, OSError) as e:
+                run.warn(f"{dataset_id}: catalog registration failed: {e}")
         failed = [f"{c.dataset_id}: {c.reason}" for c in checks if not c.passed]
         if failed:
             raise GateFailed("reconciliation failed: " + "; ".join(failed))

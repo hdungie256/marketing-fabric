@@ -5,6 +5,7 @@ from typing import Any
 from psycopg.conninfo import conninfo_to_dict
 
 from fabric_control.clients import airflow, openmetadata
+from fabric_control.metadata import register_all
 from fabric_control.migrations import run_migrations
 from pipelines.io.storage import ensure_bucket
 from sources.seed import seed
@@ -48,12 +49,16 @@ def main() -> None:
     openmetadata.put_rule_definition()
     run_migrations()
     log.info("migrations applied")
-    for name, service_type, config in [*(delta_service(layer) for layer in LAYERS), serving_service()]:
-        service = openmetadata.put_database_service(name, service_type, config)
-        state = openmetadata.run_ingestion(openmetadata.put_ingestion_pipeline(service))
-        log.info("service %s ingestion %s", name, state)
-        if state == "failed":
-            raise SystemExit(f"ingestion for {name} failed")
+    for name, service_type, config in (delta_service(layer) for layer in LAYERS):
+        openmetadata.put_database_service(name, service_type, config)
+        openmetadata.delete_ingestion_pipeline(f"{name}.{name}_metadata")
+    log.info("registered %s lake tables", len(register_all()))
+    name, service_type, config = serving_service()
+    service = openmetadata.put_database_service(name, service_type, config)
+    state = openmetadata.run_ingestion(openmetadata.put_ingestion_pipeline(service))
+    log.info("service %s ingestion %s", name, state)
+    if state == "failed":
+        raise SystemExit(f"ingestion for {name} failed")
     run_id = airflow.trigger_dag(REFRESH_DAG, {}, wait_for_dag=300)
     state = airflow.wait(REFRESH_DAG, run_id, timeout=3600, poll=10)
     log.info("%s %s: %s", REFRESH_DAG, run_id, state)
