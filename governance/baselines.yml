@@ -1,0 +1,12 @@
+load_rows:
+  raw/sales/sales_lines: 52924
+  raw/crm/customers: 1468
+  raw/erp/product_costs: 1145
+  raw/campaign/campaigns: 5
+  raw/campaign/targets: 5
+  raw/campaign/attribution: 1290
+  raw/promotion/coupon_plan: 204
+  raw/spend/campaign_spend: 135
+  raw/spend/daily_spend: 365
+  raw/spend/spend_recon: 365
+  raw/tax/tax_rates: 20

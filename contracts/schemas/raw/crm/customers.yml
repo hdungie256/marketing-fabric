@@ -1,0 +1,18 @@
+dataset_id: raw/crm/customers
+schema_version: 1.0.0
+columns:
+- name: customer_id
+  type: bigint
+  nullable: false
+- name: gender
+  type: string
+  nullable: false
+- name: location
+  type: string
+  nullable: false
+- name: tenure_months
+  type: int
+  nullable: false
+- name: provenance
+  type: string
+  nullable: false
