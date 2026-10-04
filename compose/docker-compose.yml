@@ -101,6 +101,8 @@ services:
     entrypoint: /bin/bash
     command: [/opt/airflow/ingestion_dependency.sh]
     environment:
+      <<: *fabric-env
+      FABRIC_NETWORK: marketing-fabric_default
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER}
       AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
@@ -202,6 +204,7 @@ services:
       SPARK_DRIVER_MEMORY: 2g
     volumes:
       - ..:/srv:ro
+      - om-secrets:/run/om
 
   minio:
     profiles: [benchmark]
@@ -230,3 +233,4 @@ volumes:
   airflow-dags:
   airflow-dag-configs:
   minio-data:
+  om-secrets:
