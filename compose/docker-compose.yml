@@ -103,6 +103,7 @@ services:
     environment:
       <<: *fabric-env
       FABRIC_NETWORK: marketing-fabric_default
+      FABRIC_SECRETS_VOLUME: marketing-fabric_om-secrets
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER}
       AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
@@ -120,6 +121,12 @@ services:
       - airflow-dag-configs:/opt/airflow/dag_generated_configs
       - ../pipelines/dags:/opt/airflow/dags/fabric:ro
       - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: curl -fs http://localhost:8080/api/v2/monitor/health
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 20
     depends_on:
       openmetadata-server: {condition: service_healthy}
 
@@ -201,10 +208,34 @@ services:
       <<: *fabric-env
       OM_ADMIN_USER: ${OM_ADMIN_USER}
       OM_ADMIN_PASSWORD: ${OM_ADMIN_PASSWORD}
+      AIRFLOW_USER: ${AIRFLOW_ADMIN_USER}
+      AIRFLOW_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
       SPARK_DRIVER_MEMORY: 2g
     volumes:
       - ..:/srv:ro
       - om-secrets:/run/om
+
+  bootstrap:
+    profiles: [core]
+    build:
+      context: ..
+      dockerfile: compose/images/fabric-jobs/Dockerfile
+    image: marketing-fabric/fabric-jobs:latest
+    mem_limit: 256m
+    command: python -m fabric_control.bootstrap
+    environment:
+      <<: *fabric-env
+      OM_ADMIN_USER: ${OM_ADMIN_USER}
+      OM_ADMIN_PASSWORD: ${OM_ADMIN_PASSWORD}
+      AIRFLOW_USER: ${AIRFLOW_ADMIN_USER}
+      AIRFLOW_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+    volumes:
+      - om-secrets:/run/om
+    depends_on:
+      postgresql: {condition: service_healthy}
+      seaweedfs: {condition: service_healthy}
+      openmetadata-server: {condition: service_healthy}
+      openmetadata-ingestion: {condition: service_healthy}
 
   minio:
     profiles: [benchmark]
