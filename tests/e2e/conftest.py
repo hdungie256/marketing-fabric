@@ -13,7 +13,7 @@ def offline_mode(monkeypatch):
 
 @pytest.fixture
 def registry(monkeypatch, tmp_path):
-    def write(entries: dict[str, str]) -> None:
+    def write(entries: dict[str, str], schemas: dict[str, list[tuple[str, str]]] | None = None) -> None:
         datasets = [
             {
                 "dataset_id": d,
@@ -27,6 +27,11 @@ def registry(monkeypatch, tmp_path):
         ]
         (tmp_path / "datasets").mkdir(exist_ok=True)
         (tmp_path / "datasets" / "e2e.yml").write_text(yaml.safe_dump({"datasets": datasets}))
+        for dataset_id, cols in (schemas or {}).items():
+            path = tmp_path / "schemas" / f"{dataset_id}.yml"
+            path.parent.mkdir(parents=True, exist_ok=True)
+            contract = {"schema_version": "1.0.0", "columns": [{"name": n, "type": t} for n, t in cols]}
+            path.write_text(yaml.safe_dump(contract))
         monkeypatch.setenv("FABRIC_CONTRACTS_DIR", str(tmp_path))
 
     return write

@@ -22,7 +22,8 @@ Docker Desktop memory ≥ 12GB.
 | `make up-benchmark` | Start benchmark stack (pinned MinIO) |
 | `make down` | Stop stack |
 | `make reset` | Delete volumes and restart |
-| `make bootstrap` | Rerun bootstrap (also runs on `make up`) |
+| `make bootstrap` | Rerun bootstrap (also runs on `make up`): seed, catalog, migrations, `full_refresh` |
+| `make seed` | Reseed sources from `sources/data/*.xlsx` (bumps `source_version`) |
 | `make migrate` | Run migrations, sync tags and policies |
 | `make test` | Run unit and reconcile tests |
 | `make test-jobs` | Run unit tests in `fabric-jobs`, including Spark tests |
@@ -55,7 +56,8 @@ Airflow login: `AIRFLOW_ADMIN_USER` / `AIRFLOW_ADMIN_PASSWORD` from `compose/.en
 - **Quality:** `fabric_control.report_data_quality()` pushes each rule as test case `<om_fqn>.<rule_id>`. Lineage and quality failures log a warning and never fail the job.
 - **Orchestration:** DAGs build tasks with `job_task(job_id)` from `pipelines/dags/job_task.py`: a `fabric-jobs` container per job (`python -m pipelines.jobs.<job>.job`, Spark `local[*]`, pool `fabric_writes`, `om-secrets` mounted). Task id is `job_id` with `/` replaced by `.`. A job returns an XCom value with `pipelines.io.result.write_result()`. Other services start DAGs with `fabric_control.trigger()`. Check: DAG `platform_smoke`.
 - **Runs:** `fabric_control.run()` writes `ops.runs` (status `success`, `failed` or `gated`, rows in/out, failing step from `run.step`, Delta version) and `ops.alerts` on error.
-- **Raw ingest:** `pipelines/jobs/ingest/load.py` appends to `raw/<source>/<table>` with `_load_id`, `_ingested_at`, `_source`, `_load_kind`, `_source_version`, then reconciles source vs raw rows and checksum plus `load_rows` in `governance/baselines.yml` into `ops.load_reconciliation`. `io.read_raw()` returns the latest row per registry `natural_key` from passed loads only.
+- **Sources:** `sources/seed.py` loads the sample workbooks into 7 sources: Postgres `sources` DB (`sales`, `crm`, `erp`), mock API `GET /<source>/<table>` (`campaign`, `promotion`, `spend.campaign_spend`) and CSV files in bucket `sources` (`spend`, `tax`). Every table has `provenance` (`original`/`synthetic`).
+- **Raw ingest:** `pipelines/jobs/ingest/load.py` appends to `raw/<source>/<table>` with `_load_id`, `_ingested_at`, `_source`, `_load_kind`, `_source_version`, then reconciles source vs raw rows and checksum plus `load_rows` in `governance/baselines.yml` into `ops.load_reconciliation`. `io.read_raw()` returns the latest row per registry `natural_key` from passed loads only, and refuses `derived` datasets (`spend_recon`). Before writing, the schema gate compares the source with `contracts/schemas/<dataset_id>.yml`: missing or retyped columns gate the run (`schema_drift`), extra columns are dropped with a warning. DAG `full_refresh` runs all ingest jobs, then refreshes the catalog.
 - **Memory:** core limits total 11.25 GB; measured peak 6.6 GB with a 10M-row Spark job (`MEMORY_ROWS=10000000 sh scripts/check_memory.sh`).
 
 ## Structure

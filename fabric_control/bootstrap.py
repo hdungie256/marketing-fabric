@@ -6,9 +6,11 @@ from psycopg.conninfo import conninfo_to_dict
 
 from fabric_control.clients import airflow, openmetadata
 from fabric_control.migrations import run_migrations
+from sources.seed import seed
 
 LAYERS = ("raw", "unified")
 WRITE_POOL = "fabric_writes"
+REFRESH_DAG = "full_refresh"
 
 
 def delta_service(layer: str) -> tuple[str, str, dict[str, Any]]:
@@ -38,6 +40,7 @@ def main() -> None:
     log = logging.getLogger("bootstrap")
     airflow.put_pool(WRITE_POOL, 1)
     log.info("airflow pool %s ready", WRITE_POOL)
+    log.info("sources seeded, versions %s", seed())
     admin = openmetadata.admin_token(os.environ["OM_ADMIN_USER"], os.environ["OM_ADMIN_PASSWORD"])
     log.info("bot token written to %s", openmetadata.write_bot_token(admin))
     openmetadata.put_rule_definition()
@@ -49,6 +52,11 @@ def main() -> None:
         log.info("service %s ingestion %s", name, state)
         if state == "failed":
             raise SystemExit(f"ingestion for {name} failed")
+    run_id = airflow.trigger_dag(REFRESH_DAG, {}, wait_for_dag=300)
+    state = airflow.wait(REFRESH_DAG, run_id, timeout=3600, poll=10)
+    log.info("%s %s: %s", REFRESH_DAG, run_id, state)
+    if state != "success":
+        raise SystemExit(f"{REFRESH_DAG} {run_id} {state}")
 
 
 if __name__ == "__main__":

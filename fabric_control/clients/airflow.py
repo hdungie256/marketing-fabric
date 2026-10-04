@@ -25,8 +25,15 @@ def run_path(dag_id: str, run_id: str) -> str:
     return f"/api/v2/dags/{dag_id}/dagRuns/{urllib.parse.quote(run_id, safe='')}"
 
 
-def trigger_dag(dag_id: str, conf: dict[str, Any]) -> str:
-    return call("POST", f"/api/v2/dags/{dag_id}/dagRuns", {"logical_date": None, "conf": conf})["dag_run_id"]
+def trigger_dag(dag_id: str, conf: dict[str, Any], wait_for_dag: float = 0, poll: float = 5) -> str:
+    deadline = time.monotonic() + wait_for_dag
+    while True:
+        try:
+            return call("POST", f"/api/v2/dags/{dag_id}/dagRuns", {"logical_date": None, "conf": conf})["dag_run_id"]
+        except HttpError as e:
+            if e.status != 404 or time.monotonic() > deadline:
+                raise
+            time.sleep(poll)
 
 
 def wait(dag_id: str, run_id: str, timeout: float = 600, poll: float = 2) -> str:
