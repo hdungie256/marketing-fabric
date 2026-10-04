@@ -12,6 +12,23 @@ cp compose/.env.example compose/.env
 
 Editor support (optional): Python 3.11, `pip install --group dev`.
 
+## Startup
+
+`make up` starts the stack, then the one-shot `bootstrap` service brings it to a ready state (about 5–8 minutes on first run). It is done when this shows `Exited (0)`:
+
+```bash
+docker compose -f compose/docker-compose.yml ps -a bootstrap
+```
+
+Bootstrap steps, in order: create Airflow pool `fabric_writes` → seed sources → create the `lake` bucket → set OpenMetadata admin password and save the bot token → register the quality rule definition → apply migrations → register and catalog `lake_raw`, `lake_unified`, `serving` → run DAG `full_refresh`. Rerunning is safe; `make reset` rebuilds from empty volumes to the same result.
+
+Windows (WSL2): give the VM enough memory in `%UserProfile%\.wslconfig`, then run `wsl --shutdown`:
+
+```ini
+[wsl2]
+memory=14GB
+```
+
 ## Commands
 
 | Command | Action |
@@ -56,7 +73,7 @@ Airflow login: `AIRFLOW_ADMIN_USER` / `AIRFLOW_ADMIN_PASSWORD` from `compose/.en
 - **Orchestration:** DAGs build tasks with `job_task(job_id)` from `pipelines/dags/job_task.py`: a `fabric-jobs` container per job (`python -m pipelines.jobs.<job>.job`, Spark `local[*]`, pool `fabric_writes`, `om-secrets` mounted). Task id is `job_id` with `/` replaced by `.`. A job returns an XCom value with `pipelines.io.result.write_result()`. Other services start DAGs with `fabric_control.trigger()`. Check: DAG `platform_smoke`.
 - **Runs:** `fabric_control.run()` writes `ops.runs` (status `success`, `failed` or `gated`, rows in/out, failing step from `run.step`, Delta version) and `ops.alerts` on error.
 - **Sources:** `sources/seed.py` loads the sample workbooks into 7 sources: Postgres `sources` DB (`sales`, `crm`, `erp`), mock API `GET /<source>/<table>` (`campaign`, `promotion`, `spend.campaign_spend`) and CSV files in bucket `sources` (`spend`, `tax`). Every table has `provenance` (`original`/`synthetic`).
-- **Raw ingest:** `pipelines/jobs/ingest/load.py` appends to `raw/<source>/<table>` with `_load_id`, `_ingested_at`, `_source`, `_load_kind`, `_source_version`, then reconciles source vs raw rows and checksum plus `load_rows` in `governance/baselines.yml` into `ops.load_reconciliation`. `io.read_raw()` returns the latest row per registry `natural_key` from passed loads only, and refuses `derived` datasets (`spend_recon`). Before writing, the schema gate compares the source with `contracts/schemas/<dataset_id>.yml`: missing or retyped columns gate the run (`schema_drift`), extra columns are dropped with a warning. DAG `full_refresh` runs all ingest jobs, then refreshes the catalog.
+- **Raw ingest:** `pipelines/jobs/ingest/load.py` appends to `raw/<source>/<table>` with `_load_id`, `_ingested_at`, `_source`, `_load_kind`, `_source_version`, then reconciles source vs raw rows and checksum plus `load_rows` in `governance/baselines.yml` into `ops.load_reconciliation`. `io.read_raw()` returns the latest row per registry `natural_key` from passed loads only, and refuses `derived` datasets (`spend_recon`). Before writing, the schema gate compares the source with `contracts/schemas/<dataset_id>.yml`: missing or retyped columns gate the run (`schema_drift`), extra columns are dropped with a warning. DAG `full_refresh` runs every job that writes a registry dataset, ordered by each job's `INPUTS` (ingest → unified → marts), then refreshes the catalog; new jobs need no DAG edit.
 - **Memory:** core limits total 11.25 GB; measured peak 6.6 GB with a 10M-row Spark job (`MEMORY_ROWS=10000000 sh scripts/check_memory.sh`).
 
 ## Structure
