@@ -1,0 +1,25 @@
+source:
+  type: postgres
+  serviceName: serving
+  serviceConnection:
+    config:
+      type: Postgres
+      hostPort: postgresql:5432
+      username: serving_user
+      authType:
+        password: ${SERVING_DB_PASSWORD}
+      database: serving
+  sourceConfig:
+    config:
+      type: DatabaseMetadata
+      schemaFilterPattern:
+        includes: ["^spike$"]
+sink:
+  type: metadata-rest
+  config: {}
+workflowConfig:
+  openMetadataServerConfig:
+    hostPort: http://openmetadata-server:8585/api
+    authProvider: openmetadata
+    securityConfig:
+      jwtToken: ${OM_JWT}
