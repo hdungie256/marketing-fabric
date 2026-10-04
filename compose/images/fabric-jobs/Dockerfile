@@ -23,5 +23,7 @@ COPY pipelines pipelines
 COPY contracts contracts
 COPY governance governance
 COPY migrations migrations
+COPY sources sources
+COPY compose/pg-init compose/pg-init
 
 ENV PYTHONPATH=/srv PYTHONUNBUFFERED=1

@@ -15,11 +15,12 @@ jobs = [
     "boto3",
     "psycopg[binary]==3.3.6",
     "yoyo-migrations==9.0.0",
+    "openpyxl",
     "pytest",
 ]
 app = ["pyyaml", "streamlit==1.64.0", "psycopg[binary]==3.3.6"]
 api = ["pyyaml", "fastapi==0.141.1", "uvicorn", "psycopg[binary]==3.3.6"]
-dev = ["pyyaml", "pytest", "ruff==0.16.9"]
+dev = ["pyyaml", "pytest", "ruff==0.16.9", "pandas", "openpyxl"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
