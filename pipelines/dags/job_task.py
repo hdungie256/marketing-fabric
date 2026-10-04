@@ -21,7 +21,7 @@ RESULT_PATH = "/tmp/fabric_result.pkl"
 
 
 def job_task(job_id: str, scope: dict[str, Any] | None = None, **kwargs: Any) -> DockerOperator:
-    command = ["spark-submit", "--master", "local[*]", f"pipelines/jobs/{job_id}/job.py"]
+    command = ["python", "-m", f"pipelines.jobs.{job_id.replace('/', '.')}.job"]
     if scope is not None:
         command += ["--scope", json.dumps(scope)]
     return DockerOperator(
