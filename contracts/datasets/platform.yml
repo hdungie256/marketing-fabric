@@ -1,1 +1,114 @@
-datasets: []
+datasets:
+- dataset_id: raw/sales/sales_lines
+  om_fqn: lake_raw.default.lake.sales_lines
+  openlineage:
+    namespace: s3://lake
+    name: raw/sales/sales_lines
+  job_id: ingest/sales
+  owner: platform
+  tags: []
+  natural_key:
+  - sales_line_id
+- dataset_id: raw/crm/customers
+  om_fqn: lake_raw.default.lake.customers
+  openlineage:
+    namespace: s3://lake
+    name: raw/crm/customers
+  job_id: ingest/crm
+  owner: platform
+  tags: []
+  natural_key:
+  - customer_id
+- dataset_id: raw/erp/product_costs
+  om_fqn: lake_raw.default.lake.product_costs
+  openlineage:
+    namespace: s3://lake
+    name: raw/erp/product_costs
+  job_id: ingest/erp
+  owner: platform
+  tags: []
+  natural_key:
+  - product_sku
+- dataset_id: raw/campaign/campaigns
+  om_fqn: lake_raw.default.lake.campaigns
+  openlineage:
+    namespace: s3://lake
+    name: raw/campaign/campaigns
+  job_id: ingest/campaign
+  owner: platform
+  tags: []
+  natural_key:
+  - campaign_id
+- dataset_id: raw/campaign/targets
+  om_fqn: lake_raw.default.lake.targets
+  openlineage:
+    namespace: s3://lake
+    name: raw/campaign/targets
+  job_id: ingest/campaign
+  owner: platform
+  tags: []
+  natural_key:
+  - campaign_id
+- dataset_id: raw/campaign/attribution
+  om_fqn: lake_raw.default.lake.attribution
+  openlineage:
+    namespace: s3://lake
+    name: raw/campaign/attribution
+  job_id: ingest/campaign
+  owner: platform
+  tags: []
+  natural_key:
+  - canonical_order_id
+- dataset_id: raw/promotion/coupon_plan
+  om_fqn: lake_raw.default.lake.coupon_plan
+  openlineage:
+    namespace: s3://lake
+    name: raw/promotion/coupon_plan
+  job_id: ingest/promotion
+  owner: platform
+  tags: []
+  natural_key:
+  - month
+  - product_category
+- dataset_id: raw/spend/campaign_spend
+  om_fqn: lake_raw.default.lake.campaign_spend
+  openlineage:
+    namespace: s3://lake
+    name: raw/spend/campaign_spend
+  job_id: ingest/spend
+  owner: platform
+  tags: []
+  natural_key:
+  - date_iso
+  - campaign_id
+- dataset_id: raw/spend/daily_spend
+  om_fqn: lake_raw.default.lake.daily_spend
+  openlineage:
+    namespace: s3://lake
+    name: raw/spend/daily_spend
+  job_id: ingest/spend
+  owner: platform
+  tags: []
+  natural_key:
+  - date
+- dataset_id: raw/spend/spend_recon
+  om_fqn: lake_raw.default.lake.spend_recon
+  openlineage:
+    namespace: s3://lake
+    name: raw/spend/spend_recon
+  job_id: ingest/spend
+  owner: platform
+  tags: []
+  natural_key:
+  - date_iso
+  derived: true
+- dataset_id: raw/tax/tax_rates
+  om_fqn: lake_raw.default.lake.tax_rates
+  openlineage:
+    namespace: s3://lake
+    name: raw/tax/tax_rates
+  job_id: ingest/tax
+  owner: platform
+  tags: []
+  natural_key:
+  - product_category

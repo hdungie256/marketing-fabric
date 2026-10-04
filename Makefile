@@ -1,8 +1,8 @@
-PYTHON ?= python3
 COMPOSE := docker compose -f compose/docker-compose.yml
 JOBS := $(COMPOSE) run --rm fabric-jobs
+DEV := $(COMPOSE) --profile tools run --rm --build dev
 
-.PHONY: up up-dev up-benchmark down test format lint migrate reset demo-ready
+.PHONY: up up-dev up-benchmark down bootstrap seed test test-jobs test-e2e test-e2e-full format lint migrate reset demo-ready
 
 compose/.env:
 	cp compose/.env.example $@
@@ -19,16 +19,29 @@ up-benchmark: compose/.env
 down:
 	$(COMPOSE) --profile core --profile dev --profile benchmark down
 
-test:
-	$(PYTHON) -m pytest
+bootstrap:
+	$(COMPOSE) --profile core run --rm --build bootstrap
 
-format:
-	ruff format .
-	ruff check --fix .
+seed:
+	$(JOBS) python -m sources.seed
 
-lint:
-	ruff format --check .
-	ruff check .
+test: compose/.env
+	$(DEV) python -m pytest -p no:cacheprovider $(ARGS)
+
+test-jobs:
+	$(JOBS) python -m pytest -p no:cacheprovider tests/unit $(ARGS)
+
+test-e2e:
+	$(JOBS) env FABRIC_E2E=1 python -m pytest -p no:cacheprovider tests/e2e $(ARGS)
+
+test-e2e-full:
+	$(JOBS) env FABRIC_E2E=1 FABRIC_E2E_FULL=1 python -m pytest -p no:cacheprovider tests/e2e $(ARGS)
+
+format: compose/.env
+	$(DEV) sh -c "ruff format . && ruff check --fix ."
+
+lint: compose/.env
+	$(DEV) sh -c "ruff format --check . && ruff check ."
 
 migrate:
 	$(JOBS) python -c "import fabric_control as fc; fc.run_migrations(); fc.sync_tags(); fc.sync_policies()"

@@ -1,0 +1,15 @@
+dataset_id: raw/spend/daily_spend
+schema_version: 1.0.0
+columns:
+- name: date
+  type: string
+  nullable: false
+- name: offline_spend
+  type: decimal(18,2)
+  nullable: false
+- name: online_spend
+  type: decimal(18,2)
+  nullable: false
+- name: provenance
+  type: string
+  nullable: false

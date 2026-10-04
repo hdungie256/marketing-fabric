@@ -34,5 +34,5 @@ jobs:
         with:
           python-version-file: .python-version
       - run: pip install -U "pip>=25.1" && pip install --group dev
-      - run: make test PYTHON=python
+      - run: python -m pytest -p no:cacheprovider
       - run: python -m scripts.check_registry

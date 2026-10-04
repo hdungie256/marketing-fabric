@@ -1,0 +1,18 @@
+dataset_id: raw/promotion/coupon_plan
+schema_version: 1.0.0
+columns:
+- name: month
+  type: string
+  nullable: false
+- name: product_category
+  type: string
+  nullable: false
+- name: coupon_code
+  type: string
+  nullable: false
+- name: discount_pct
+  type: int
+  nullable: false
+- name: provenance
+  type: string
+  nullable: false

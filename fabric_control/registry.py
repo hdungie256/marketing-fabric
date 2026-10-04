@@ -22,5 +22,7 @@ def load_registry(directory: Path | None = None) -> dict[str, dict]:
                 raise RegistryError(f"{path.name}: {dataset_id} missing {missing}")
             if dataset_id in datasets:
                 raise RegistryError(f"{path.name}: duplicate dataset_id {dataset_id}")
+            if dataset_id.startswith("raw/") and not entry.get("natural_key"):
+                raise RegistryError(f"{path.name}: raw dataset {dataset_id} missing natural_key")
             datasets[dataset_id] = entry
     return datasets

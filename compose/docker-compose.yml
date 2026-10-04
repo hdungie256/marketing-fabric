@@ -25,6 +25,7 @@ x-fabric-env: &fabric-env
   SOURCES_DB_DSN: postgresql://sources_user:${SOURCES_DB_PASSWORD}@postgresql:5432/sources
   S3_ENDPOINT: http://seaweedfs:8333
   S3_BUCKET: ${S3_BUCKET}
+  SOURCES_BUCKET: sources
   AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY}
   AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY}
   OM_URL: http://openmetadata-server:8585/api
@@ -101,6 +102,10 @@ services:
     entrypoint: /bin/bash
     command: [/opt/airflow/ingestion_dependency.sh]
     environment:
+      <<: *fabric-env
+      FABRIC_NETWORK: marketing-fabric_default
+      FABRIC_SECRETS_VOLUME: marketing-fabric_om-secrets
+      FABRIC_ROOT: /opt/fabric
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER}
       AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
@@ -117,21 +122,29 @@ services:
       - airflow-dags:/opt/airflow/dags
       - airflow-dag-configs:/opt/airflow/dag_generated_configs
       - ../pipelines/dags:/opt/airflow/dags/fabric:ro
+      - ..:/opt/fabric:ro
       - /var/run/docker.sock:/var/run/docker.sock
+    healthcheck:
+      test: curl -fs http://localhost:8080/api/v2/monitor/health
+      interval: 15s
+      timeout: 5s
+      start_period: 60s
+      retries: 20
     depends_on:
       openmetadata-server: {condition: service_healthy}
 
   seaweedfs:
     profiles: [core, dev]
     image: chrislusf/seaweedfs:4.47
-    mem_limit: 512m
+    restart: unless-stopped
+    mem_limit: 1g
     entrypoint: /bin/sh
     command:
       - -c
       - >-
         printf '{"identities":[{"name":"fabric","credentials":[{"accessKey":"%s","secretKey":"%s"}],"actions":["Admin","Read","Write","List","Tagging"]}]}'
         "$$S3_ACCESS_KEY" "$$S3_SECRET_KEY" > /tmp/s3.json
-        && exec weed server -dir=/data -s3 -s3.port=8333 -s3.config=/tmp/s3.json
+        && exec weed server -dir=/data -volume.max=0 -master.volumeSizeLimitMB=1024 -s3.concurrentFileUploadLimit=2 -s3 -s3.port=8333 -s3.config=/tmp/s3.json
     environment:
       S3_ACCESS_KEY: ${S3_ACCESS_KEY}
       S3_SECRET_KEY: ${S3_SECRET_KEY}
@@ -198,9 +211,44 @@ services:
       <<: *fabric-env
       OM_ADMIN_USER: ${OM_ADMIN_USER}
       OM_ADMIN_PASSWORD: ${OM_ADMIN_PASSWORD}
+      AIRFLOW_USER: ${AIRFLOW_ADMIN_USER}
+      AIRFLOW_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
       SPARK_DRIVER_MEMORY: 2g
     volumes:
       - ..:/srv:ro
+      - om-secrets:/run/om
+
+  dev:
+    profiles: [tools]
+    build:
+      context: ..
+      dockerfile: compose/images/python/Dockerfile
+      args: {GROUP: dev}
+    image: marketing-fabric/dev:latest
+    volumes:
+      - ..:/srv
+
+  bootstrap:
+    profiles: [core]
+    build:
+      context: ..
+      dockerfile: compose/images/fabric-jobs/Dockerfile
+    image: marketing-fabric/fabric-jobs:latest
+    mem_limit: 256m
+    command: python -m fabric_control.bootstrap
+    environment:
+      <<: *fabric-env
+      OM_ADMIN_USER: ${OM_ADMIN_USER}
+      OM_ADMIN_PASSWORD: ${OM_ADMIN_PASSWORD}
+      AIRFLOW_USER: ${AIRFLOW_ADMIN_USER}
+      AIRFLOW_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
+    volumes:
+      - om-secrets:/run/om
+    depends_on:
+      postgresql: {condition: service_healthy}
+      seaweedfs: {condition: service_healthy}
+      openmetadata-server: {condition: service_healthy}
+      openmetadata-ingestion: {condition: service_healthy}
 
   minio:
     profiles: [benchmark]
@@ -229,3 +277,4 @@ volumes:
   airflow-dags:
   airflow-dag-configs:
   minio-data:
+  om-secrets:

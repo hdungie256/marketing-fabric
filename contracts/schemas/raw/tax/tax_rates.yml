@@ -1,0 +1,12 @@
+dataset_id: raw/tax/tax_rates
+schema_version: 1.0.0
+columns:
+- name: product_category
+  type: string
+  nullable: false
+- name: gst
+  type: decimal(6,4)
+  nullable: false
+- name: provenance
+  type: string
+  nullable: false
