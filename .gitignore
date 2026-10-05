@@ -14,3 +14,4 @@ derby.log
 
 *.parquet
 !contracts/fixtures/*.parquet
+docs/
