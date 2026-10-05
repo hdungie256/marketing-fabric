@@ -1,1 +1,24 @@
 /* Story 1.11 — layout, sidebar, navigation, skeleton */
+html, body, [data-testid="stAppViewContainer"] { font-size: 16px; }
+p, li, label { font-size: 16px; }
+[data-testid="stCaptionContainer"], small { font-size: 14px; }
+h1 { font-size: 28px !important; font-weight: 700 !important; }
+h2, h3 { font-size: 19px !important; font-weight: 700 !important; }
+
+section[data-testid="stSidebar"] { width: 244px !important; min-width: 244px !important; }
+[data-testid="stPageLink-NavLink"][aria-current="page"],
+[data-testid="stPageLink-NavLink"]:hover { background: #E8EEFE; color: #1F3FAE; }
+[data-testid="stPageLink-NavLink"][aria-current="page"] { font-weight: 600; }
+
+.st-key-viewing-as { text-align: right; color: #5B6472; }
+.st-key-footnote-strip { border-top: 1px solid #E4E7EC; margin-top: 24px; padding-top: 8px; }
+
+*:focus-visible { outline: 2px solid #2F5BEA !important; outline-offset: 2px; }
+
+.skeleton { border-radius: 12px; background: linear-gradient(90deg, #EEF0F3 25%, #F6F7F9 50%, #EEF0F3 75%);
+  background-size: 200% 100%; animation: skeleton-shimmer 1.2s ease-in-out infinite; }
+.skeleton-card { height: 132px; }
+.skeleton-table { height: 280px; }
+.skeleton-chart { height: 320px; }
+@keyframes skeleton-shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .skeleton { animation: none; } }
