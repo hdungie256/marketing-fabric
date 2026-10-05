@@ -56,3 +56,8 @@ def test_empty_password_env_counts_as_missing_and_never_logs_in(env):
 def test_missing_env_lists_unset_variables(env):
     env.delenv("DATA_OPS_DB_PASSWORD")
     assert auth.missing_env() == ["DATA_OPS_DB_PASSWORD"]
+
+
+def test_empty_db_user_env_falls_back_to_default(env):
+    env.setenv("FINANCE_CONTROLLER_DB_USER", "")
+    assert ROLES["UG04"].db_user == "finance_controller"

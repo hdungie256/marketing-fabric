@@ -14,7 +14,7 @@ class Role:
 
     @property
     def db_user(self) -> str:
-        return os.environ.get(f"{self.env_prefix}_DB_USER", self.env_prefix.lower())
+        return os.environ.get(f"{self.env_prefix}_DB_USER") or self.env_prefix.lower()
 
     @property
     def label(self) -> str:

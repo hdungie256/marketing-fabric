@@ -3,6 +3,7 @@ from collections.abc import Sequence
 import streamlit as st
 from streamlit.navigation.page import StreamlitPage
 
+from app.shell import session
 from app.shell.registry import GROUPS, PageSpec
 
 FALLBACK_KEY = "no_pages"
@@ -31,6 +32,7 @@ def grouped(role: str, pages: Sequence[PageSpec]) -> dict[str, list[PageSpec]]:
 
 
 def _no_pages() -> None:
+    session.set_current_page(FALLBACK_KEY)
     st.title("No pages available")
     st.markdown("No pages available for this role yet.")
 

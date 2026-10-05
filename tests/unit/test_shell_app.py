@@ -120,6 +120,16 @@ def test_role_without_pages_sees_fallback(app, monkeypatch):
     assert "No pages available for this role yet." in [m.value for m in at.markdown]
 
 
+def test_leaving_fallback_page_lands_on_new_role_home(app, monkeypatch):
+    monkeypatch.setattr(runner, "load_pages", lambda: [p for p in full_registry() if "UG05" not in p.roles])
+    at = login(app, "UG01", "pw1")
+    assert at.title[0].value == "Campaign Overview"
+    at.sidebar.selectbox(key="_role_switcher").set_value("UG05").run()
+    assert at.title[0].value == "No pages available"
+    at.sidebar.selectbox(key="_role_switcher").set_value("UG03").run()
+    assert at.title[0].value == "Targets"
+
+
 def test_invalid_registry_stops_with_reason(app, monkeypatch):
     monkeypatch.setattr(runner, "load_pages", lambda: full_registry() + full_registry()[:1])
     at = login(app, "UG01", "pw1")
