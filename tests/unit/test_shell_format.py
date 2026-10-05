@@ -1,6 +1,8 @@
 import math
 from datetime import UTC, date, datetime
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from app.shell.format import FORMATTERS, fmt_count, fmt_date, fmt_money, fmt_pct, fmt_ratio, fmt_time
@@ -51,3 +53,15 @@ def test_fmt_time_treats_naive_datetime_as_utc(monkeypatch):
 
 def test_formatters_cover_metric_kinds():
     assert set(FORMATTERS) == {"count", "money", "ratio", "pct"}
+
+
+@pytest.mark.parametrize("fn", [fmt_count, fmt_money, fmt_ratio, fmt_pct])
+@pytest.mark.parametrize("missing", [pd.NA, math.inf, -math.inf, np.float32("nan"), np.float64("nan")])
+def test_pandas_na_and_infinity_render_as_dash(fn, missing):
+    assert fn(missing) == "—"
+
+
+@pytest.mark.parametrize("fn", [fmt_date, fmt_time])
+def test_nat_and_na_render_as_dash_for_dates(fn):
+    assert fn(pd.NaT) == "—"
+    assert fn(pd.NA) == "—"

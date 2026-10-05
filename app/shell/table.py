@@ -27,7 +27,7 @@ _cached_masked_columns = st.cache_data(ttl=60, show_spinner=False)(masked_column
 
 
 def _is_missing(value: Any) -> bool:
-    return value is None or (isinstance(value, float) and pd.isna(value))
+    return value is None or (pd.api.types.is_scalar(value) and bool(pd.isna(value)))
 
 
 def _formatter(fmt: Callable[[Any], str]) -> Callable[[Any], str]:

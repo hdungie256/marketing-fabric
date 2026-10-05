@@ -6,11 +6,20 @@ from decimal import ROUND_HALF_UP, Decimal
 from typing import Any
 from zoneinfo import ZoneInfo
 
+import numpy as np
+import pandas as pd
+
 DASH = "—"
 
 
 def _missing(value: Any) -> bool:
-    return value is None or (isinstance(value, float) and math.isnan(value))
+    if value is None:
+        return True
+    if isinstance(value, (float, np.floating)):
+        return not math.isfinite(value)
+    if not pd.api.types.is_scalar(value):
+        return False
+    return bool(pd.isna(value))
 
 
 def _quantize(value: Any, places: str) -> Decimal:

@@ -119,3 +119,12 @@ def test_table_propagates_policy_errors(monkeypatch):
     table_module._cached_masked_columns.clear()
     at = AppTest.from_function(_table_script).run()
     assert "policy unavailable" in at.exception[0].message
+
+
+def test_masked_column_with_pandas_na_stays_missing_and_unprefixed():
+    df = pd.DataFrame({"customer_id": pd.array(["C****42", pd.NA, DENIED_TEXT], dtype="string")})
+    out, _, _ = prepare_table(df, masked_cols=frozenset({"customer_id"}))
+    values = out["customer_id"].tolist()
+    assert values[0] == "🔒 C****42"
+    assert pd.isna(values[1])
+    assert values[2] == DENIED_TEXT
