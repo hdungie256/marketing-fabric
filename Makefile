@@ -11,7 +11,7 @@ up: compose/.env
 	$(COMPOSE) --profile core up -d --build
 
 up-dev: compose/.env
-	FABRIC_CONTROL_MODE=offline $(COMPOSE) --profile dev up -d --build
+	FABRIC_CONTROL_MODE=offline APP_DATA_MODE=fixture $(COMPOSE) --profile dev up -d --build
 
 up-benchmark: compose/.env
 	$(COMPOSE) --profile benchmark up -d --build
