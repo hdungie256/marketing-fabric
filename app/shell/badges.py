@@ -1,9 +1,13 @@
 from datetime import datetime
 
+import streamlit as st
+
+from app.shell.format import fmt_time
+
 
 def badge_fresh(dt: datetime) -> None:
-    raise NotImplementedError("Story 1.12")
+    st.badge(f"Refreshed {fmt_time(dt)}", icon=":material/check_circle:", color="green")
 
 
 def badge_synthetic() -> None:
-    raise NotImplementedError("Story 1.12")
+    st.badge("Synthetic", icon=":material/science:", color="gray")
