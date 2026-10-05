@@ -1,0 +1,24 @@
+[theme]
+base = "light"
+primaryColor = "#2F5BEA"
+backgroundColor = "#F6F7F9"
+secondaryBackgroundColor = "#EEF0F3"
+textColor = "#1A1F29"
+borderColor = "#E4E7EC"
+dataframeBorderColor = "#E4E7EC"
+greenColor = "#146C2E"
+orangeColor = "#92400E"
+redColor = "#99180C"
+blueColor = "#2F5BEA"
+grayColor = "#5B6472"
+chartCategoricalColors = ["#2a78d6", "#d95926", "#1baf7a", "#4a3aa7", "#eda100"]
+# Streamlit requires exactly ten; linear interpolation through the UX-DR1 stops #E8EEFE → #7D9AF2 → #1F3FAE
+chartSequentialColors = ["#E8EEFE", "#D0DBFB", "#B8C9F9", "#A1B6F6", "#89A3F3", "#7390EA", "#5E7CDB", "#4967CC", "#3453BD", "#1F3FAE"]
+font = "sans-serif"
+codeFont = "monospace"
+baseFontSize = 16
+baseRadius = "8px"
+buttonRadius = "8px"
+
+[theme.sidebar]
+backgroundColor = "#FBFBFC"

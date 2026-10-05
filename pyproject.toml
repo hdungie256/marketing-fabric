@@ -1,7 +1,7 @@
 [project]
 name = "marketing-fabric"
 version = "0.1.0"
-requires-python = ">=3.11"
+requires-python = ">=3.11, <3.13"
 dependencies = ["pyyaml"]
 
 [dependency-groups]
@@ -18,9 +18,9 @@ jobs = [
     "openpyxl",
     "pytest",
 ]
-app = ["pyyaml", "streamlit==1.64.0", "psycopg[binary]==3.3.6"]
+app = ["pyyaml", "streamlit==1.64.0", "psycopg[binary]==3.3.6", "tzdata"]
 api = ["pyyaml", "fastapi==0.141.1", "uvicorn", "psycopg[binary]==3.3.6"]
-dev = ["pyyaml", "pytest", "ruff==0.16.9", "pandas", "openpyxl"]
+dev = ["pyyaml", "pytest", "ruff==0.16.9", "pandas", "openpyxl", "streamlit==1.64.0", "psycopg[binary]==3.3.6", "tzdata"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
