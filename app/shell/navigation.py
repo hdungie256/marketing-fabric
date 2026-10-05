@@ -35,15 +35,18 @@ def _no_pages() -> None:
     st.markdown("No pages available for this role yet.")
 
 
-def build_navigation(role: str, pages: Sequence[PageSpec]) -> tuple[StreamlitPage, dict[str, StreamlitPage]]:
+def build_navigation(
+    role: str, pages: Sequence[PageSpec], current: str | None = None
+) -> tuple[StreamlitPage, dict[str, StreamlitPage]]:
     from app.shell.page import wrap
 
     home = home_for(role, pages)
     if home is None:
         fallback = st.Page(_no_pages, title="No pages available", url_path=FALLBACK_KEY, default=True)
         return st.navigation([fallback], position="hidden"), {}
+    default_key = current if current in {p.key for p in pages_for(role, pages)} else home.key
     st_pages = {
-        p.key: st.Page(wrap(p), title=p.title, url_path=p.key, icon=p.icon, default=p is home)
+        p.key: st.Page(wrap(p), title=p.title, url_path=p.key, icon=p.icon, default=p.key == default_key)
         for p in pages_for(role, pages)
     }
     sections = {group: [st_pages[p.key] for p in specs] for group, specs in grouped(role, pages).items()}

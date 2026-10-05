@@ -1,3 +1,6 @@
 import streamlit as st
 
-st.title("Marketing Data Fabric")
+from app.shell import run
+
+st.set_page_config(page_title="Marketing Data Fabric", layout="wide")
+run()
