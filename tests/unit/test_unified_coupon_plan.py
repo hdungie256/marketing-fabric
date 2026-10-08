@@ -64,3 +64,18 @@ def test_exception_row_is_stable(spark):
     assert first.exception_id == again.collect()[0].exception_id
     assert (first["class"], first.dataset_id) == ("coupon_plan_duplicate", "unified/coupon_plan")
     assert first.detail == "source_category=Notebooks; kept coupon_code=NJ10"
+
+
+def test_unknown_month_duplicates_still_get_exceptions(spark):
+    rows = [
+        ("Janvier", "Nest", "A1", 10, "original"),
+        ("Janvier", "Nest", "B1", 10, "original"),
+        ("Janvier", "Nest", "C1", 10, "original"),
+    ]
+    kept, dropped = split(spark, rows)
+    out = transforms.exceptions(dropped, kept, AT).collect()
+    assert dropped.count() == 2 and len(out) == 2
+    assert {r.natural_key for r in out} == {"?|Nest|B1", "?|Nest|C1"}
+    assert all(
+        r.exception_id == hashlib.sha1(f"coupon_plan_duplicate|{r.natural_key}".encode()).hexdigest() for r in out
+    )
