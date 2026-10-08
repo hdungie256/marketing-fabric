@@ -513,13 +513,17 @@ app = [
     { name = "psycopg", extra = ["binary"] },
     { name = "pyyaml" },
     { name = "streamlit" },
+    { name = "tzdata" },
 ]
 dev = [
     { name = "openpyxl" },
     { name = "pandas" },
+    { name = "psycopg", extra = ["binary"] },
     { name = "pytest" },
     { name = "pyyaml" },
     { name = "ruff" },
+    { name = "streamlit" },
+    { name = "tzdata" },
 ]
 jobs = [
     { name = "boto3" },
@@ -549,13 +553,17 @@ app = [
     { name = "psycopg", extras = ["binary"], specifier = "==3.3.6" },
     { name = "pyyaml" },
     { name = "streamlit", specifier = "==1.64.0" },
+    { name = "tzdata" },
 ]
 dev = [
     { name = "openpyxl" },
     { name = "pandas" },
+    { name = "psycopg", extras = ["binary"], specifier = "==3.3.6" },
     { name = "pytest" },
     { name = "pyyaml" },
     { name = "ruff", specifier = "==0.16.9" },
+    { name = "streamlit", specifier = "==1.64.0" },
+    { name = "tzdata" },
 ]
 jobs = [
     { name = "boto3" },
