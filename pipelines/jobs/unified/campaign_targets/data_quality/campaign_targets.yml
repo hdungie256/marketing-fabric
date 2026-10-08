@@ -15,4 +15,3 @@ rules:
     expectation: ExpectColumnPairValuesAToBeGreaterThanB
     kwargs: {column_A: evaluation_through, column_B: evaluation_from, or_equal: true}
     severity: warning
-```

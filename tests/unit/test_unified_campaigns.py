@@ -99,3 +99,36 @@ def test_job_writes_and_emits_lineage(lake):
 def test_job_rejects_scoped_refresh(lake):
     with pytest.raises(ValueError, match="full refresh only"):
         job.main({"mode": "scope", "keys": {"campaign_id": ["CMP19_01"]}})
+
+
+@pytest.mark.parametrize(
+    "path,rule_ids",
+    [
+        (
+            "pipelines/jobs/unified/campaigns/data_quality/campaigns.yml",
+            {
+                "campaign_id_not_null",
+                "campaign_id_unique",
+                "provenance_not_null",
+                "end_date_not_before_start_date",
+                "budget_not_negative",
+            },
+        ),
+        (
+            "pipelines/jobs/unified/campaign_targets/data_quality/campaign_targets.yml",
+            {
+                "campaign_id_not_null",
+                "campaign_id_unique",
+                "provenance_not_null",
+                "evaluation_through_not_before_from",
+            },
+        ),
+    ],
+)
+def test_dq_files_parse(path, rule_ids):
+    import pathlib
+
+    import yaml
+
+    rules = yaml.safe_load(pathlib.Path(path).read_text())["rules"]
+    assert {r["rule_id"] for r in rules} == rule_ids
