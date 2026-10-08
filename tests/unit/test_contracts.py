@@ -2,6 +2,7 @@ import ast
 from pathlib import Path
 
 import pytest
+import yaml
 
 from fabric_control import load_registry
 from fabric_control.contracts import ContractError, columns, load_schema
@@ -60,3 +61,34 @@ def test_every_raw_dataset_has_an_ingest_job():
             if isinstance(node, ast.Assign) and any(getattr(t, "id", None) == "OUTPUTS" for t in node.targets):
                 outputs |= set(ast.literal_eval(node.value))
     assert outputs == {d for d in load_registry() if d.startswith("raw/")}
+
+
+UNIFIED_P2 = [
+    "unified/campaigns",
+    "unified/attribution",
+    "unified/campaign_targets",
+    "unified/coupon_plan",
+    "unified/exceptions_coupon_plan_duplicate",
+]
+
+
+@pytest.mark.parametrize("dataset_id", UNIFIED_P2)
+def test_unified_contract_declares_grain(dataset_id):
+    contract = load_schema(dataset_id)
+    names = [name for name, _ in columns(contract)]
+    assert contract.get("grain"), dataset_id
+    assert set(contract["grain"]) <= set(names), dataset_id
+    assert "provenance" in names or dataset_id.startswith("unified/exceptions_")
+
+
+def test_registry_unified_datasets_have_contracts():
+    for dataset_id in load_registry():
+        if dataset_id.startswith("unified/"):
+            assert columns(load_schema(dataset_id)), dataset_id
+
+
+def test_exception_classes_include_coupon_plan_duplicate():
+    data = yaml.safe_load((ROOT / "contracts" / "exceptions.yml").read_text())
+    assert "coupon_plan_duplicate" in data["classes"]
+    exception_columns = [(c["name"], c["type"]) for c in data["columns"]]
+    assert columns(load_schema("unified/exceptions_coupon_plan_duplicate")) == exception_columns
