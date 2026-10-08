@@ -1,0 +1,31 @@
+dataset_id: unified/product_cost
+schema_version: 1.0.0
+grain: [product_sku]
+columns:
+- name: product_sku
+  type: string
+  nullable: false
+- name: product_category
+  type: string
+  nullable: false
+- name: canonical_category
+  type: string
+  nullable: false
+- name: observed_avg_price
+  type: decimal(18,4)
+  nullable: false
+- name: estimated_unit_cost
+  type: decimal(18,2)
+  nullable: false
+- name: valid_from
+  type: date
+  nullable: false
+- name: valid_through
+  type: date
+  nullable: false
+- name: provenance
+  type: string
+  nullable: false
+- name: provenance_note
+  type: string
+  nullable: false

@@ -4,16 +4,56 @@ from fabric_control.clients import openmetadata
 from fabric_control.clients.http import HttpError
 from fabric_control.config import log, mode, stub
 from fabric_control.contracts import columns, load_schema
+from fabric_control.glossary import GLOSSARY_NAME, labelled_terms, load_tags
 from fabric_control.models import Status
 from fabric_control.registry import load_registry
 
 
+def _describe_term(term_id: str, term: dict[str, Any]) -> str:
+    registry = load_registry()
+    lines = [
+        term["definition"],
+        "",
+        f"Formula: {term['formula']}",
+        f"Source: {term['dataset_id']}.{term['column']} ({registry[term['dataset_id']]['om_fqn']})",
+        f"Rules: {', '.join(term['rules'])}",
+        f"Owner slice: {term['owner_slice']}",
+        f"Provenance: {term['provenance']}",
+    ]
+    lines += ["", "Limitations:"] + [f"- {item}" for item in term["limitations"]]
+    lines += ["", "Notes:"] + [f"- {item}" for item in term["notes"]]
+    return "\n".join(lines)
+
+
 def sync_glossary() -> None:
-    stub("sync_glossary")
+    terms = labelled_terms()
+    if mode() == "offline":
+        stub("sync_glossary", terms=sorted(terms))
+        return
+    try:
+        openmetadata.put_glossary(
+            GLOSSARY_NAME,
+            "Marketing Metrics",
+            "Single source of truth for marketing metric definitions (FR-11). Managed as code; do not edit in UI.",
+        )
+        for term_id, term in terms.items():
+            openmetadata.put_glossary_term(GLOSSARY_NAME, term_id, term["display_name"], _describe_term(term_id, term))
+    except (HttpError, OSError) as e:
+        log.warning("glossary sync to OpenMetadata failed: %s", e)
 
 
 def sync_tags() -> None:
-    stub("sync_tags")
+    tags = load_tags()
+    if mode() == "offline":
+        stub("sync_tags", tags=len(tags))
+        return
+    try:
+        for classification in sorted({c for c, _ in tags}):
+            openmetadata.put_classification(classification, f"Fabric classification {classification}, managed as code.")
+        for (classification, name), tag in tags.items():
+            openmetadata.put_tag(classification, name, tag["description"])
+    except (HttpError, OSError) as e:
+        log.warning("tag sync to OpenMetadata failed: %s", e)
 
 
 def emit_lineage(job_id: str, inputs: list[str], outputs: list[str]) -> None:
