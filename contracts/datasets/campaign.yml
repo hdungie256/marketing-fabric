@@ -1,1 +1,41 @@
-datasets: []
+datasets:
+- dataset_id: unified/campaigns
+  om_fqn: lake_unified.default.lake.campaigns
+  openlineage:
+    namespace: s3://lake
+    name: unified/campaigns
+  job_id: unified/campaigns
+  owner: campaign
+  tags: []
+- dataset_id: unified/campaign_targets
+  om_fqn: lake_unified.default.lake.campaign_targets
+  openlineage:
+    namespace: s3://lake
+    name: unified/campaign_targets
+  job_id: unified/campaign_targets
+  owner: campaign
+  tags: []
+- dataset_id: unified/attribution
+  om_fqn: lake_unified.default.lake.attribution
+  openlineage:
+    namespace: s3://lake
+    name: unified/attribution
+  job_id: unified/attribution
+  owner: campaign
+  tags: []
+- dataset_id: unified/coupon_plan
+  om_fqn: lake_unified.default.lake.coupon_plan
+  openlineage:
+    namespace: s3://lake
+    name: unified/coupon_plan
+  job_id: unified/coupon_plan
+  owner: campaign
+  tags: []
+- dataset_id: unified/exceptions_coupon_plan_duplicate
+  om_fqn: lake_unified.default.lake.exceptions_coupon_plan_duplicate
+  openlineage:
+    namespace: s3://lake
+    name: unified/exceptions_coupon_plan_duplicate
+  job_id: unified/coupon_plan
+  owner: campaign
+  tags: []
