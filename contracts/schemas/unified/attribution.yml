@@ -1,0 +1,15 @@
+dataset_id: unified/attribution
+schema_version: 1.0.0
+grain: [order_key]
+columns:
+- {name: order_key, type: string, nullable: false}
+- {name: customer_id, type: bigint, nullable: false}
+- {name: transaction_id, type: bigint, nullable: false}
+- {name: canonical_order_id, type: string, nullable: false}
+- {name: order_date, type: date, nullable: false}
+- {name: campaign_id, type: string, nullable: false}
+- {name: matched_category, type: string, nullable: false}
+- {name: source_matched_category, type: string, nullable: false}
+- {name: attribution_rule, type: string, nullable: false}
+- {name: provenance, type: string, nullable: false}
+- {name: provenance_note, type: string, nullable: false}

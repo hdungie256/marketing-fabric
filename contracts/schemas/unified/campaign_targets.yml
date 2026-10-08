@@ -1,0 +1,12 @@
+dataset_id: unified/campaign_targets
+schema_version: 1.0.0
+grain: [campaign_id]
+columns:
+- {name: campaign_id, type: string, nullable: false}
+- {name: target_metric, type: string, nullable: false}
+- {name: target_value, type: decimal(18,2), nullable: false}
+- {name: evaluation_from, type: date, nullable: false}
+- {name: evaluation_through, type: date, nullable: false}
+- {name: target_note, type: string, nullable: false}
+- {name: provenance, type: string, nullable: false}
+- {name: provenance_note, type: string, nullable: false}

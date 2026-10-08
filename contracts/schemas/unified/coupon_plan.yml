@@ -1,0 +1,10 @@
+dataset_id: unified/coupon_plan
+schema_version: 1.0.0
+grain: [month, product_category]
+columns:
+- {name: month, type: int, nullable: false}
+- {name: product_category, type: string, nullable: false}
+- {name: source_category, type: string, nullable: false}
+- {name: coupon_code, type: string, nullable: false}
+- {name: discount_pct, type: int, nullable: false}
+- {name: provenance, type: string, nullable: false}
