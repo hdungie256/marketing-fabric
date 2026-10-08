@@ -15,3 +15,4 @@ derby.log
 *.parquet
 !contracts/fixtures/*.parquet
 docs/
+CLAUDE.md
