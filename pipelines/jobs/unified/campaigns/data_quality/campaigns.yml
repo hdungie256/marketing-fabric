@@ -1,0 +1,22 @@
+rules:
+  - rule_id: campaign_id_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: campaign_id}
+    severity: critical
+  - rule_id: campaign_id_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: campaign_id}
+    severity: critical
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical
+  - rule_id: end_date_not_before_start_date
+    expectation: ExpectColumnPairValuesAToBeGreaterThanB
+    kwargs: {column_A: end_date, column_B: start_date, or_equal: true}
+    severity: warning
+  - rule_id: budget_not_negative
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: budget, min_value: 0}
+    severity: warning
+```

@@ -1,0 +1,18 @@
+rules:
+  - rule_id: campaign_id_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: campaign_id}
+    severity: critical
+  - rule_id: campaign_id_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: campaign_id}
+    severity: critical
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical
+  - rule_id: evaluation_through_not_before_from
+    expectation: ExpectColumnPairValuesAToBeGreaterThanB
+    kwargs: {column_A: evaluation_through, column_B: evaluation_from, or_equal: true}
+    severity: warning
+```
