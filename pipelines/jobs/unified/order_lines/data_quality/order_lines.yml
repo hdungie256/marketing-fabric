@@ -1,0 +1,13 @@
+rules:
+  - rule_id: sales_line_id_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: sales_line_id}
+    severity: critical
+  - rule_id: sales_line_id_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: sales_line_id}
+    severity: critical
+  - rule_id: order_key_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: order_key}
+    severity: critical

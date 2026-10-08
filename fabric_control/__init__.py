@@ -1,5 +1,6 @@
 from fabric_control.data_quality import check, gate, report_data_quality
 from fabric_control.decisions.scoring import score
+from fabric_control.glossary import GlossaryError
 from fabric_control.metadata import (
     catalog,
     effective_matrix,
@@ -24,6 +25,7 @@ from fabric_control.run import Run, run
 __all__ = [
     "DataQualityResult",
     "GateFailed",
+    "GlossaryError",
     "RegistryError",
     "RuleResult",
     "Run",

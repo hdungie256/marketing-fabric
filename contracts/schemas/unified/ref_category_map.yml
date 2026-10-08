@@ -1,0 +1,13 @@
+dataset_id: unified/ref_category_map
+schema_version: 1.0.0
+grain: [raw_category]
+columns:
+- name: raw_category
+  type: string
+  nullable: false
+- name: canonical_category
+  type: string
+  nullable: false
+- name: rule
+  type: string
+  nullable: false

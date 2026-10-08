@@ -1,0 +1,9 @@
+rules:
+  - rule_id: product_sku_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: product_sku}
+    severity: critical
+  - rule_id: product_sku_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: product_sku}
+    severity: critical

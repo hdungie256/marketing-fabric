@@ -1,0 +1,9 @@
+rules:
+  - rule_id: customer_id_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: customer_id}
+    severity: critical
+  - rule_id: customer_id_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: customer_id}
+    severity: critical

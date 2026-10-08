@@ -168,6 +168,24 @@ def add_test_result(test_case_fqn: str, passed: bool, result: str) -> None:
     call("POST", f"dataQuality/testCases/testCaseResults/{quote(test_case_fqn)}", body)
 
 
+def put_glossary(name: str, display_name: str, description: str) -> str:
+    body = {"name": name, "displayName": display_name, "description": description}
+    return call("PUT", "glossaries", body)["id"]
+
+
+def put_glossary_term(glossary: str, name: str, display_name: str, description: str) -> str:
+    body = {"name": name, "displayName": display_name, "description": description, "glossary": glossary}
+    return call("PUT", "glossaryTerms", body)["id"]
+
+
+def put_classification(name: str, description: str) -> None:
+    call("PUT", "classifications", {"name": name, "description": description})
+
+
+def put_tag(classification: str, name: str, description: str) -> None:
+    call("PUT", "tags", {"name": name, "description": description, "classification": classification})
+
+
 def put_database_service(name: str, service_type: str, config: dict[str, Any]) -> dict[str, Any]:
     body = {"name": name, "serviceType": service_type, "connection": {"config": {"type": service_type, **config}}}
     return call("PUT", "services/databaseServices", body)

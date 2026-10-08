@@ -29,6 +29,7 @@ datasets:
   tags: []
   natural_key:
   - product_sku
+  synthetic_source: true
 - dataset_id: raw/campaign/campaigns
   om_fqn: lake_raw.default.lake.campaigns
   openlineage:
@@ -49,6 +50,7 @@ datasets:
   tags: []
   natural_key:
   - campaign_id
+  synthetic_source: true
 - dataset_id: raw/campaign/attribution
   om_fqn: lake_raw.default.lake.attribution
   openlineage:
@@ -59,6 +61,7 @@ datasets:
   tags: []
   natural_key:
   - canonical_order_id
+  synthetic_source: true
 - dataset_id: raw/promotion/coupon_plan
   om_fqn: lake_raw.default.lake.coupon_plan
   openlineage:
@@ -81,6 +84,7 @@ datasets:
   natural_key:
   - date_iso
   - campaign_id
+  synthetic_source: true
 - dataset_id: raw/spend/daily_spend
   om_fqn: lake_raw.default.lake.daily_spend
   openlineage:
@@ -102,6 +106,7 @@ datasets:
   natural_key:
   - date_iso
   derived: true
+  synthetic_source: true
 - dataset_id: raw/tax/tax_rates
   om_fqn: lake_raw.default.lake.tax_rates
   openlineage:

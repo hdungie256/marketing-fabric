@@ -1,1 +1,9 @@
-tags: []
+# Customer-slice classification tags (Story 2.1). Owner: P3, draft for P4 review in 3.5.
+# sync_tags() pushes this taxonomy to OM; column assignment lands in Story 3.5.
+tags:
+  - name: direct_identifier
+    classification: Sensitivity
+    description: Direct customer identifier (customer_id). Masked or denied per access matrix.
+  - name: cost_estimate
+    classification: Finance
+    description: Estimated unit-cost reference. Aggregate-only except UG04 SKU detail.

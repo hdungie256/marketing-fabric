@@ -1,1 +1,52 @@
-terms: []
+# Customer-slice glossary terms (Story 2.1, FR-11). Owner: P3.
+# Term IDs derive as snake_case(display_name) with "/" -> "_per_" (AD-16).
+# Provenance labels are COMPUTED by fabric_control.sync_glossary() from lineage,
+# never hand-assigned here.
+terms:
+  - display_name: Gross Value
+    owner_slice: customer
+    dataset_id: unified/orders
+    column: gross_value
+    definition: Total goods value of one order.
+    formula: SUM(quantity x avg_price) grouped by order_key.
+    rules: [R2, R3, R10]
+    limitations:
+      - Not net revenue: excludes returns, payments and real discounts.
+      - Currency unit not verified; figures carry no currency symbol.
+    notes:
+      - Shipping is counted once per order in shipping_fee (R3) and never in gross_value.
+  - display_name: First Observed Buyers
+    owner_slice: customer
+    dataset_id: unified/customers
+    column: first_observed_order_date
+    definition: Buyers whose first purchase observed in the 2019 history falls in the period.
+    formula: COUNT(customer_id) WHERE first_observed_order_date IN period.
+    rules: [R9]
+    limitations:
+      - Observed history only: a "new" buyer may have purchased before 2019.
+    notes:
+      - Customers without a 2019 order have a null first_observed_order_date.
+  - display_name: RFM Segment
+    owner_slice: customer
+    dataset_id: unified/orders
+    column: order_key
+    definition: Quintile-based recency/frequency/monetary segment at as-of 2019-12-31.
+    formula: R/F/M quintiles 1-5 over 2019 buyers, first-match segment rule (Champions, Can't Lose, At Risk, Loyal, Potential Loyalist, Recent First Buyers, Needs Attention, Hibernating, Lost).
+    rules: [R5, R18]
+    limitations:
+      - Quintiles are relative to the 2019 buyer population, not absolute thresholds.
+      - Frequency counts technical orders (order_key), not source transaction IDs.
+    notes:
+      - Ties broken by customer_id so reruns are identical.
+  - display_name: Estimated Unit Cost
+    owner_slice: customer
+    dataset_id: unified/product_cost
+    column: estimated_unit_cost
+    definition: Reference estimate of one unit's cost for a SKU.
+    formula: Direct reference column; no computation.
+    rules: [R11, R16]
+    limitations:
+      - Estimate only, not actual COGS.
+      - Any contribution built on it is estimated, never net profit.
+    notes:
+      - Synthetic reference data (R16): valid for demo math, not business truth.
