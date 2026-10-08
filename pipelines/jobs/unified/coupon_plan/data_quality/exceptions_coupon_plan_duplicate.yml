@@ -1,0 +1,5 @@
+rules:
+  - rule_id: exception_id_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: exception_id}
+    severity: critical

@@ -1,0 +1,21 @@
+rules:
+  - rule_id: month_product_category_unique
+    expectation: ExpectCompoundColumnsToBeUnique
+    kwargs: {column_list: [month, product_category]}
+    severity: critical
+  - rule_id: month_in_range
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: month, min_value: 1, max_value: 12}
+    severity: critical
+  - rule_id: month_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: month}
+    severity: critical
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical
+  - rule_id: discount_pct_in_range
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: discount_pct, min_value: 0, max_value: 100}
+    severity: warning

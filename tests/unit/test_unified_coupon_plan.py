@@ -79,3 +79,60 @@ def test_unknown_month_duplicates_still_get_exceptions(spark):
     assert all(
         r.exception_id == hashlib.sha1(f"coupon_plan_duplicate|{r.natural_key}".encode()).hexdigest() for r in out
     )
+
+
+import fabric_control as fc  # noqa: E402
+from pipelines import io  # noqa: E402
+from pipelines.jobs.unified.coupon_plan import job  # noqa: E402
+
+
+def test_job_writes_plan_and_exceptions(monkeypatch, spark):
+    tables = {
+        "raw/promotion/coupon_plan": frame(spark, "raw/promotion/coupon_plan", NOTEBOOKS),
+        "unified/ref_category_map": category_map(spark),
+    }
+    written, lineage = {}, []
+    monkeypatch.setattr(io, "read_raw", lambda d: tables[d])
+    monkeypatch.setattr(io, "read_delta", lambda d, version=None: tables[d])
+    monkeypatch.setattr(io, "write_delta", lambda d, df, run_id, replace_where=None: written.update({d: df.collect()}))
+    monkeypatch.setattr(fc, "emit_lineage", lambda *args: lineage.append(args))
+    job.main({"mode": "full"})
+    assert [r.coupon_code for r in written["unified/coupon_plan"]] == ["NJ10"]
+    assert [r.natural_key for r in written["unified/exceptions_coupon_plan_duplicate"]] == [
+        "1|Notebooks & Journals|NOTES10"
+    ]
+    assert list(written) == job.OUTPUTS
+    assert lineage == [(job.JOB_ID, job.INPUTS, job.OUTPUTS)]
+
+
+def test_job_rejects_scoped_refresh():
+    with pytest.raises(ValueError, match="full refresh only"):
+        job.main({"mode": "scope", "keys": {"month": [1]}})
+
+
+@pytest.mark.parametrize(
+    ("path", "rule_ids"),
+    [
+        (
+            "pipelines/jobs/unified/coupon_plan/data_quality/coupon_plan.yml",
+            {
+                "month_product_category_unique",
+                "month_in_range",
+                "month_not_null",
+                "provenance_not_null",
+                "discount_pct_in_range",
+            },
+        ),
+        (
+            "pipelines/jobs/unified/coupon_plan/data_quality/exceptions_coupon_plan_duplicate.yml",
+            {"exception_id_unique"},
+        ),
+    ],
+)
+def test_dq_files_parse(path, rule_ids):
+    import pathlib
+
+    import yaml
+
+    rules = yaml.safe_load(pathlib.Path(path).read_text())["rules"]
+    assert {r["rule_id"] for r in rules} == rule_ids

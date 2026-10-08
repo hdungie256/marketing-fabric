@@ -1,0 +1,17 @@
+rules:
+  - rule_id: order_key_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: order_key}
+    severity: critical
+  - rule_id: order_key_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: order_key}
+    severity: critical
+  - rule_id: campaign_id_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: campaign_id}
+    severity: critical
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical
