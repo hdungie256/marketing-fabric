@@ -38,9 +38,18 @@ def transform(raw: DataFrame, category_map: DataFrame) -> tuple[DataFrame, DataF
 def exceptions(dropped: DataFrame, kept: DataFrame, detected_at: datetime) -> DataFrame:
     from pyspark.sql import functions as F
 
-    winners = kept.select("month", "product_category", F.col("coupon_code").alias("_kept_code"))
-    natural_key = F.concat_ws("|", F.col("month").cast("string"), F.col("product_category"), F.col("coupon_code"))
-    return dropped.join(winners, ["month", "product_category"]).select(
+    winners = kept.select(
+        F.col("month").alias("_w_month"),
+        F.col("product_category").alias("_w_category"),
+        F.col("coupon_code").alias("_kept_code"),
+    )
+    natural_key = F.concat_ws(
+        "|", F.coalesce(F.col("month").cast("string"), F.lit("?")), F.col("product_category"), F.col("coupon_code")
+    )
+    return dropped.join(
+        winners,
+        F.col("month").eqNullSafe(F.col("_w_month")) & (F.col("product_category") == F.col("_w_category")),
+    ).select(
         F.sha1(F.concat_ws("|", F.lit(EXCEPTION_CLASS), natural_key)).alias("exception_id"),
         F.lit(EXCEPTION_CLASS).alias("class"),
         natural_key.alias("natural_key"),
