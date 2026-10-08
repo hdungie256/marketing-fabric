@@ -68,3 +68,34 @@ def test_unknown_campaigns(spark):
     campaigns = spark.createDataFrame([("CMP19_01",)], "campaign_id STRING")
     links = spark.createDataFrame([("CMP19_01",), ("CMP19_99",)], "campaign_id STRING")
     assert [r.campaign_id for r in transforms.unknown_campaigns(links, campaigns).collect()] == ["CMP19_99"]
+
+
+import fabric_control as fc  # noqa: E402
+from pipelines import io  # noqa: E402
+from pipelines.jobs.unified.campaigns import job  # noqa: E402
+
+
+@pytest.fixture
+def lake(monkeypatch, spark):
+    tables = {
+        "raw/campaign/campaigns": frame(spark, "raw/campaign/campaigns", [campaign("CMP19_01", "Notebooks")]),
+        "unified/ref_category_map": category_map(spark),
+    }
+    written, lineage = {}, []
+    monkeypatch.setattr(io, "read_raw", lambda d: tables[d])
+    monkeypatch.setattr(io, "read_delta", lambda d, version=None: tables[d])
+    monkeypatch.setattr(io, "write_delta", lambda d, df, run_id, replace_where=None: written.update({d: df.collect()}))
+    monkeypatch.setattr(fc, "emit_lineage", lambda *args: lineage.append(args))
+    return written, lineage
+
+
+def test_job_writes_and_emits_lineage(lake):
+    written, lineage = lake
+    job.main({"mode": "full"})
+    assert [r.target_category for r in written["unified/campaigns"]] == ["Notebooks & Journals"]
+    assert lineage == [(job.JOB_ID, job.INPUTS, job.OUTPUTS)]
+
+
+def test_job_rejects_scoped_refresh(lake):
+    with pytest.raises(ValueError, match="full refresh only"):
+        job.main({"mode": "scope", "keys": {"campaign_id": ["CMP19_01"]}})
