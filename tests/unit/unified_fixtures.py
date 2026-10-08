@@ -23,4 +23,4 @@ def schema(df):
 
 
 def category_map(spark, pairs=CATEGORY_PAIRS):
-    return spark.createDataFrame(pairs, "source_category STRING, category STRING")
+    return spark.createDataFrame(pairs, "raw_category STRING, canonical_category STRING")

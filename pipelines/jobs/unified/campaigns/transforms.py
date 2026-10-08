@@ -5,8 +5,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
-MAP_SOURCE = "source_category"
-MAP_TARGET = "category"
+MAP_SOURCE = "raw_category"
+MAP_TARGET = "canonical_category"
 COLUMNS = [
     "campaign_id",
     "campaign_name",
