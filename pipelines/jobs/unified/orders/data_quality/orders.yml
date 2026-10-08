@@ -1,0 +1,13 @@
+rules:
+  - rule_id: order_key_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: order_key}
+    severity: critical
+  - rule_id: order_key_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: order_key}
+    severity: critical
+  - rule_id: gross_value_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: gross_value}
+    severity: critical

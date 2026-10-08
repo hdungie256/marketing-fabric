@@ -1,1 +1,61 @@
-datasets: []
+datasets:
+- dataset_id: unified/orders
+  om_fqn: lake_unified.default.lake.orders
+  openlineage:
+    namespace: s3://lake
+    name: unified/orders
+  job_id: unified/orders
+  owner: p3
+  tags: []
+  natural_key:
+  - order_key
+- dataset_id: unified/order_lines
+  om_fqn: lake_unified.default.lake.order_lines
+  openlineage:
+    namespace: s3://lake
+    name: unified/order_lines
+  job_id: unified/order_lines
+  owner: p3
+  tags: []
+  natural_key:
+  - sales_line_id
+- dataset_id: unified/customers
+  om_fqn: lake_unified.default.lake.customers
+  openlineage:
+    namespace: s3://lake
+    name: unified/customers
+  job_id: unified/customers
+  owner: p3
+  tags: []
+  natural_key:
+  - customer_id
+- dataset_id: unified/products
+  om_fqn: lake_unified.default.lake.products
+  openlineage:
+    namespace: s3://lake
+    name: unified/products
+  job_id: unified/products
+  owner: p3
+  tags: []
+  natural_key:
+  - product_sku
+- dataset_id: unified/product_cost
+  om_fqn: lake_unified.default.lake.product_cost
+  openlineage:
+    namespace: s3://lake
+    name: unified/product_cost
+  job_id: unified/product_cost
+  owner: p3
+  tags: []
+  natural_key:
+  - product_sku
+- dataset_id: unified/ref_category_map
+  om_fqn: lake_unified.default.lake.ref_category_map
+  openlineage:
+    namespace: s3://lake
+    name: unified/ref_category_map
+  job_id: unified/ref_category_map
+  owner: p3
+  tags: []
+  natural_key:
+  - raw_category

@@ -1,0 +1,10 @@
+# Category normalization map (Story 1.6, FR-6 / R13).
+#
+# Only true synonyms are normalized here. `Nest`, `Nest-USA` and `Nest-Canada`
+# are three separate categories and MUST stay separate (no entries for them).
+# The single synonym below exists because the coupon plan uses `Notebooks`
+# while sales lines use `Notebooks & Journals`.
+mappings:
+  - raw: Notebooks
+    canonical: Notebooks & Journals
+    rule: synonym R13 (coupon-plan only)

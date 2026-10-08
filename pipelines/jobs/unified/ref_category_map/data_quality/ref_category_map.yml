@@ -1,0 +1,9 @@
+rules:
+  - rule_id: raw_category_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: raw_category}
+    severity: critical
+  - rule_id: raw_category_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: raw_category}
+    severity: critical

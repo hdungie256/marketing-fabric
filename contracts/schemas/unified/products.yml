@@ -1,0 +1,19 @@
+dataset_id: unified/products
+schema_version: 1.0.0
+grain: [product_sku]
+columns:
+- name: product_sku
+  type: string
+  nullable: false
+- name: product_description
+  type: string
+  nullable: false
+- name: product_category
+  type: string
+  nullable: false
+- name: canonical_category
+  type: string
+  nullable: false
+- name: provenance
+  type: string
+  nullable: false

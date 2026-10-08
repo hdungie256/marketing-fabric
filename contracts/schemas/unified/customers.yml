@@ -1,0 +1,25 @@
+dataset_id: unified/customers
+schema_version: 1.0.0
+grain: [customer_id]
+columns:
+- name: customer_id
+  type: bigint
+  nullable: false
+- name: gender
+  type: string
+  nullable: false
+- name: location
+  type: string
+  nullable: false
+- name: tenure_months
+  type: int
+  nullable: false
+- name: first_observed_order_date
+  type: date
+  nullable: true
+- name: order_count
+  type: int
+  nullable: false
+- name: provenance
+  type: string
+  nullable: false
