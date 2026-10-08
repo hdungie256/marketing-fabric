@@ -4,7 +4,7 @@ grain: [campaign_id]
 columns:
 - {name: campaign_id, type: string, nullable: false}
 - {name: target_metric, type: string, nullable: false}
-- {name: target_value, type: decimal(18,2), nullable: false}
+- {name: target_value, type: "decimal(18,2)", nullable: false}
 - {name: evaluation_from, type: date, nullable: false}
 - {name: evaluation_through, type: date, nullable: false}
 - {name: target_note, type: string, nullable: false}
