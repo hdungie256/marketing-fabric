@@ -73,3 +73,80 @@ def test_outside_campaign_window(spark):
     )
     df = unified(spark, [link(1, 1, day=date(2019, 1, 15)), link(2, 2, day=date(2019, 3, 1))])
     assert [r.order_key for r in transforms.outside_campaign_window(df, campaigns).collect()] == ["2|2"]
+
+
+import fabric_control as fc  # noqa: E402
+from fabric_control.models import GateFailed  # noqa: E402
+from pipelines import io  # noqa: E402
+from pipelines.jobs.unified.attribution import job  # noqa: E402
+
+
+def lake(monkeypatch, spark, order_keys, baseline=2):
+    tables = {
+        "raw/campaign/attribution": frame(spark, "raw/campaign/attribution", [link(14142, 17936), link(13065, 17950)]),
+        "unified/ref_category_map": category_map(spark),
+        "unified/orders": orders(spark, *order_keys),
+        "unified/campaigns": spark.createDataFrame(
+            [("CMP19_01", date(2019, 1, 15), date(2019, 2, 10))], "campaign_id STRING, start_date DATE, end_date DATE"
+        ),
+    }
+    written, lineage = {}, []
+    monkeypatch.setattr(io, "read_raw", lambda d: tables[d])
+    monkeypatch.setattr(io, "read_delta", lambda d, version=None: tables[d])
+    monkeypatch.setattr(io, "write_delta", lambda d, df, run_id, replace_where=None: written.update({d: df.collect()}))
+    monkeypatch.setattr(fc, "emit_lineage", lambda *args: lineage.append(args))
+    monkeypatch.setattr(job, "load_baselines", lambda: {"raw/campaign/attribution": baseline})
+    return written, lineage
+
+
+def test_job_writes_when_every_order_exists(monkeypatch, spark):
+    written, lineage = lake(monkeypatch, spark, ["14142|17936", "13065|17950"])
+    job.main({"mode": "full"})
+    assert {r.order_key for r in written["unified/attribution"]} == {"14142|17936", "13065|17950"}
+    assert lineage == [(job.JOB_ID, job.INPUTS, job.OUTPUTS)]
+
+
+def test_job_gates_orphan_links(monkeypatch, spark):
+    written, _ = lake(monkeypatch, spark, ["14142|17936"])
+    with pytest.raises(GateFailed, match="order_key_in_orders"):
+        job.main({"mode": "full"})
+    assert written == {}
+
+
+def test_job_gates_row_count_off_baseline(monkeypatch, spark):
+    written, _ = lake(monkeypatch, spark, ["14142|17936", "13065|17950"], baseline=1290)
+    with pytest.raises(GateFailed, match="row_count_baseline"):
+        job.main({"mode": "full"})
+    assert written == {}
+
+
+def test_missing_baseline_fails_closed(spark):
+    df = unified(spark, [link(1, 1)])
+    campaigns = spark.createDataFrame(
+        [("CMP19_01", date(2019, 1, 1), date(2019, 12, 31))], "campaign_id STRING, start_date DATE, end_date DATE"
+    )
+    rules = {r.rule_id: r.passed for r in job.cross_rules(df, orders(spark, "1|1"), campaigns, None)}
+    assert rules == {
+        "order_key_in_orders": True,
+        "campaign_id_in_campaigns": True,
+        "row_count_baseline": False,
+        "order_date_in_campaign_window": True,
+    }
+
+
+@pytest.mark.parametrize(
+    ("path", "rule_ids"),
+    [
+        (
+            "pipelines/jobs/unified/attribution/data_quality/attribution.yml",
+            {"order_key_not_null", "order_key_unique", "campaign_id_not_null", "provenance_not_null"},
+        ),
+    ],
+)
+def test_dq_files_parse(path, rule_ids):
+    import pathlib
+
+    import yaml
+
+    rules = yaml.safe_load(pathlib.Path(path).read_text())["rules"]
+    assert {r["rule_id"] for r in rules} == rule_ids
