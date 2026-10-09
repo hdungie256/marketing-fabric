@@ -18,7 +18,7 @@ def main(scope: dict) -> None:
         fc.report_data_quality(result)
         fc.gate(result)
         if scope["mode"] == "full":
-            io.write_pg_full(OUTPUTS[0], df, run.run_id)
+            io.write_pg_full(OUTPUTS[0], df, run.run_id, io.source_versions(INPUTS))
         else:
             before, after = io.upsert_pg(OUTPUTS[0], df, scope, run.run_id)
             run.record_change(OUTPUTS[0], before, after)

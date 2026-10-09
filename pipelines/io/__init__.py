@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
-from pipelines.io import ops, raw
+from pipelines.io import lineage, ops, raw
 from pipelines.io.scope import Scope, scope_predicate
 from pipelines.io.spark import get_spark
 from pipelines.io.storage import table_path
@@ -17,6 +17,7 @@ __all__ = [
     "get_spark",
     "read_delta",
     "read_raw",
+    "source_versions",
     "upsert_pg",
     "vacuum",
     "write_delta",
@@ -35,6 +36,20 @@ def read_raw(dataset_id: str) -> DataFrame:
     keys = entry["natural_key"]
     loads = read_delta(dataset_id).filter(F.col("_load_id").isin(ops.passed_loads(dataset_id)))
     return raw.latest_per_key(loads, keys)
+
+
+def source_versions(dataset_ids: list[str]) -> dict[str, int]:
+    from pyspark.sql import functions as F
+
+    from pipelines.dags.job_graph import writers
+
+    versions = {}
+    for raw_id in lineage.raw_ancestors(dataset_ids, writers(lineage.ROOT), lineage.job_inputs):
+        version = read_raw(raw_id).agg(F.max("_source_version")).first()[0]
+        if version is None:
+            raise ValueError(f"{raw_id} has no passed load")
+        versions[raw_id] = int(version)
+    return versions
 
 
 def append_raw(
@@ -88,7 +103,7 @@ def vacuum(dataset_id: str, retention_hours: int = 168) -> None:
     DeltaTable.forPath(get_spark(), table_path(dataset_id)).vacuum(retention_hours)
 
 
-def write_pg_full(table: str, df: DataFrame, run_id: str) -> None:
+def write_pg_full(table: str, df: DataFrame, run_id: str, source_version: dict[str, int]) -> None:
     raise NotImplementedError("write_pg_full")
 
 
