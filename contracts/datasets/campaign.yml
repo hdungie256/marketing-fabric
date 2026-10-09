@@ -39,3 +39,19 @@ datasets:
   job_id: unified/coupon_plan
   owner: campaign
   tags: []
+- dataset_id: mart_shared.campaign_attributed_orders
+  om_fqn: serving.serving.mart_shared.campaign_attributed_orders
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_shared.campaign_attributed_orders
+  job_id: marts/shared/campaign_attributed_daily
+  owner: campaign
+  tags: []
+- dataset_id: mart_shared.campaign_attributed_daily
+  om_fqn: serving.serving.mart_shared.campaign_attributed_daily
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_shared.campaign_attributed_daily
+  job_id: marts/shared/campaign_attributed_daily
+  owner: campaign
+  tags: []

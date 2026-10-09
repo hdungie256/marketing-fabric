@@ -68,3 +68,44 @@ def test_migration_matches_contract(dataset_id):
 def test_order_table_has_period_index():
     sql = (MIGRATIONS / "101_p2_campaign_attributed_orders.sql").read_text()
     assert "ON mart_shared.campaign_attributed_orders (campaign_id, date)" in sql
+
+
+from fabric_control import load_registry  # noqa: E402
+from pipelines.dags.job_graph import job_graph  # noqa: E402
+
+
+def test_registry_mart_datasets_have_contract_and_mart_yml():
+    marts = mart_files()
+    mart_ids = [d for d in load_registry() if d.startswith("mart_")]
+    assert set(MART_P2) <= set(mart_ids)
+    for dataset_id in mart_ids:
+        contract = load_schema(dataset_id)
+        assert contract.get("grain"), dataset_id
+        assert marts[dataset_id]["grain"] == contract["grain"], dataset_id
+
+
+def test_mart_registry_entries():
+    registry = load_registry()
+    for dataset_id in MART_P2:
+        entry = registry[dataset_id]
+        assert entry["job_id"] == "marts/shared/campaign_attributed_daily"
+        assert entry["om_fqn"] == f"serving.serving.{dataset_id}"
+        assert entry["openlineage"]["name"] == f"serving.{dataset_id}"
+
+
+def test_campaign_mart_runs_after_unified():
+    graph = job_graph(ROOT)
+    assert graph["marts/shared/campaign_attributed_daily"] == {
+        "unified/attribution",
+        "unified/orders",
+        "unified/customers",
+    }
+
+
+def test_shared_metrics_lists_order_table_with_contract_grain():
+    entries = {
+        e["dataset_id"]: e
+        for e in yaml.safe_load((ROOT / "contracts" / "shared_metrics.yml").read_text())["shared_metrics"]
+    }
+    for dataset_id in MART_P2:
+        assert entries[dataset_id]["grain"] == load_schema(dataset_id)["grain"], dataset_id

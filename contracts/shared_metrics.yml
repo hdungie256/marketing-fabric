@@ -2,6 +2,9 @@ shared_metrics:
   - dataset_id: mart_shared.campaign_attributed_daily
     grain: [campaign_id, date]
     metrics: [attributed_orders, attributed_gross_value, buyers, first_observed_buyers]
+  - dataset_id: mart_shared.campaign_attributed_orders
+    grain: [order_key]
+    metrics: [gross_value, is_first_observed]
   - dataset_id: mart_shared.campaign_spend_allocated
     grain: [campaign_id, date]
     metrics: [allocated, unallocated]
