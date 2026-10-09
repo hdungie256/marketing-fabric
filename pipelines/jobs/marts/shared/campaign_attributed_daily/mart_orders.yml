@@ -1,0 +1,5 @@
+table: mart_shared.campaign_attributed_orders
+grain: [order_key]
+modes: [full]
+scope_map: {}
+metrics: [gross_value, is_first_observed]

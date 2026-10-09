@@ -1,0 +1,5 @@
+table: mart_shared.campaign_attributed_daily
+grain: [campaign_id, date]
+modes: [full]
+scope_map: {}
+metrics: [attributed_orders, attributed_gross_value, buyers, first_observed_buyers]
