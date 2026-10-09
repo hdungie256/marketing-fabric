@@ -135,3 +135,112 @@ def test_transform_is_deterministic(spark):
     second = per_order(spark, links[::-1], orders[::-1], customers[::-1])
     assert sorted(first.collect()) == sorted(second.collect())
     assert sorted(transforms.daily(first).collect()) == sorted(transforms.daily(second).collect())
+
+
+import fabric_control as fc  # noqa: E402
+from fabric_control.models import GateFailed  # noqa: E402
+from pipelines import io  # noqa: E402
+from pipelines.jobs.marts.shared.campaign_attributed_daily import job  # noqa: E402
+
+VERSIONS = {"raw/campaign/attribution": 2, "raw/sales/sales_lines": 1}
+
+
+def lake(monkeypatch, spark, orders, baseline=2, links=None):
+    links = links or [link(1, 1), link(2, 2, day=D2)]
+    attribution, orders_df, customers_df = inputs(spark, links, orders, [customer(1), customer(2, D2)])
+    tables = {"unified/attribution": attribution, "unified/orders": orders_df, "unified/customers": customers_df}
+    written, lineage = {}, []
+    monkeypatch.setattr(io, "read_delta", lambda d, version=None: tables[d])
+    monkeypatch.setattr(io, "source_versions", lambda ids: VERSIONS)
+    monkeypatch.setattr(
+        io, "write_pg_full", lambda t, df, run_id, versions: written.update({t: (df.collect(), versions)})
+    )
+    monkeypatch.setattr(fc, "emit_lineage", lambda *args: lineage.append(args))
+    monkeypatch.setattr(job, "load_baselines", lambda: {"raw/campaign/attribution": baseline})
+    return written, lineage
+
+
+def test_job_writes_both_tables_with_source_versions(monkeypatch, spark):
+    written, lineage = lake(monkeypatch, spark, [order(1, 1), order(2, 2)])
+    job.main({"mode": "full"})
+    assert list(written) == job.OUTPUTS
+    rows, versions = written[ORDERS_MART]
+    assert {r.order_key for r in rows} == {"1|1", "2|2"} and versions == VERSIONS
+    assert sum(r.attributed_orders for r in written[DAILY_MART][0]) == 2
+    assert lineage == [(job.JOB_ID, job.INPUTS, job.OUTPUTS)]
+
+
+@pytest.mark.parametrize("scope", [{"mode": "scope", "keys": {"campaign_id": ["CMP19_01"]}}, {}])
+def test_job_rejects_non_full_scope(monkeypatch, spark, scope):
+    written, _ = lake(monkeypatch, spark, [order(1, 1), order(2, 2)])
+    with pytest.raises(ValueError, match="full refresh only"):
+        job.main(scope)
+    assert written == {}
+
+
+def test_job_gates_missing_order(monkeypatch, spark):
+    written, _ = lake(monkeypatch, spark, [order(1, 1)])
+    with pytest.raises(GateFailed, match="order_key_in_orders"):
+        job.main({"mode": "full"})
+    assert written == {}
+
+
+def test_job_gates_duplicate_order_key_before_write(monkeypatch, spark):
+    written, _ = lake(monkeypatch, spark, [order(1, 1), order(1, 1), order(2, 2)])
+    with pytest.raises(GateFailed, match="orders_row_count"):
+        job.main({"mode": "full"})
+    assert written == {}
+
+
+def test_daily_gate_failure_writes_neither_table(monkeypatch, spark):
+    written, _ = lake(monkeypatch, spark, [order(1, 1), order(2, 2)])
+    monkeypatch.setattr(job, "daily_rules", lambda per_day, per_order: [fc.RuleResult("forced", "critical", False)])
+    with pytest.raises(GateFailed, match="forced"):
+        job.main({"mode": "full"})
+    assert written == {}
+
+
+def test_missing_baseline_fails_closed(spark):
+    attribution, orders_df, customers_df = inputs(spark, [link(1, 1)], [order(1, 1)], [customer(1)])
+    per = transforms.attributed_orders(attribution, orders_df, customers_df)
+    rules = {r.rule_id: r.passed for r in job.order_rules(per, attribution, orders_df, customers_df, None)}
+    assert rules == {
+        "orders_row_count": False,
+        "order_key_in_orders": True,
+        "customer_id_in_customers": True,
+    }
+
+
+def test_daily_rules_check_total(spark):
+    per = per_order(spark, [link(1, 1), link(1, 2)], [order(1, 1), order(1, 2)], [customer(1)])
+    assert [(r.rule_id, r.passed) for r in job.daily_rules(transforms.daily(per), per)] == [
+        ("daily_orders_total", True)
+    ]
+
+
+@pytest.mark.parametrize(
+    ("name", "rule_ids"),
+    [
+        (
+            "campaign_attributed_orders.yml",
+            {"order_key_not_null", "order_key_unique", "gross_value_not_negative", "provenance_not_null"},
+        ),
+        (
+            "campaign_attributed_daily.yml",
+            {
+                "campaign_id_date_unique",
+                "buyers_not_above_orders",
+                "first_observed_not_above_buyers",
+                "provenance_not_null",
+            },
+        ),
+    ],
+)
+def test_dq_files_parse(name, rule_ids):
+    import pathlib
+
+    import yaml
+
+    path = pathlib.Path("pipelines/jobs/marts/shared/campaign_attributed_daily/data_quality") / name
+    rules = yaml.safe_load(path.read_text())["rules"]
+    assert {r["rule_id"] for r in rules} == rule_ids
