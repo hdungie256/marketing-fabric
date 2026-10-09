@@ -1,0 +1,17 @@
+rules:
+  - rule_id: order_key_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: order_key}
+    severity: critical
+  - rule_id: order_key_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: order_key}
+    severity: critical
+  - rule_id: gross_value_not_negative
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: gross_value, min_value: 0}
+    severity: warning
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical
