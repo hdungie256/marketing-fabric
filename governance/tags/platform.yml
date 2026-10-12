@@ -1,1 +1,42 @@
-tags: []
+tags:
+  - name: internal
+    classification: Sensitivity
+    description: Non-sensitive business or operational column. Visible to every role that can read the dataset.
+    actions: {default: allow}
+columns:
+  ops.runs:
+    run_id: Sensitivity.internal
+    job_id: Sensitivity.internal
+    event_id: Sensitivity.internal
+    scope: Sensitivity.internal
+    status: Sensitivity.internal
+    started_at: Sensitivity.internal
+    ended_at: Sensitivity.internal
+    rows_in: Sensitivity.internal
+    rows_out: Sensitivity.internal
+    failing_step: Sensitivity.internal
+    delta_version: Sensitivity.internal
+  ops.alerts:
+    alert_id: Sensitivity.internal
+    run_id: Sensitivity.internal
+    job_id: Sensitivity.internal
+    severity: Sensitivity.internal
+    message: Sensitivity.internal
+    raised_at: Sensitivity.internal
+  ops.load_reconciliation:
+    load_id: Sensitivity.internal
+    dataset_id: Sensitivity.internal
+    run_id: Sensitivity.internal
+    source_rows: Sensitivity.internal
+    raw_rows: Sensitivity.internal
+    baseline_rows: Sensitivity.internal
+    source_checksum: Sensitivity.internal
+    raw_checksum: Sensitivity.internal
+    passed: Sensitivity.internal
+    reason: Sensitivity.internal
+    checked_at: Sensitivity.internal
+  ops.policy_effective:
+    role: Sensitivity.internal
+    dataset_id: Sensitivity.internal
+    column: Sensitivity.internal
+    action: Sensitivity.internal

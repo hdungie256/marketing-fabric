@@ -121,7 +121,3 @@ def lineage(dataset_id: str, depth: int = 1) -> dict[str, list]:
 
 def latest_score(dataset_id: str) -> tuple[float, Status] | None:
     return stub("latest_score", None, dataset_id=dataset_id)
-
-
-def effective_matrix() -> list[dict[str, Any]]:
-    return stub("effective_matrix", [])

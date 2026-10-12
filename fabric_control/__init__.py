@@ -3,7 +3,6 @@ from fabric_control.decisions.scoring import score
 from fabric_control.glossary import GlossaryError
 from fabric_control.metadata import (
     catalog,
-    effective_matrix,
     emit_lineage,
     latest_score,
     lineage,
@@ -17,7 +16,7 @@ from fabric_control.metadata import (
 from fabric_control.migrations import run_migrations
 from fabric_control.models import DataQualityResult, GateFailed, RuleResult
 from fabric_control.ops import record_timing, trigger
-from fabric_control.policy import can_export, sync_policies, verify_policies
+from fabric_control.policy import PolicyError, can_export, effective_matrix, sync_policies, verify_policies
 from fabric_control.refresh import affected_by, status
 from fabric_control.registry import RegistryError, load_registry
 from fabric_control.run import Run, run
@@ -26,6 +25,7 @@ __all__ = [
     "DataQualityResult",
     "GateFailed",
     "GlossaryError",
+    "PolicyError",
     "RegistryError",
     "RuleResult",
     "Run",
