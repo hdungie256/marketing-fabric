@@ -70,6 +70,17 @@ def write_dq_results(
             )
 
 
+def last_success() -> dict[str, tuple[Any, int | None]]:
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT DISTINCT ON (job_id) job_id, ended_at, delta_version FROM ops.runs
+            WHERE status = 'success' ORDER BY job_id, ended_at DESC
+            """
+        ).fetchall()
+    return {job_id: (ended_at, version) for job_id, ended_at, version in rows}
+
+
 SERVING_TABLES = """
     SELECT c.table_schema, c.table_name, c.column_name
     FROM information_schema.columns c

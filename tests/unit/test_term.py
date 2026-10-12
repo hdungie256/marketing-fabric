@@ -1,14 +1,16 @@
 import pytest
 
 import fabric_control
-from fabric_control import metadata
+from fabric_control.clients import openmetadata, postgres
 
 
 @pytest.fixture(autouse=True)
-def fresh_cache():
-    metadata._local_terms.cache_clear()
-    yield
-    metadata._local_terms.cache_clear()
+def services_down(monkeypatch):
+    def down(*args):
+        raise OSError("down")
+
+    monkeypatch.setattr(openmetadata, "test_results", down)
+    monkeypatch.setattr(postgres, "last_success", down)
 
 
 @pytest.mark.parametrize("mode", ["offline", "online"])

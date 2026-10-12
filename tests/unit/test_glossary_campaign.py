@@ -2,14 +2,8 @@ import pytest
 
 import fabric_control
 from app.shell import NOTE_TEXT
-from fabric_control import metadata
 
 TERMS = ["attributed_orders", "attributed_buyers", "attributed_gross_value", "average_order_value"]
-
-
-@pytest.fixture(autouse=True)
-def fresh_cache():
-    metadata._local_terms.cache_clear()
 
 
 @pytest.mark.parametrize("term_id", TERMS)

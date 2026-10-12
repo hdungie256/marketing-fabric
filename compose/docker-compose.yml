@@ -206,6 +206,7 @@ services:
     ports: ["${STREAMLIT_HOST_PORT:-8501}:8501"]
     volumes:
       - ..:/srv:ro
+      - om-secrets:/run/om:ro
     depends_on:
       postgresql: {condition: service_healthy}
       seaweedfs: {condition: service_healthy}

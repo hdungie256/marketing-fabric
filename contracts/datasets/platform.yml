@@ -1,5 +1,6 @@
 datasets:
 - dataset_id: raw/sales/sales_lines
+  description: "Order lines from the sales system, one row per product in an order."
   om_fqn: lake_raw.default.lake.sales_lines
   openlineage:
     namespace: s3://lake
@@ -10,6 +11,7 @@ datasets:
   natural_key:
   - sales_line_id
 - dataset_id: raw/crm/customers
+  description: "Customer profiles from the CRM."
   om_fqn: lake_raw.default.lake.customers
   openlineage:
     namespace: s3://lake
@@ -20,6 +22,7 @@ datasets:
   natural_key:
   - customer_id
 - dataset_id: raw/erp/product_costs
+  description: "Observed average price and estimated unit cost per product SKU from the ERP."
   om_fqn: lake_raw.default.lake.product_costs
   openlineage:
     namespace: s3://lake
@@ -31,6 +34,7 @@ datasets:
   - product_sku
   synthetic_source: true
 - dataset_id: raw/campaign/campaigns
+  description: "Campaign master data: name, channel, period, target category, objective and budget."
   om_fqn: lake_raw.default.lake.campaigns
   openlineage:
     namespace: s3://lake
@@ -41,6 +45,7 @@ datasets:
   natural_key:
   - campaign_id
 - dataset_id: raw/campaign/targets
+  description: "Target metric and value per campaign."
   om_fqn: lake_raw.default.lake.targets
   openlineage:
     namespace: s3://lake
@@ -52,6 +57,7 @@ datasets:
   - campaign_id
   synthetic_source: true
 - dataset_id: raw/campaign/attribution
+  description: "Orders attributed to campaigns."
   om_fqn: lake_raw.default.lake.attribution
   openlineage:
     namespace: s3://lake
@@ -63,6 +69,7 @@ datasets:
   - canonical_order_id
   synthetic_source: true
 - dataset_id: raw/promotion/coupon_plan
+  description: "Coupon codes and discount percent per month and product category."
   om_fqn: lake_raw.default.lake.coupon_plan
   openlineage:
     namespace: s3://lake
@@ -74,6 +81,7 @@ datasets:
   - month
   - product_category
 - dataset_id: raw/spend/campaign_spend
+  description: "Daily online spend allocated to campaigns."
   om_fqn: lake_raw.default.lake.campaign_spend
   openlineage:
     namespace: s3://lake
@@ -86,6 +94,7 @@ datasets:
   - campaign_id
   synthetic_source: true
 - dataset_id: raw/spend/daily_spend
+  description: "Total online and offline marketing spend per day."
   om_fqn: lake_raw.default.lake.daily_spend
   openlineage:
     namespace: s3://lake
@@ -96,6 +105,7 @@ datasets:
   natural_key:
   - date
 - dataset_id: raw/spend/spend_recon
+  description: "Source-side spend reconciliation, kept for reference and never read as a fact."
   om_fqn: lake_raw.default.lake.spend_recon
   openlineage:
     namespace: s3://lake
@@ -108,6 +118,7 @@ datasets:
   derived: true
   synthetic_source: true
 - dataset_id: raw/tax/tax_rates
+  description: "GST rate per product category."
   om_fqn: lake_raw.default.lake.tax_rates
   openlineage:
     namespace: s3://lake
