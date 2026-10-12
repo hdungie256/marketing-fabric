@@ -12,3 +12,5 @@ SQL
 for f in /pg-init/*.sql; do
   psql -v ON_ERROR_STOP=1 -U sources_user -d sources -f "$f"
 done
+
+bash /pg-init/roles.sh

@@ -4,6 +4,7 @@ tags:
   - name: direct_identifier
     classification: Sensitivity
     description: Direct customer identifier (customer_id). Masked or denied per access matrix.
+    actions: {default: 'mask:partial', UG02: allow}
   - name: cost_estimate
     classification: Finance
     description: Estimated unit-cost reference. Aggregate-only except UG04 SKU detail.

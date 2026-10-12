@@ -1,0 +1,14 @@
+roles:
+  UG01: marketing_analyst
+  UG02: crm_marketing
+  UG03: marketing_manager
+  UG04: finance_controller
+  UG05: data_steward
+  UG06: data_ops
+read:
+  mart_shared.campaign_attributed_orders: [UG01, UG02, UG03]
+  mart_shared.campaign_attributed_daily: [UG01, UG02, UG03, UG04]
+  ops.runs: [UG01, UG03, UG04, UG05, UG06]
+  ops.alerts: [UG05, UG06]
+  ops.load_reconciliation: [UG05, UG06]
+  ops.policy_effective: [UG05]

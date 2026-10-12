@@ -1,1 +1,24 @@
 tags: []
+columns:
+  mart_shared.campaign_attributed_orders:
+    order_key: Sensitivity.internal
+    campaign_id: Sensitivity.internal
+    date: Sensitivity.internal
+    customer_id: Sensitivity.direct_identifier
+    gross_value: Sensitivity.internal
+    is_first_observed: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
+  mart_shared.campaign_attributed_daily:
+    campaign_id: Sensitivity.internal
+    date: Sensitivity.internal
+    attributed_orders: Sensitivity.internal
+    attributed_gross_value: Sensitivity.internal
+    buyers: Sensitivity.internal
+    first_observed_buyers: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal

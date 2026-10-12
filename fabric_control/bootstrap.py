@@ -7,6 +7,7 @@ from psycopg.conninfo import conninfo_to_dict
 from fabric_control.clients import airflow, openmetadata
 from fabric_control.metadata import register_all
 from fabric_control.migrations import run_migrations
+from fabric_control.policy import sync_policies, verify_policies
 from pipelines.io.storage import ensure_bucket
 from sources.seed import seed
 
@@ -64,6 +65,9 @@ def main() -> None:
     log.info("%s %s: %s", REFRESH_DAG, run_id, state)
     if state != "success":
         raise SystemExit(f"{REFRESH_DAG} {run_id} {state}")
+    sync_policies()
+    verify_policies()
+    log.info("policies synced and verified")
 
 
 if __name__ == "__main__":

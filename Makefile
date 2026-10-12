@@ -44,7 +44,7 @@ lint: compose/.env
 	$(DEV) sh -c "ruff format --check . && ruff check ."
 
 migrate:
-	$(JOBS) python -c "import fabric_control as fc; fc.run_migrations(); fc.sync_tags(); fc.sync_policies()"
+	$(JOBS) python -c "import fabric_control as fc; fc.run_migrations(); fc.sync_tags(); fc.sync_policies(); fc.verify_policies()"
 
 reset:
 	$(COMPOSE) --profile core --profile dev --profile benchmark down -v
