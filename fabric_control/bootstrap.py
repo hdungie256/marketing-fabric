@@ -5,7 +5,7 @@ from typing import Any
 from psycopg.conninfo import conninfo_to_dict
 
 from fabric_control.clients import airflow, openmetadata
-from fabric_control.metadata import register_all
+from fabric_control.metadata import register_all, sync_glossary, sync_tags
 from fabric_control.migrations import run_migrations
 from fabric_control.policy import sync_policies, verify_policies
 from pipelines.io.storage import ensure_bucket
@@ -60,6 +60,9 @@ def main() -> None:
     log.info("service %s ingestion %s", name, state)
     if state == "failed":
         raise SystemExit(f"ingestion for {name} failed")
+    sync_tags()
+    sync_glossary()
+    log.info("tags and glossary synced")
     run_id = airflow.trigger_dag(REFRESH_DAG, {}, wait_for_dag=300)
     state = airflow.wait(REFRESH_DAG, run_id, timeout=3600, poll=10)
     log.info("%s %s: %s", REFRESH_DAG, run_id, state)

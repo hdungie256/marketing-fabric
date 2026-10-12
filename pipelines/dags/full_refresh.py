@@ -20,9 +20,10 @@ def full_refresh():
         for dependency in upstream:
             jobs[dependency] >> jobs[job_id]
     catalog = job_task("platform/catalog", trigger_rule="all_done")
+    policies = job_task("platform/policies", trigger_rule="all_done")
     passed = jobs_passed()
     for job in jobs.values():
-        job >> [catalog, passed]
+        job >> [catalog, policies, passed]
 
 
 full_refresh()
