@@ -12,3 +12,4 @@ read:
   ops.alerts: [UG05, UG06]
   ops.load_reconciliation: [UG05, UG06]
   ops.policy_effective: [UG05]
+  ops.dq_results: [UG01, UG02, UG03, UG04, UG05, UG06]

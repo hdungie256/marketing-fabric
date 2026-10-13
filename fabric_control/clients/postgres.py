@@ -50,6 +50,26 @@ def add_alert(run_id: str, job_id: str, severity: str, message: str) -> None:
         )
 
 
+def write_dq_results(
+    run_id: str, dataset_id: str, scope: dict[str, Any], score_pct: float, status: str, rules: list[Any]
+) -> None:
+    rows = [
+        (run_id, dataset_id, r.rule_id, r.severity, r.passed, r.detail, score_pct, status, json.dumps(scope))
+        for r in rules
+    ]
+    with connect() as conn, conn.transaction():
+        conn.execute("DELETE FROM ops.dq_results WHERE run_id = %s AND dataset_id = %s", (run_id, dataset_id))
+        with conn.cursor() as cursor:
+            cursor.executemany(
+                """
+                INSERT INTO ops.dq_results
+                    (run_id, dataset_id, rule_id, severity, passed, detail, score_pct, status, scope)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+                """,
+                rows,
+            )
+
+
 SERVING_TABLES = """
     SELECT c.table_schema, c.table_name, c.column_name
     FROM information_schema.columns c

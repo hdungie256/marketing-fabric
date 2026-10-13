@@ -16,6 +16,7 @@ class RuleResult:
     rule_id: str
     severity: Severity
     passed: bool
+    detail: str | None = None
 
 
 @dataclass
