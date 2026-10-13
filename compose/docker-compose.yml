@@ -31,6 +31,7 @@ x-fabric-env: &fabric-env
   OM_URL: http://openmetadata-server:8585/api
   AIRFLOW_URL: http://openmetadata-ingestion:8080
   API_URL: http://api:8000
+  OPS_WRITER_DB_PASSWORD: ${OPS_WRITER_DB_PASSWORD}
 
 services:
   postgresql:

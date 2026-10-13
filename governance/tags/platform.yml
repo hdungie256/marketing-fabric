@@ -51,3 +51,8 @@ columns:
     status: Sensitivity.internal
     scope: Sensitivity.internal
     checked_at: Sensitivity.internal
+  ops.page_timings:
+    timing_id: Sensitivity.internal
+    page: Sensitivity.internal
+    ms: Sensitivity.internal
+    recorded_at: Sensitivity.internal
