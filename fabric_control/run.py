@@ -1,12 +1,22 @@
 import os
 from collections.abc import Iterator
 from contextlib import contextmanager
+from contextvars import ContextVar
 from datetime import UTC, datetime
 from typing import Any
 
 from fabric_control.clients import postgres
 from fabric_control.config import log, mode, stub
 from fabric_control.models import GateFailed, Scope
+
+_run_id: ContextVar[str | None] = ContextVar("run_id", default=None)
+
+
+def current_run_id() -> str:
+    run_id = _run_id.get()
+    if run_id is None:
+        raise RuntimeError("no active fabric_control.run()")
+    return run_id
 
 
 class Run:
@@ -37,6 +47,15 @@ class Run:
 @contextmanager
 def run(job_id: str, scope: Scope) -> Iterator[Run]:
     current = Run(job_id, scope)
+    token = _run_id.set(current.run_id)
+    try:
+        yield from _run(current)
+    finally:
+        _run_id.reset(token)
+
+
+def _run(current: Run) -> Iterator[Run]:
+    job_id, scope = current.job_id, current.scope
     if mode() == "offline":
         stub("run.start", run_id=current.run_id, scope=scope)
         yield current

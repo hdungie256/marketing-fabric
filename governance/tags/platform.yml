@@ -40,3 +40,14 @@ columns:
     dataset_id: Sensitivity.internal
     column: Sensitivity.internal
     action: Sensitivity.internal
+  ops.dq_results:
+    run_id: Sensitivity.internal
+    dataset_id: Sensitivity.internal
+    rule_id: Sensitivity.internal
+    severity: Sensitivity.internal
+    passed: Sensitivity.internal
+    detail: Sensitivity.internal
+    score_pct: Sensitivity.internal
+    status: Sensitivity.internal
+    scope: Sensitivity.internal
+    checked_at: Sensitivity.internal

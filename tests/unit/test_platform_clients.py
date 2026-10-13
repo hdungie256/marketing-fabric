@@ -2,7 +2,8 @@ import pytest
 import yaml
 
 import fabric_control as fc
-from fabric_control.clients import airflow, openmetadata
+from fabric_control import data_quality
+from fabric_control.clients import airflow, openmetadata, postgres
 from fabric_control.clients.http import HttpError
 from fabric_control.models import DataQualityResult, RuleResult
 
@@ -50,21 +51,31 @@ def test_emit_lineage_rejects_unregistered_dataset(online):
         fc.emit_lineage("unified/c", ["raw/unknown"], ["unified/c"])
 
 
-def test_report_data_quality_pushes_each_rule(online, monkeypatch):
+@pytest.fixture
+def dq_rows(monkeypatch):
+    rows = []
+    monkeypatch.setattr(data_quality, "current_run_id", lambda: "dag1:unified/c")
+    monkeypatch.setattr(postgres, "write_dq_results", lambda *args: rows.append(args))
+    return rows
+
+
+def test_report_data_quality_pushes_each_rule(online, monkeypatch, dq_rows):
     results = []
     monkeypatch.setattr(openmetadata, "put_test_case", lambda fqn, rule_id, description: f"{fqn}.{rule_id}")
     monkeypatch.setattr(openmetadata, "add_test_result", lambda fqn, passed, text: results.append((fqn, passed)))
     rules = [RuleResult("not_null", "critical", True), RuleResult("in_range", "warning", False)]
     fc.report_data_quality(DataQualityResult("raw/a/b", {"mode": "full"}, rules))
     assert results == [("lake_raw.default.lake.b.not_null", True), ("lake_raw.default.lake.b.in_range", False)]
+    assert dq_rows == [("dag1:unified/c", "raw/a/b", {"mode": "full"}, 50.0, "Amber", rules)]
 
 
-def test_report_data_quality_does_not_fail_job_when_openmetadata_down(online, monkeypatch):
+def test_report_data_quality_does_not_fail_job_when_openmetadata_down(online, monkeypatch, dq_rows):
     def down(*args):
         raise ConnectionRefusedError("down")
 
     monkeypatch.setattr(openmetadata, "put_test_case", down)
     fc.report_data_quality(DataQualityResult("raw/a/b", {"mode": "full"}, [RuleResult("r", "critical", True)]))
+    assert [row[1] for row in dq_rows] == ["raw/a/b"]
 
 
 def test_trigger_online_calls_airflow(online, monkeypatch):

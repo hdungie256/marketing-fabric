@@ -50,7 +50,8 @@ def test_emit_lineage(tables):
 
 def test_report_data_quality(tables):
     result = DataQualityResult(SOURCE, {"mode": "full"}, [RuleResult("e2e_rule", "critical", False)])
-    fc.report_data_quality(result)
+    with fc.run("e2e/quality", {"mode": "full"}):  # quality results belong to a run (ops.dq_results.run_id)
+        fc.report_data_quality(result)
     fqn = openmetadata.quote(FQNS[SOURCE] + ".e2e_rule")
     case = openmetadata.call("GET", f"dataQuality/testCases/name/{fqn}?fields=testCaseResult")
     assert case["testCaseResult"]["testCaseStatus"] == "Failed"
