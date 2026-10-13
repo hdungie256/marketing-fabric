@@ -1,0 +1,5 @@
+table: mart_finance.budget_daily
+grain: [campaign_id, date]
+modes: [full, scope]
+scope_map: {campaign_id: campaign_id, date: date}
+metrics: [allocated, attributed_orders, attributed_gross_value]

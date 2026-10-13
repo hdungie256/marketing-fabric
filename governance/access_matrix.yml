@@ -10,6 +10,7 @@ read:
   mart_shared.campaign_attributed_daily: [UG01, UG02, UG03, UG04]
   mart_shared.campaign_spend_allocated: [UG03, UG04]
   mart_shared.spend_reconciliation: [UG03, UG04]
+  mart_finance.budget_daily: [UG03, UG04]
   ops.runs: [UG01, UG03, UG04, UG05, UG06]
   ops.alerts: [UG05, UG06]
   ops.load_reconciliation: [UG05, UG06]

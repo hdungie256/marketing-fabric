@@ -54,11 +54,9 @@ def post_merge(dataset_id: str, df: Any, scope: Scope) -> Any:
     from pipelines import io
     from pipelines.io.scope import scope_predicate
 
-    if not dataset_id.startswith("unified/"):
-        # ponytail: serving marts need a PG read; add it with io.upsert_pg (Story 8.3)
-        raise NotImplementedError(f"post-merge quality check for {dataset_id}")
     in_scope = F.coalesce(F.expr(scope_predicate(scope)), F.lit(False))
-    current = io.read_delta(dataset_id).filter(~in_scope).select(*df.columns)
+    current = io.read_delta(dataset_id) if dataset_id.startswith("unified/") else io.read_pg(dataset_id)
+    current = current.filter(~in_scope).select(*df.columns)
     return current.unionByName(df)
 
 

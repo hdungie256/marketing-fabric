@@ -120,3 +120,14 @@ def test_scope_mode_checks_uniqueness_on_post_merge_image(spark, gx_rules, monke
 
     clash = fc.check("unified/orders", frame(spark, [(1, "c", 2)]), scope)
     assert [(r.rule_id, r.passed) for r in clash.rules] == [("id_unique", False), ("value_not_null", True)]
+
+
+def test_scope_mode_reads_serving_tables_for_post_merge_image(spark, gx_rules, monkeypatch):
+    from pipelines import io
+
+    current = frame(spark, [(1, "a", 1)])
+    monkeypatch.setattr(io, "read_pg", lambda table: current)
+    clash = fc.check(
+        "mart_shared.campaign_attributed_daily", frame(spark, [(1, "c", 2)]), {"mode": "scope", "keys": {"day": [2]}}
+    )
+    assert [(r.rule_id, r.passed) for r in clash.rules] == [("id_unique", False), ("value_not_null", True)]

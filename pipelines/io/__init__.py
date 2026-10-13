@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import TYPE_CHECKING, Any
 
 from pipelines.io import lineage, ops, raw
@@ -16,6 +17,7 @@ __all__ = [
     "delta_version",
     "get_spark",
     "read_delta",
+    "read_pg",
     "read_raw",
     "source_versions",
     "upsert_pg",
@@ -101,6 +103,23 @@ def vacuum(dataset_id: str, retention_hours: int = 168) -> None:
     from delta.tables import DeltaTable
 
     DeltaTable.forPath(get_spark(), table_path(dataset_id)).vacuum(retention_hours)
+
+
+def read_pg(table: str) -> DataFrame:
+    """Read a serving table (e.g. a mart_shared input of a slice mart) over JDBC as the job login."""
+    from psycopg.conninfo import conninfo_to_dict
+
+    dsn = conninfo_to_dict(os.environ["SERVING_DB_DSN"])
+    return (
+        get_spark()
+        .read.format("jdbc")
+        .option("url", f"jdbc:postgresql://{dsn['host']}:{dsn.get('port', 5432)}/{dsn['dbname']}")
+        .option("dbtable", table)
+        .option("user", dsn["user"])
+        .option("password", dsn["password"])
+        .option("driver", "org.postgresql.Driver")
+        .load()
+    )
 
 
 def write_pg_full(table: str, df: DataFrame, run_id: str, source_version: dict[str, int]) -> None:

@@ -31,3 +31,11 @@ datasets:
   job_id: marts/shared/campaign_spend
   owner: finance
   tags: []
+- dataset_id: mart_finance.budget_daily
+  om_fqn: serving.serving.mart_finance.budget_daily
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_finance.budget_daily
+  job_id: marts/finance/budget_daily
+  owner: finance
+  tags: []

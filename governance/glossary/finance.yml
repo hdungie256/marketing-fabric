@@ -1,1 +1,55 @@
-terms: []
+# Finance-slice glossary terms (Story 6.1, FR-11, FR-34). Owner: P4.
+# Notes use the keys of app.shell.metric.NOTE_TEXT so metric cards can render them.
+terms:
+  - display_name: Campaign Budget
+    owner_slice: finance
+    dataset_id: mart_finance.budget_daily
+    column: campaign_budget
+    definition: Planned budget of a campaign as recorded in the campaign source. A plan, not a cost.
+    formula: unified/campaigns.budget, one value per campaign; repeated on each campaign-day row, so take it once per campaign.
+    rules: [R8]
+    limitations:
+      - Budget is never added to spend; Budget ≠ cost (R8).
+    notes: [currency_unverified]
+  - display_name: Allocated Spend
+    owner_slice: finance
+    dataset_id: mart_shared.campaign_spend_allocated
+    column: allocated
+    definition: Part of the day's online spend that the ad source allocates to a campaign.
+    formula: SUM(unified/campaign_spend.allocated_online_spend) per campaign and day.
+    rules: [R8]
+    limitations:
+      - A subset of daily online spend; never add it to online spend again (no double counting).
+      - Allocation is synthetic sample data (34–46% of the day's online spend while a campaign runs).
+    notes: [currency_unverified]
+  - display_name: Unallocated Spend
+    owner_slice: finance
+    dataset_id: mart_shared.spend_reconciliation
+    column: unallocated
+    definition: Online spend of a day that no campaign received.
+    formula: daily online_spend − SUM(allocated) of that day; allocated + unallocated = online spend, difference 0.
+    rules: [R8]
+    limitations:
+      - Recomputed from unified data; the source Spend_Recon table is never read (FR-4).
+    notes: [currency_unverified]
+  - display_name: Attributed Value / Spend Ratio
+    owner_slice: finance
+    dataset_id: mart_finance.budget_daily
+    column: attributed_gross_value
+    definition: Attributed gross value per unit of allocated spend for the selected campaigns and days.
+    formula: SUM(attributed_gross_value) / SUM(allocated); a ratio of sums, never an average of daily ratios.
+    rules: [R6, R7, R8]
+    limitations:
+      - Not ROAS (R7): attribution is a sample rule, not proof that the ad produced the order.
+      - Gross value, not revenue or profit.
+    notes: [attributed_not_incremental]
+  - display_name: Cost per Attributed Order
+    owner_slice: finance
+    dataset_id: mart_finance.budget_daily
+    column: allocated
+    definition: Allocated spend per attributed order for the selected campaigns and days.
+    formula: SUM(allocated) / SUM(attributed_orders).
+    rules: [R6, R8]
+    limitations:
+      - Attributed orders follow the sample attribution rule, not ad clicks.
+    notes: [attributed_not_incremental, currency_unverified]
