@@ -16,7 +16,7 @@ RUN cd "$(python -c 'import os, pyspark; print(os.path.dirname(pyspark.__file__)
         com/amazonaws/aws-java-sdk-bundle/1.12.262/aws-java-sdk-bundle-1.12.262.jar \
         org/postgresql/postgresql/42.7.7/postgresql-42.7.7.jar \
         io/openlineage/openlineage-spark_2.12/1.53.0/openlineage-spark_2.12-1.53.0.jar; \
-       do curl -fsSLO "https://repo1.maven.org/maven2/$jar"; done
+       do curl -fsSLO --retry 5 --retry-all-errors "https://repo1.maven.org/maven2/$jar" || exit 1; done
 
 COPY fabric_control fabric_control
 COPY pipelines pipelines
