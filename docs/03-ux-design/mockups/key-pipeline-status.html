@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Key Screen — Pipeline Status (UG06 home) | Marketing Data Fabric</title>
+<style>
+/* ============================================================
+   KEY SCREEN: Pipeline Status — UG06 (Tuấn) home, FR-23..26
+   Governed by EXPERIENCE.md:
+     - Component Patterns: pipeline status, status-chip, alert-indicator,
+       banner-error
+     - State Patterns: Pipeline Status -> Run active; Pipeline Status -> Failed
+     - Key Flow 3 step 5 (UG06 detail after Hà's spend edit) and
+       Key Flow 4 (Tuấn, UG06 Data Ops) steps 1-4
+   Governed by DESIGN.md:
+     - Components: status-chip (success/warning/danger/info/neutral),
+       alert-indicator, banner-error, table, sidebar, role-switcher
+   Section 1 = canonical Pipeline Status: sources & steps table (all
+     success) + the active partial_refresh run from Hà's spend edit,
+     elapsed vs 2-min target. Alert-indicator correctly hidden (0 open
+     alerts).
+   Section 2 = failed-source alert state: alert-indicator visible (1),
+     failed step + cause, "Reload source" button, downstream gated dataset.
+   ============================================================ */
+:root{
+  --canvas:#F6F7F9; --surface:#FFFFFF; --sidebar-bg:#FBFBFC;
+  --surface-sunken:#EEF0F3; --surface-code:#F1F2F5; --info-icon-bg:#EEF1F5;
+  --text:#1A1F29; --text-secondary:#3A4150; --muted:#5B6472; --border:#E4E7EC;
+  --accent:#2F5BEA; --accent-strong:#1F3FAE; --accent-tint:#E8EEFE; --on-accent:#FFFFFF;
+  --success:#146C2E; --success-tint:#E5F3E9;
+  --warning:#92400E; --warning-tint:#FCEEDC; --warning-border:#F3D9B8;
+  --danger:#99180C; --danger-tint:#FBE7E6;
+  --neutral-status:#5B6472; --neutral-status-tint:#EEF0F3;
+  --radius-xs:5px; --radius-sm:8px; --radius-md:12px; --radius-full:9999px;
+  --shadow:0 1px 2px rgba(16,24,40,0.04), 0 2px 8px rgba(16,24,40,0.06);
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:var(--font-sans);background:#DEE1E6;color:var(--text);font-size:16px;line-height:1.5;padding:26px 0 60px;}
+.section-tag{max-width:1366px;margin:0 auto 10px;padding:0 24px;}
+.section-tag span{display:inline-block;background:var(--accent-tint);color:var(--accent-strong);border-radius:999px;font-size:12px;font-weight:700;padding:4px 12px;}
+.section-cap{max-width:1366px;margin:0 auto 14px;padding:0 24px;font-size:13.5px;color:#3A4150;}
+.browser-frame{width:1366px;max-width:100%;margin:0 auto 40px;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(16,24,40,0.14),0 2px 6px rgba(16,24,40,0.07);border:1px solid var(--border);}
+.browser-chrome{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#F1F2F5;border-bottom:1px solid var(--border);}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.dot.red{background:#EE6A5F;} .dot.amber{background:#F5BD4F;} .dot.green{background:#61C554;}
+.addr-bar{margin-left:14px;background:#FFFFFF;border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:12.5px;color:var(--muted);flex:1;max-width:520px;}
+.app{display:flex;min-height:800px;position:relative;}
+
+.sidebar{width:244px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid var(--border);padding:20px 16px;}
+.app-name{font-weight:700;font-size:16px;margin-bottom:2px;letter-spacing:-0.01em;}
+.app-name .dot-logo{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-right:7px;}
+.app-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+.role-switch-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px;font-weight:600;}
+.role-switch{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-size:15px;font-weight:600;margin-bottom:6px;box-shadow:var(--shadow);}
+.role-switch .chev{color:var(--muted);font-size:11px;}
+.role-note{font-size:14px;color:var(--muted);margin-bottom:10px;}
+.role-note b{color:var(--accent-strong);font-weight:700;}
+.alert-pill{display:inline-flex;align-items:center;gap:6px;background:var(--danger-tint);color:var(--danger);border-radius:var(--radius-full);padding:6px 12px;font-size:14px;font-weight:700;margin-bottom:14px;}
+.nav-group-label{font-size:14px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600;margin:14px 0 6px 4px;}
+.nav-list{list-style:none;margin:0;padding:0;}
+.nav-list li{padding:9px 12px;border-radius:var(--radius-sm);font-size:16px;color:var(--text-secondary);margin-bottom:2px;cursor:default;display:flex;align-items:center;gap:9px;}
+.nav-list li .ic{width:16px;text-align:center;color:var(--muted);font-size:13px;}
+.nav-list li.active{background:var(--accent-tint);color:var(--accent-strong);font-weight:700;}
+.nav-list li.active .ic{color:var(--accent-strong);}
+
+.main{flex:1;padding:26px 32px 32px;background:var(--canvas);min-width:0;}
+.page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.page-head h2{font-size:28px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+.viewing-as{font-size:14px;color:var(--muted);}
+.viewing-as b{color:var(--text);}
+
+.banner-error{background:var(--danger-tint);color:var(--danger);border-left:4px solid var(--danger);border-radius:var(--radius-sm);padding:12px 16px;font-size:16px;margin-bottom:16px;display:flex;gap:10px;align-items:flex-start;}
+.banner-error .bh{font-weight:700;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:18px;}
+.card h3{font-size:19px;margin:0 0 4px;font-weight:700;}
+.card .sub-line{font-size:14px;color:var(--muted);margin-bottom:14px;}
+
+table{width:100%;border-collapse:collapse;font-size:15px;}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.02em;padding:0 8px 8px 8px;border-bottom:1px solid var(--border);}
+td{padding:9px 8px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+td.num{text-align:right;font-variant-numeric:tabular-nums;}
+td.mono{font-family:var(--font-mono);font-size:14px;}
+tr.hl td{background:var(--danger-tint);}
+
+.status-chip{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;padding:5px 12px;border-radius:var(--radius-full);white-space:nowrap;}
+.status-chip.success{background:var(--success-tint);color:var(--success);}
+.status-chip.warning{background:var(--warning-tint);color:var(--warning);}
+.status-chip.danger{background:var(--danger-tint);color:var(--danger);}
+.status-chip.info{background:var(--accent-tint);color:var(--accent-strong);}
+.status-chip.neutral{background:var(--neutral-status-tint);color:var(--neutral-status);}
+
+.run-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:4px;}
+.run-title{font-size:19px;font-weight:700;}
+.run-meta{font-size:14px;color:var(--muted);margin-bottom:14px;}
+.run-meta code{background:var(--surface-code);border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-family:var(--font-mono);font-size:13px;}
+.elapsed{font-size:15px;font-weight:600;color:var(--text-secondary);}
+
+.btn-primary{background:var(--accent);color:var(--on-accent);border:none;border-radius:var(--radius-sm);padding:10px 18px;font-size:16px;font-weight:600;cursor:default;display:inline-block;}
+.form-hint{font-size:14px;color:var(--muted);margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div class="section-tag"><span>Section 1 — Canonical: active partial refresh</span></div>
+<div class="section-cap">Pipeline Status at rest — UG06 (Tuấn) home page. All 7 sources last ran clean; the run triggered by Hà's spend edit (Section 3 of key-budget-spend.html) is mid-flight. Alert-indicator correctly hidden — 0 open alerts.</div>
+
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+    <div class="addr-bar">localhost:8501/Pipeline_Status</div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="app-name"><span class="dot-logo"></span>Marketing Data Fabric</div>
+      <div class="app-sub">CO5173 · Academic demo</div>
+      <div class="role-switch-label">Role (demo mode)</div>
+      <div class="role-switch"><span>Data Ops</span><span class="chev">▾</span></div>
+      <div class="role-note">Signed in as <b>UG06</b> · nav filtered to this role</div>
+      <div class="nav-group-label">Operations</div>
+      <ul class="nav-list">
+        <li class="active"><span class="ic">⚙</span>Pipeline Status</li>
+        <li><span class="ic">↺</span>Change History</li>
+      </ul>
+      <div class="nav-group-label">Data trust</div>
+      <ul class="nav-list">
+        <li><span class="ic">▥</span>Catalog &amp; Glossary</li>
+        <li><span class="ic">⛓</span>Lineage</li>
+      </ul>
+    </aside>
+
+    <main class="main">
+      <div class="page-head">
+        <h2>Pipeline Status</h2>
+        <span class="viewing-as">Viewing as: <b>Data Ops (UG06)</b></span>
+      </div>
+
+      <div class="card">
+        <h3>Sources &amp; steps</h3>
+        <div class="sub-line">Last run per source (full_refresh, 10:42 pre-demo baseline).</div>
+        <table>
+          <thead><tr><th>Source</th><th>Last run</th><th>Duration</th><th class="num">Rows in → out</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">raw/sales_db/order_lines</td><td>10:42</td><td>0:54</td><td class="num">26,631 → 26,631</td><td><span class="status-chip success">✓ success</span></td></tr>
+            <tr><td class="mono">raw/crm_db/customers</td><td>10:42</td><td>0:31</td><td class="num">5,300 → 5,300</td><td><span class="status-chip success">✓ success</span></td></tr>
+            <tr><td class="mono">raw/product_erp/product_cost</td><td>10:42</td><td>0:12</td><td class="num">1,048 → 1,048</td><td><span class="status-chip success">✓ success</span></td></tr>
+            <tr><td class="mono">raw/attribution_api/campaign_attribution</td><td>10:42</td><td>0:22</td><td class="num">26,631 → 26,631</td><td><span class="status-chip success">✓ success</span></td></tr>
+            <tr><td class="mono">raw/ad_cost_api/campaign_spend</td><td>10:42</td><td>0:18</td><td class="num">1,825 → 1,825</td><td><span class="status-chip success">✓ success</span></td></tr>
+            <tr><td class="mono">raw/finance_file/spend_recon</td><td>10:42</td><td>0:08</td><td class="num">1,825 → 1,825</td><td><span class="status-chip success">✓ success</span></td></tr>
+            <tr><td class="mono">raw/targets_api/campaign_targets</td><td>10:42</td><td>0:05</td><td class="num">5 → 5</td><td><span class="status-chip success">✓ success</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="run-head">
+          <div class="run-title">Active run — partial_refresh</div>
+          <span class="status-chip info">● running</span>
+        </div>
+        <div class="run-meta">event <code>evt_20191212_cmp01_spend</code> · triggered by spend edit, Holiday Push (CMP-01), 2019-12-12 · <span class="elapsed">0:47 elapsed · 2:00 target</span></div>
+        <table>
+          <thead><tr><th>Step</th><th>Dataset</th><th>Status</th><th class="num">Elapsed</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td class="mono">unified/campaign_spend</td><td><span class="status-chip success">✓ success</span></td><td class="num">0:14</td></tr>
+            <tr><td>2</td><td class="mono">mart_shared.campaign_spend_allocated</td><td><span class="status-chip info">● running</span></td><td class="num">0:47</td></tr>
+            <tr><td>3</td><td class="mono">mart_finance.budget_daily</td><td><span class="status-chip neutral">○ queued</span></td><td class="num">—</td></tr>
+          </tbody>
+        </table>
+        <div class="form-hint">Auto-refreshes every 5s while a run is active (st.fragment); stops when none active.</div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="section-tag"><span>Section 2 — Failed source alert state</span></div>
+<div class="section-cap">A source has failed (fault injected outside the app via `make break-source SRC=ad_cost_api`). Alert-indicator shows 1; the failed step and cause are named; downstream dataset is gated; "Reload source" is offered.</div>
+
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+    <div class="addr-bar">localhost:8501/Pipeline_Status</div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="app-name"><span class="dot-logo"></span>Marketing Data Fabric</div>
+      <div class="app-sub">CO5173 · Academic demo</div>
+      <div class="role-switch-label">Role (demo mode)</div>
+      <div class="role-switch"><span>Data Ops</span><span class="chev">▾</span></div>
+      <div class="role-note">Signed in as <b>UG06</b> · nav filtered to this role</div>
+      <div class="alert-pill">🔔 1</div>
+      <div class="nav-group-label">Operations</div>
+      <ul class="nav-list">
+        <li class="active"><span class="ic">⚙</span>Pipeline Status</li>
+        <li><span class="ic">↺</span>Change History</li>
+      </ul>
+      <div class="nav-group-label">Data trust</div>
+      <ul class="nav-list">
+        <li><span class="ic">▥</span>Catalog &amp; Glossary</li>
+        <li><span class="ic">⛓</span>Lineage</li>
+      </ul>
+    </aside>
+
+    <main class="main">
+      <div class="page-head">
+        <h2>Pipeline Status</h2>
+        <span class="viewing-as">Viewing as: <b>Data Ops (UG06)</b></span>
+      </div>
+
+      <div class="banner-error"><span>⚠</span><span><span class="bh">1 source failed.</span> raw/ad_cost_api/campaign_spend — source connection timeout after 30s. Dependent pages keep previous values.</span></div>
+
+      <div class="card">
+        <h3>Sources &amp; steps</h3>
+        <div class="sub-line">Filtered to failed runs (from alert-indicator click).</div>
+        <table>
+          <thead><tr><th>Source</th><th>Last run</th><th>Duration</th><th class="num">Rows in → out</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr class="hl"><td class="mono">raw/ad_cost_api/campaign_spend</td><td>10:58</td><td>0:09</td><td class="num">1,825 → 0</td><td><span class="status-chip danger">✗ failed</span></td></tr>
+            <tr><td class="mono">mart_shared.campaign_spend_allocated</td><td>10:58</td><td>—</td><td class="num">— → —</td><td><span class="status-chip warning">⚠ gated</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <div class="run-head">
+          <div class="run-title">Failed run — full_refresh</div>
+          <span class="status-chip danger">✗ failed</span>
+        </div>
+        <div class="run-meta">event <code>evt_20191212_full</code> · source <code>raw/ad_cost_api/campaign_spend</code></div>
+        <table>
+          <thead><tr><th>Step</th><th>Dataset</th><th>Status</th><th>Cause</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td class="mono">raw/ad_cost_api/campaign_spend</td><td><span class="status-chip danger">✗ failed</span></td><td>Source connection timeout after 30s (ad_cost_api unreachable)</td></tr>
+            <tr><td>2</td><td class="mono">mart_shared.campaign_spend_allocated</td><td><span class="status-chip warning">⚠ gated</span></td><td>Skipped — upstream source failed (DAG skips descendants of a blocked dataset)</td></tr>
+          </tbody>
+        </table>
+        <div class="form-hint" style="margin-bottom:12px;">Budget &amp; Spend and Contribution now show "Using previous version — quality check failed on raw/ad_cost_api/campaign_spend".</div>
+        <span class="btn-primary">Reload source</span>
+        <span class="form-hint">Confirms once, then queues → runs → success with 5s auto-refresh.</span>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

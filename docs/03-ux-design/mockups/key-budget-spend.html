@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Key Screen — Budget &amp; Spend (UG04 home) | Marketing Data Fabric</title>
+<style>
+/* ============================================================
+   KEY SCREEN: Budget & Spend — UG04 (Hà) home, FR-34 / FR-16a
+   Governed by EXPERIENCE.md:
+     - Component Patterns: metric-card, filter-bar, chart, table,
+       footnote-strip, spend edit form (st.form), progress-strip, toast
+     - State Patterns: Fresh, Refreshing, Stale (Surface-specific: Spend edit form ->
+       Validation/4xx; Spend edit form -> Submitting)
+     - Key Flow 3 (Hà, UG04 Finance Controller) — demo climax, steps 1-5
+   Governed by DESIGN.md:
+     - Components: metric-card, badge-fresh/refreshing/stale, form-field, button-primary,
+       progress-strip, banner-stale, toast, table, chart
+   Section 1 = canonical Budget & Spend at rest (the wrong entry is visible
+     in the data — no staged flag, just an anomalous number/bar).
+   Section 2 = spend edit form, inline mock-API 4xx validation error.
+   Section 3 = after successful save — toast + inline progress-strip
+     "Refreshing 3 datasets · 0:47"; affected metrics show Refreshing badges
+     (not Stale — AD-19) while the mart_shared refresh is still in flight.
+   ============================================================ */
+:root{
+  --canvas:#F6F7F9; --surface:#FFFFFF; --sidebar-bg:#FBFBFC;
+  --surface-sunken:#EEF0F3; --surface-code:#F1F2F5; --info-icon-bg:#EEF1F5;
+  --text:#1A1F29; --text-secondary:#3A4150; --muted:#5B6472; --border:#E4E7EC;
+  --accent:#2F5BEA; --accent-strong:#1F3FAE; --accent-tint:#E8EEFE; --on-accent:#FFFFFF;
+  --success:#146C2E; --success-tint:#E5F3E9;
+  --warning:#92400E; --warning-tint:#FCEEDC; --warning-border:#F3D9B8;
+  --danger:#99180C; --danger-tint:#FBE7E6;
+  --neutral-status:#5B6472; --neutral-status-tint:#EEF0F3;
+  --series-1:#2a78d6; --series-2:#d95926; --series-3:#1baf7a; --series-4:#4a3aa7; --series-5:#eda100;
+  --radius-xs:5px; --radius-sm:8px; --radius-md:12px; --radius-full:9999px;
+  --shadow:0 1px 2px rgba(16,24,40,0.04), 0 2px 8px rgba(16,24,40,0.06);
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:var(--font-sans);background:#DEE1E6;color:var(--text);font-size:16px;line-height:1.5;padding:26px 0 60px;}
+.section-tag{max-width:1366px;margin:0 auto 10px;padding:0 24px;}
+.section-tag span{display:inline-block;background:var(--accent-tint);color:var(--accent-strong);border-radius:999px;font-size:12px;font-weight:700;padding:4px 12px;}
+.section-cap{max-width:1366px;margin:0 auto 14px;padding:0 24px;font-size:13.5px;color:#3A4150;}
+.browser-frame{width:1366px;max-width:100%;margin:0 auto 40px;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(16,24,40,0.14),0 2px 6px rgba(16,24,40,0.07);border:1px solid var(--border);}
+.browser-chrome{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#F1F2F5;border-bottom:1px solid var(--border);}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.dot.red{background:#EE6A5F;} .dot.amber{background:#F5BD4F;} .dot.green{background:#61C554;}
+.addr-bar{margin-left:14px;background:#FFFFFF;border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:12.5px;color:var(--muted);flex:1;max-width:520px;}
+.app{display:flex;min-height:800px;position:relative;}
+
+.sidebar{width:244px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid var(--border);padding:20px 16px;}
+.app-name{font-weight:700;font-size:16px;margin-bottom:2px;letter-spacing:-0.01em;}
+.app-name .dot-logo{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-right:7px;}
+.app-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+.role-switch-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px;font-weight:600;}
+.role-switch{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-size:15px;font-weight:600;margin-bottom:6px;box-shadow:var(--shadow);}
+.role-switch .chev{color:var(--muted);font-size:11px;}
+.role-note{font-size:14px;color:var(--muted);margin-bottom:18px;}
+.role-note b{color:var(--accent-strong);font-weight:700;}
+.nav-group-label{font-size:14px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600;margin:14px 0 6px 4px;}
+.nav-list{list-style:none;margin:0;padding:0;}
+.nav-list li{padding:9px 12px;border-radius:var(--radius-sm);font-size:16px;color:var(--text-secondary);margin-bottom:2px;cursor:default;display:flex;align-items:center;gap:9px;}
+.nav-list li .ic{width:16px;text-align:center;color:var(--muted);font-size:13px;}
+.nav-list li.active{background:var(--accent-tint);color:var(--accent-strong);font-weight:700;}
+.nav-list li.active .ic{color:var(--accent-strong);}
+
+.main{flex:1;padding:26px 32px 32px;background:var(--canvas);min-width:0;}
+.page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.page-head h2{font-size:28px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+.viewing-as{font-size:14px;color:var(--muted);}
+.viewing-as b{color:var(--text);}
+
+.banner{display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:var(--radius-sm);font-size:16px;margin-bottom:16px;border-left:4px solid;}
+.banner-stale{background:var(--warning-tint);color:var(--warning);border-left-color:var(--warning);}
+
+.filters-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.filter{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 14px;font-size:15px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);min-width:190px;}
+.filter .flabel{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.03em;}
+.filter .fval{font-weight:600;}
+.filter .fval .swatch{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;background:var(--series-1);}
+.filter .chev{margin-left:auto;color:var(--muted);font-size:11px;}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px;}
+.kpi-row.row2{grid-template-columns:repeat(4,1fr);}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;box-shadow:var(--shadow);position:relative;}
+.kpi-card.stale{border:1px solid var(--warning-border);}
+.kpi-card.stale .kpi-value{color:var(--warning);}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.kpi-label{font-size:15px;color:var(--muted);font-weight:600;letter-spacing:.01em;}
+.info-ico{width:20px;height:20px;border-radius:50%;background:var(--info-icon-bg);color:var(--muted);font-size:12px;line-height:20px;text-align:center;cursor:default;flex-shrink:0;}
+.kpi-value{font-size:40px;font-weight:700;letter-spacing:-0.01em;margin-bottom:3px;}
+.kpi-note{font-size:14px;color:var(--muted);font-style:italic;margin-bottom:8px;}
+.kpi-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:700;padding:4px 10px;border-radius:var(--radius-full);white-space:nowrap;}
+.badge-fresh{background:var(--success-tint);color:var(--success);}
+.badge-synthetic{background:var(--surface-sunken);color:var(--text-secondary);}
+.badge-stale{background:var(--warning-tint);color:var(--warning);white-space:normal;line-height:1.3;}
+.badge-refreshing{background:var(--accent-tint);color:var(--accent-strong);}
+
+.content-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:18px;align-items:stretch;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px 20px;box-shadow:var(--shadow);}
+.card h3{font-size:19px;margin:0 0 4px;font-weight:700;}
+.card .sub{font-size:14px;color:var(--muted);font-weight:400;margin-left:6px;}
+.card .sub-line{font-size:13.5px;color:var(--muted);margin-bottom:12px;}
+.stackchart{display:flex;align-items:flex-end;gap:10px;height:170px;padding:6px 2px 0;}
+.stack-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+.stack-bar{width:60%;display:flex;flex-direction:column-reverse;border-radius:5px 5px 0 0;overflow:hidden;}
+.seg-allocated{background:var(--accent);}
+.seg-unallocated{background:#C8CEDB;}
+.stack-day{font-size:12px;color:var(--muted);margin-top:6px;}
+
+table{width:100%;border-collapse:collapse;font-size:15px;}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.02em;padding:0 8px 8px 8px;border-bottom:1px solid var(--border);}
+td{padding:8px 8px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+td.num{text-align:right;font-variant-numeric:tabular-nums;}
+
+.footnote-strip{background:var(--surface-sunken);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 16px;font-size:14px;color:var(--muted);margin-bottom:22px;}
+.footnote-strip b{color:var(--text);}
+
+/* Spend edit form */
+.form-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;box-shadow:var(--shadow);}
+.form-card h3{font-size:19px;margin:0 0 4px;font-weight:700;}
+.form-card .sub-line{font-size:14px;color:var(--muted);margin-bottom:16px;}
+.form-row{display:flex;gap:16px;margin-bottom:4px;flex-wrap:wrap;}
+.form-field{flex:1;min-width:180px;}
+.form-field label{display:block;font-size:15px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+.form-field .control{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;font-size:16px;}
+.form-field.error .control{border:1px solid var(--danger);}
+.form-field .err-msg{color:var(--danger);font-size:14px;margin-top:6px;}
+.form-actions{margin-top:14px;display:flex;align-items:center;gap:12px;}
+.btn-primary{background:var(--accent);color:var(--on-accent);border:none;border-radius:var(--radius-sm);padding:10px 18px;font-size:16px;font-weight:600;cursor:default;}
+.form-hint{font-size:14px;color:var(--muted);}
+
+/* Progress strip */
+.progress-strip{background:var(--accent-tint);color:var(--accent-strong);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 16px;font-size:14px;display:flex;align-items:center;gap:18px;margin-top:16px;flex-wrap:wrap;}
+.progress-strip .lead{font-weight:700;}
+.pstep{display:flex;align-items:center;gap:6px;font-weight:600;}
+.pstep.done{color:var(--success);}
+.pstep.running{color:var(--accent-strong);}
+.pstep.queued{color:var(--muted);}
+
+/* Toast */
+.toast{position:absolute;right:26px;bottom:22px;background:#1A1F29;color:#fff;border-radius:var(--radius-sm);padding:12px 16px;font-size:15px;display:flex;align-items:center;gap:10px;box-shadow:0 10px 30px rgba(16,24,40,0.3);max-width:340px;}
+.toast .ic{color:#7BE0A0;font-weight:700;}
+</style>
+</head>
+<body>
+
+<div class="section-tag"><span>Section 1 — Canonical</span></div>
+<div class="section-cap">Budget &amp; Spend at rest — UG04 (Hà) home page. The wrong day (2019-12-12) is visible in the daily reconciliation chart/table as an outlier — no staged flag, just the working numbers.</div>
+
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+    <div class="addr-bar">localhost:8501/Budget_and_Spend</div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="app-name"><span class="dot-logo"></span>Marketing Data Fabric</div>
+      <div class="app-sub">CO5173 · Academic demo</div>
+      <div class="role-switch-label">Role (demo mode)</div>
+      <div class="role-switch"><span>Finance Controller</span><span class="chev">▾</span></div>
+      <div class="role-note">Signed in as <b>UG04</b> · nav filtered to this role</div>
+      <div class="nav-group-label">Finance</div>
+      <ul class="nav-list">
+        <li class="active"><span class="ic">$</span>Budget &amp; Spend</li>
+        <li><span class="ic">Σ</span>Contribution</li>
+      </ul>
+      <div class="nav-group-label">Data trust</div>
+      <ul class="nav-list">
+        <li><span class="ic">▥</span>Catalog &amp; Glossary</li>
+        <li><span class="ic">⛓</span>Lineage</li>
+      </ul>
+      <div class="nav-group-label">Operations</div>
+      <ul class="nav-list"><li><span class="ic">↺</span>Change History</li></ul>
+    </aside>
+
+    <main class="main">
+      <div class="page-head">
+        <h2>Budget &amp; Spend</h2>
+        <span class="viewing-as">Viewing as: <b>Finance Controller (UG04)</b></span>
+      </div>
+
+      <div class="filters-row">
+        <div class="filter"><span class="flabel">Period</span><span class="fval">Jan–Dec 2019</span><span class="chev">▾</span></div>
+        <div class="filter"><span class="flabel">Campaign</span><span class="fval"><span class="swatch"></span>Holiday Push (CMP-01)</span><span class="chev">▾</span></div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Campaign Budget</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">45,000</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges"><span class="badge badge-fresh">✓ Refreshed 10:42</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Allocated Spend</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">42,103</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges"><span class="badge badge-fresh">✓ Refreshed 10:42</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Unallocated Spend</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">2,415</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges"><span class="badge badge-fresh">✓ Refreshed 10:42</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Attributed Value / Spend Ratio</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">1.22×</div>
+          <div class="kpi-badges"><span class="badge badge-fresh">✓ Refreshed 10:42</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+      </div>
+      <div class="kpi-row row2" style="grid-template-columns:repeat(4,1fr);margin-bottom:22px;">
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Cost per Attributed Order</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">102.2</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges"><span class="badge badge-fresh">✓ Refreshed 10:42</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+        <div></div><div></div><div></div>
+      </div>
+
+      <div class="content-grid">
+        <div class="card">
+          <h3>Campaign Budget vs Allocated / Unallocated Spend <span class="sub">last 7 days</span></h3>
+          <div class="sub-line">Allocated (dark) + unallocated (light) = total online spend per day (difference 0, R8). Currency unverified.</div>
+          <div class="stackchart">
+            <div class="stack-col"><div class="stack-bar" style="height:66px"><div class="seg-unallocated" style="height:6px"></div><div class="seg-allocated" style="height:60px"></div></div><div class="stack-day">12-09</div></div>
+            <div class="stack-col"><div class="stack-bar" style="height:68px"><div class="seg-unallocated" style="height:5px"></div><div class="seg-allocated" style="height:63px"></div></div><div class="stack-day">12-10</div></div>
+            <div class="stack-col"><div class="stack-bar" style="height:70px"><div class="seg-unallocated" style="height:6px"></div><div class="seg-allocated" style="height:64px"></div></div><div class="stack-day">12-11</div></div>
+            <div class="stack-col"><div class="stack-bar" style="height:160px" title="2019-12-12 · Allocated 6,050 — looks wrong"><div class="seg-unallocated" style="height:6px"></div><div class="seg-allocated" style="height:154px"></div></div><div class="stack-day" style="color:var(--warning);font-weight:700;">12-12</div></div>
+            <div class="stack-col"><div class="stack-bar" style="height:67px"><div class="seg-unallocated" style="height:5px"></div><div class="seg-allocated" style="height:62px"></div></div><div class="stack-day">12-13</div></div>
+            <div class="stack-col"><div class="stack-bar" style="height:69px"><div class="seg-unallocated" style="height:6px"></div><div class="seg-allocated" style="height:63px"></div></div><div class="stack-day">12-14</div></div>
+            <div class="stack-col"><div class="stack-bar" style="height:68px"><div class="seg-unallocated" style="height:5px"></div><div class="seg-allocated" style="height:63px"></div></div><div class="stack-day">12-15</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Daily reconciliation</h3>
+          <table>
+            <thead><tr><th>Date</th><th class="num">Allocated</th><th class="num">Unallocated</th><th class="num">Total</th></tr></thead>
+            <tbody>
+              <tr><td>2019-12-09</td><td class="num">605</td><td class="num">42</td><td class="num">647</td></tr>
+              <tr><td>2019-12-10</td><td class="num">618</td><td class="num">39</td><td class="num">657</td></tr>
+              <tr><td>2019-12-11</td><td class="num">629</td><td class="num">44</td><td class="num">673</td></tr>
+              <tr><td style="font-weight:700;color:var(--warning);">2019-12-12</td><td class="num" style="font-weight:700;color:var(--warning);">6,050</td><td class="num">47</td><td class="num">6,097</td></tr>
+              <tr><td>2019-12-13</td><td class="num">611</td><td class="num">41</td><td class="num">652</td></tr>
+              <tr><td>2019-12-14</td><td class="num">624</td><td class="num">43</td><td class="num">667</td></tr>
+              <tr><td>2019-12-15</td><td class="num">617</td><td class="num">40</td><td class="num">657</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footnote-strip"><b>Note —</b> Campaign Budget ≠ spend (R8). Currency unverified (R10).</div>
+
+      <div class="form-card">
+        <h3>Edit daily spend</h3>
+        <div class="sub-line">st.form · UG04 only — UG03 sees this table read-only.</div>
+        <div class="form-row">
+          <div class="form-field"><label>Campaign</label><div class="control">Holiday Push (CMP-01) ▾</div></div>
+          <div class="form-field"><label>Date</label><div class="control">2019-12-12 ▾</div></div>
+          <div class="form-field"><label>Allocated spend</label><div class="control" style="color:var(--muted);">Enter corrected value…</div></div>
+        </div>
+        <div class="form-actions"><span class="btn-primary">Save change</span><span class="form-hint">Current recorded value: 6,050 — looks like a data-entry error.</span></div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<div class="section-tag"><span>Section 2 — Spend edit form, mock-API validation error</span></div>
+<div class="section-cap">Hà retypes the value but still fat-fingers it (6,150). The mock API rejects it 4xx; the reason appears inline under the field, values are kept, Save stays enabled.</div>
+
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+    <div class="addr-bar">localhost:8501/Budget_and_Spend</div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="app-name"><span class="dot-logo"></span>Marketing Data Fabric</div>
+      <div class="app-sub">CO5173 · Academic demo</div>
+      <div class="role-switch-label">Role (demo mode)</div>
+      <div class="role-switch"><span>Finance Controller</span><span class="chev">▾</span></div>
+      <div class="role-note">Signed in as <b>UG04</b> · nav filtered to this role</div>
+      <div class="nav-group-label">Finance</div>
+      <ul class="nav-list"><li class="active"><span class="ic">$</span>Budget &amp; Spend</li><li><span class="ic">Σ</span>Contribution</li></ul>
+      <div class="nav-group-label">Data trust</div>
+      <ul class="nav-list"><li><span class="ic">▥</span>Catalog &amp; Glossary</li><li><span class="ic">⛓</span>Lineage</li></ul>
+      <div class="nav-group-label">Operations</div>
+      <ul class="nav-list"><li><span class="ic">↺</span>Change History</li></ul>
+    </aside>
+    <main class="main">
+      <div class="page-head"><h2>Budget &amp; Spend</h2><span class="viewing-as">Viewing as: <b>Finance Controller (UG04)</b></span></div>
+      <div class="filters-row">
+        <div class="filter"><span class="flabel">Period</span><span class="fval">Jan–Dec 2019</span><span class="chev">▾</span></div>
+        <div class="filter"><span class="flabel">Campaign</span><span class="fval"><span class="swatch"></span>Holiday Push (CMP-01)</span><span class="chev">▾</span></div>
+      </div>
+
+      <div class="form-card" style="max-width:640px;">
+        <h3>Edit daily spend</h3>
+        <div class="sub-line">st.form · UG04 only</div>
+        <div class="form-row">
+          <div class="form-field"><label>Campaign</label><div class="control">Holiday Push (CMP-01) ▾</div></div>
+          <div class="form-field"><label>Date</label><div class="control">2019-12-12 ▾</div></div>
+        </div>
+        <div class="form-row">
+          <div class="form-field error">
+            <label>Allocated spend</label>
+            <div class="control">6,150</div>
+            <div class="err-msg">6,150 is far above CMP-01's nearby days (605–630) — check for a data-entry error before saving.</div>
+          </div>
+        </div>
+        <div class="form-actions"><span class="btn-primary">Save change</span><span class="form-hint">Values kept — correct and resubmit.</span></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="section-tag"><span>Section 3 — After save: toast + inline progress strip</span></div>
+<div class="section-cap">615 saved successfully. Toast confirms the write; a progress strip tracks the partial refresh in flight. The 3 affected metrics keep their previous value and show a Refreshing badge ("Refreshing…") until mart_shared finishes recomputing, then flip to Refreshed HH:MM — Campaign Budget is unaffected and stays fresh. Not Stale: Stale is reserved for a gated/quality failure (AD-19), never for a normal in-flight refresh.</div>
+
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+    <div class="addr-bar">localhost:8501/Budget_and_Spend</div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="app-name"><span class="dot-logo"></span>Marketing Data Fabric</div>
+      <div class="app-sub">CO5173 · Academic demo</div>
+      <div class="role-switch-label">Role (demo mode)</div>
+      <div class="role-switch"><span>Finance Controller</span><span class="chev">▾</span></div>
+      <div class="role-note">Signed in as <b>UG04</b> · nav filtered to this role</div>
+      <div class="nav-group-label">Finance</div>
+      <ul class="nav-list"><li class="active"><span class="ic">$</span>Budget &amp; Spend</li><li><span class="ic">Σ</span>Contribution</li></ul>
+      <div class="nav-group-label">Data trust</div>
+      <ul class="nav-list"><li><span class="ic">▥</span>Catalog &amp; Glossary</li><li><span class="ic">⛓</span>Lineage</li></ul>
+      <div class="nav-group-label">Operations</div>
+      <ul class="nav-list"><li><span class="ic">↺</span>Change History</li></ul>
+    </aside>
+    <main class="main">
+      <div class="page-head"><h2>Budget &amp; Spend</h2><span class="viewing-as">Viewing as: <b>Finance Controller (UG04)</b></span></div>
+
+      <div class="filters-row">
+        <div class="filter"><span class="flabel">Period</span><span class="fval">Jan–Dec 2019</span><span class="chev">▾</span></div>
+        <div class="filter"><span class="flabel">Campaign</span><span class="fval"><span class="swatch"></span>Holiday Push (CMP-01)</span><span class="chev">▾</span></div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Campaign Budget</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">45,000</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges"><span class="badge badge-fresh">✓ Refreshed 10:42</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Allocated Spend</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">42,103</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges"><span class="badge badge-refreshing">↻ Refreshing…</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Unallocated Spend</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">2,415</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges"><span class="badge badge-fresh">✓ Refreshed 10:42</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Attributed Value / Spend Ratio</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">1.22×</div>
+          <div class="kpi-badges"><span class="badge badge-refreshing">↻ Refreshing…</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+      </div>
+      <div class="kpi-row row2" style="grid-template-columns:repeat(4,1fr);margin-bottom:22px;">
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Cost per Attributed Order</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">102.2</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges"><span class="badge badge-refreshing">↻ Refreshing…</span><span class="badge badge-synthetic">🧪 Synthetic</span></div>
+        </div>
+        <div></div><div></div><div></div>
+      </div>
+
+      <div class="form-card" style="max-width:640px;">
+        <h3>Edit daily spend</h3>
+        <div class="sub-line">st.form · UG04 only</div>
+        <div class="form-row">
+          <div class="form-field"><label>Campaign</label><div class="control" style="color:var(--muted);">Select campaign…</div></div>
+          <div class="form-field"><label>Date</label><div class="control" style="color:var(--muted);">Select date…</div></div>
+          <div class="form-field"><label>Allocated spend</label><div class="control" style="color:var(--muted);">Enter value…</div></div>
+        </div>
+        <div class="form-actions"><span class="btn-primary">Save change</span><span class="form-hint">Last saved: 2019-12-12 → 615.</span></div>
+
+        <div class="progress-strip">
+          <span class="lead">Refreshing 3 datasets · 0:47</span>
+          <span class="pstep done">✓ unified/campaign_spend</span>
+          <span class="pstep running">● mart_shared.campaign_spend_allocated</span>
+          <span class="pstep queued">○ mart_finance.budget_daily</span>
+        </div>
+      </div>
+
+      <div class="toast"><span class="ic">✓</span><span>Change saved · partial refresh started</span></div>
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

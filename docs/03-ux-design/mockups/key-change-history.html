@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Key Screen — Change History | Marketing Data Fabric</title>
+<style>
+/* ============================================================
+   KEY SCREEN: Change History, FR-18
+   Governed by EXPERIENCE.md:
+     - Component Patterns: change history, table (metric column ⓘ),
+       filter-bar (event_id deep link)
+     - Key Flow 3 (Hà, UG04) step 6 — BR16 climax: only the edited
+       campaign's metrics changed, others kept their refresh time
+   Governed by DESIGN.md:
+     - Components: table, footnote-strip, sidebar, role-switcher
+     - Campaign categorical series (color follows campaign, never rank)
+   One canonical state: change-event list + before->after table for the
+   affected metrics of one campaign (CMP-01), summary line verbatim from
+   the assignment: "3 metrics changed · 12 unchanged kept refresh time 10:42".
+   ============================================================ */
+:root{
+  --canvas:#F6F7F9; --surface:#FFFFFF; --sidebar-bg:#FBFBFC;
+  --surface-sunken:#EEF0F3; --surface-code:#F1F2F5; --info-icon-bg:#EEF1F5;
+  --text:#1A1F29; --text-secondary:#3A4150; --muted:#5B6472; --border:#E4E7EC;
+  --accent:#2F5BEA; --accent-strong:#1F3FAE; --accent-tint:#E8EEFE; --on-accent:#FFFFFF;
+  --success:#146C2E; --success-tint:#E5F3E9;
+  --warning:#92400E; --warning-tint:#FCEEDC;
+  --danger:#99180C; --danger-tint:#FBE7E6;
+  --series-1:#2a78d6; --series-2:#d95926; --series-3:#1baf7a; --series-4:#4a3aa7; --series-5:#eda100;
+  --radius-sm:8px; --radius-md:12px; --radius-full:9999px;
+  --shadow:0 1px 2px rgba(16,24,40,0.04), 0 2px 8px rgba(16,24,40,0.06);
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:var(--font-sans);background:#DEE1E6;color:var(--text);font-size:16px;line-height:1.5;padding:26px 0 60px;}
+.section-tag{max-width:1366px;margin:0 auto 10px;padding:0 24px;}
+.section-tag span{display:inline-block;background:var(--accent-tint);color:var(--accent-strong);border-radius:999px;font-size:12px;font-weight:700;padding:4px 12px;}
+.section-cap{max-width:1366px;margin:0 auto 14px;padding:0 24px;font-size:13.5px;color:#3A4150;}
+.browser-frame{width:1366px;max-width:100%;margin:0 auto 40px;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(16,24,40,0.14),0 2px 6px rgba(16,24,40,0.07);border:1px solid var(--border);}
+.browser-chrome{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#F1F2F5;border-bottom:1px solid var(--border);}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.dot.red{background:#EE6A5F;} .dot.amber{background:#F5BD4F;} .dot.green{background:#61C554;}
+.addr-bar{margin-left:14px;background:#FFFFFF;border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:12.5px;color:var(--muted);flex:1;max-width:520px;}
+.app{display:flex;min-height:800px;}
+
+.sidebar{width:244px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid var(--border);padding:20px 16px;}
+.app-name{font-weight:700;font-size:16px;margin-bottom:2px;letter-spacing:-0.01em;}
+.app-name .dot-logo{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-right:7px;}
+.app-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+.role-switch-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px;font-weight:600;}
+.role-switch{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-size:15px;font-weight:600;margin-bottom:6px;box-shadow:var(--shadow);}
+.role-switch .chev{color:var(--muted);font-size:11px;}
+.role-note{font-size:14px;color:var(--muted);margin-bottom:18px;}
+.role-note b{color:var(--accent-strong);font-weight:700;}
+.nav-group-label{font-size:14px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600;margin:14px 0 6px 4px;}
+.nav-list{list-style:none;margin:0;padding:0;}
+.nav-list li{padding:9px 12px;border-radius:var(--radius-sm);font-size:16px;color:var(--text-secondary);margin-bottom:2px;cursor:default;display:flex;align-items:center;gap:9px;}
+.nav-list li .ic{width:16px;text-align:center;color:var(--muted);font-size:13px;}
+.nav-list li.active{background:var(--accent-tint);color:var(--accent-strong);font-weight:700;}
+.nav-list li.active .ic{color:var(--accent-strong);}
+
+.main{flex:1;padding:26px 32px 32px;background:var(--canvas);min-width:0;}
+.page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;}
+.page-head h2{font-size:28px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+.viewing-as{font-size:14px;color:var(--muted);}
+.viewing-as b{color:var(--text);}
+
+.filters-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.filter{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 14px;font-size:15px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);min-width:190px;}
+.filter .flabel{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.03em;}
+.filter .fval{font-weight:600;}
+.filter .chev{margin-left:auto;color:var(--muted);font-size:11px;}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px 20px;box-shadow:var(--shadow);margin-bottom:18px;}
+.card h3{font-size:19px;margin:0 0 4px;font-weight:700;}
+.card .sub-line{font-size:14px;color:var(--muted);margin-bottom:14px;}
+
+table{width:100%;border-collapse:collapse;font-size:15px;}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.02em;padding:0 8px 8px 8px;border-bottom:1px solid var(--border);}
+td{padding:10px 8px;border-bottom:1px solid var(--border);vertical-align:top;}
+tr:last-child td{border-bottom:none;}
+td.num{text-align:right;font-variant-numeric:tabular-nums;}
+tr.selected td{background:var(--accent-tint);}
+.swatch{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;}
+.mono{font-family:var(--font-mono);font-size:13.5px;color:var(--muted);}
+.info-ico{width:18px;height:18px;border-radius:50%;background:var(--info-icon-bg);color:var(--muted);font-size:11px;line-height:18px;text-align:center;display:inline-block;margin-left:6px;cursor:default;}
+
+.summary-line{font-size:19px;font-weight:700;color:var(--text);margin-bottom:14px;}
+.summary-line .n{color:var(--accent-strong);}
+
+.footnote-strip{background:var(--surface-sunken);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 16px;font-size:14px;color:var(--muted);}
+.footnote-strip b{color:var(--text);}
+</style>
+</head>
+<body>
+
+<div class="section-tag"><span>Canonical</span></div>
+<div class="section-cap">Change History — BR16 climax view. Selected event (CMP-01 spend correction) expands into a before→after table for only that campaign's affected metrics; the summary line states the blast radius across the whole event.</div>
+
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+    <div class="addr-bar">localhost:8501/Change_History?event_id=evt_20191212_cmp01_spend</div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="app-name"><span class="dot-logo"></span>Marketing Data Fabric</div>
+      <div class="app-sub">CO5173 · Academic demo</div>
+      <div class="role-switch-label">Role (demo mode)</div>
+      <div class="role-switch"><span>Data Ops</span><span class="chev">▾</span></div>
+      <div class="role-note">Signed in as <b>UG06</b> · nav filtered to this role</div>
+      <div class="nav-group-label">Operations</div>
+      <ul class="nav-list">
+        <li><span class="ic">⚙</span>Pipeline Status</li>
+        <li class="active"><span class="ic">↺</span>Change History</li>
+      </ul>
+      <div class="nav-group-label">Data trust</div>
+      <ul class="nav-list">
+        <li><span class="ic">▥</span>Catalog &amp; Glossary</li>
+        <li><span class="ic">⛓</span>Lineage</li>
+      </ul>
+    </aside>
+
+    <main class="main">
+      <div class="page-head">
+        <h2>Change History</h2>
+        <span class="viewing-as">Viewing as: <b>Data Ops (UG06)</b></span>
+      </div>
+
+      <div class="filters-row">
+        <div class="filter"><span class="flabel">Period</span><span class="fval">Jan–Dec 2019</span><span class="chev">▾</span></div>
+        <div class="filter"><span class="flabel">Campaign</span><span class="fval">All campaigns</span><span class="chev">▾</span></div>
+        <div class="filter"><span class="flabel">Event</span><span class="fval">evt_20191212_cmp01_spend</span><span class="chev">▾</span></div>
+      </div>
+
+      <div class="card">
+        <h3>Change events</h3>
+        <div class="sub-line">Most recent first · selected row expands below.</div>
+        <table>
+          <thead><tr><th>Event</th><th>Time</th><th>Campaign</th><th>Trigger</th><th class="num">Metrics changed</th></tr></thead>
+          <tbody>
+            <tr class="selected">
+              <td class="mono">evt_20191212_cmp01_spend</td>
+              <td>2019-12-12 · 10:42</td>
+              <td><span class="swatch" style="background:var(--series-1)"></span>Holiday Push <span class="mono">CMP-01</span></td>
+              <td>Spend edit — 2019-12-12 allocated spend corrected (6,050 → 615)</td>
+              <td class="num">3</td>
+            </tr>
+            <tr>
+              <td class="mono">evt_20191205_cmp03_spend</td>
+              <td>2019-12-05 · 09:14</td>
+              <td><span class="swatch" style="background:var(--series-3)"></span>Summer Drinkware Launch <span class="mono">CMP-03</span></td>
+              <td>Spend edit — 2019-12-05 allocated spend corrected</td>
+              <td class="num">3</td>
+            </tr>
+            <tr>
+              <td class="mono">evt_20191118_cmp05_spend</td>
+              <td>2019-11-18 · 14:02</td>
+              <td><span class="swatch" style="background:var(--series-5)"></span>Always-On Retargeting <span class="mono">CMP-05</span></td>
+              <td>Spend edit — 2019-11-18 allocated spend corrected</td>
+              <td class="num">3</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="card">
+        <h3>evt_20191212_cmp01_spend — Holiday Push (CMP-01)</h3>
+        <div class="summary-line"><span class="n">3 metrics changed</span> · <span class="n">12 unchanged</span> kept refresh time 10:42</div>
+        <table>
+          <thead><tr><th>Metric</th><th class="num">Old</th><th class="num">New</th><th class="num">Delta</th></tr></thead>
+          <tbody>
+            <tr><td>Allocated Spend<span class="info-ico" title="Open definition">ⓘ</span></td><td class="num">42,103</td><td class="num">36,668</td><td class="num" style="color:var(--success);">−5,435</td></tr>
+            <tr><td>Attributed Value / Spend Ratio<span class="info-ico" title="Open definition">ⓘ</span></td><td class="num">1.22×</td><td class="num">1.40×</td><td class="num" style="color:var(--success);">+0.18×</td></tr>
+            <tr><td>Cost per Attributed Order<span class="info-ico" title="Open definition">ⓘ</span></td><td class="num">102.2</td><td class="num">89.0</td><td class="num" style="color:var(--success);">−13.2</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="footnote-strip"><b>Note —</b> Currency unverified (R10). Only Holiday Push (CMP-01) metrics were affected by this event — all other campaigns' metrics kept their 10:42 refresh time.</div>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>
