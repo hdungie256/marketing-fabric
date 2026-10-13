@@ -1,1 +1,11 @@
-tags: []
+# Finance-slice classification tags (Story 3.5, FR-20). Owner: P4.
+# UG04 sees SKU cost of goods; UG03 sees only aggregated contribution; every other role is denied both.
+tags:
+  - name: sku_cost
+    classification: Finance
+    description: Reference cost of goods at SKU level. Visible to Finance only.
+    actions: {default: deny, UG04: allow}
+  - name: aggregate
+    classification: Finance
+    description: Campaign-level cost of goods or contribution aggregated from SKU cost. Finance and Marketing Manager only.
+    actions: {default: deny, UG03: allow, UG04: allow}
