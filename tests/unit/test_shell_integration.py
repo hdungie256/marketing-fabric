@@ -57,7 +57,7 @@ def test_metric_inside_wrapper_puts_currency_note_once_in_footnote_strip(stubs):
     assert stubs == ["campaign_overview"]
 
 
-def test_real_app_logs_in_to_p2_placeholder(monkeypatch):
+def test_real_app_logs_in_to_campaign_overview(monkeypatch):
     for name, value in {
         "MARKETING_ANALYST_DB_PASSWORD": "pw1",
         "CRM_MARKETING_DB_PASSWORD": "pw2",
@@ -74,4 +74,4 @@ def test_real_app_logs_in_to_p2_placeholder(monkeypatch):
     at.button[0].click().run()
     assert not at.exception
     assert at.title[0].value == "Campaign Overview"
-    assert "Placeholder — implemented in Story 1.13" in [c.value for c in at.caption]
+    assert not any(c.value.startswith("Placeholder") for c in at.caption)
