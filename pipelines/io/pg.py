@@ -41,19 +41,3 @@ def write_full(table: str, df: DataFrame, run_id: str, source_version: dict[str,
         with conn.cursor().copy(copy) as out:
             for row in rows:
                 out.write_row(row)
-
-
-def read(dataset_id: str) -> DataFrame:
-    from psycopg import sql
-
-    from pipelines.io.spark import get_spark
-
-    ident = sql.Identifier(*_table(dataset_id, "mart_shared"))
-    with connect() as conn:
-        cursor = conn.execute(sql.SQL("SELECT * FROM {}").format(ident))
-        names = [d.name for d in cursor.description]
-        rows = cursor.fetchall()
-    if not rows:
-        raise ValueError(f"{dataset_id} is empty")
-    keep = [i for i, n in enumerate(names) if not n.startswith("_")]
-    return get_spark().createDataFrame([tuple(r[i] for i in keep) for r in rows], [names[i] for i in keep])
