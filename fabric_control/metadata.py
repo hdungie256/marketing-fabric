@@ -1,3 +1,4 @@
+import functools
 from typing import Any
 
 from fabric_control.clients import openmetadata
@@ -111,8 +112,15 @@ def search(q: str) -> list[dict[str, Any]]:
     return stub("search", [], q=q)
 
 
+@functools.cache
+def _local_terms() -> dict[str, dict[str, Any]]:
+    return labelled_terms()
+
+
 def term(term_id: str) -> dict[str, Any] | None:
-    return stub("term", None, term_id=term_id)
+    # ponytail: reads the repo glossary in both modes; Story 2.2 swaps the online branch to OpenMetadata
+    t = _local_terms().get(term_id)
+    return None if t is None else {**t, "synthetic": t["provenance"] == "synthetic"}
 
 
 def lineage(dataset_id: str, depth: int = 1) -> dict[str, list]:
