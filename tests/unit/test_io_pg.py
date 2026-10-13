@@ -20,9 +20,3 @@ def test_stamp_appends_same_metadata_to_every_row():
 def test_write_pg_full_rejects_non_mart_or_unregistered(table):
     with pytest.raises(ValueError, match="registered mart_"):
         io.write_pg_full(table, object(), "run-1", {})
-
-
-@pytest.mark.parametrize("dataset_id", ["mart_campaign.anything", "ops.runs", "mart_shared.not_registered"])
-def test_read_pg_only_reads_registered_shared_marts(dataset_id):
-    with pytest.raises(ValueError, match="registered mart_shared"):
-        io.read_pg(dataset_id)

@@ -35,9 +35,3 @@ def test_failed_write_keeps_previous_rows():
     with pytest.raises(psycopg.Error):
         io.write_pg_full(TABLE, duplicate, "e2e-dup", {})
     assert snapshot() == before
-
-
-def test_read_pg_returns_every_row_without_metadata():
-    df = io.read_pg("mart_shared.campaign_attributed_daily")
-    assert df.count() == query("SELECT count(*) FROM mart_shared.campaign_attributed_daily")[0][0]
-    assert not [c for c in df.columns if c.startswith("_")]

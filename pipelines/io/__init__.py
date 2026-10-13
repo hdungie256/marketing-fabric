@@ -126,9 +126,5 @@ def write_pg_full(table: str, df: DataFrame, run_id: str, source_version: dict[s
     pg.write_full(table, df, run_id, source_version)
 
 
-def read_pg(dataset_id: str) -> DataFrame:
-    return pg.read(dataset_id)
-
-
 def upsert_pg(table: str, df: DataFrame, scope: Scope, run_id: str) -> tuple[Any, Any]:
     raise NotImplementedError("upsert_pg")
