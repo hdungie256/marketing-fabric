@@ -18,7 +18,7 @@ jobs = [
     "openpyxl",
     "pytest",
 ]
-app = ["pyyaml", "streamlit==1.64.0", "psycopg[binary]==3.3.6", "tzdata"]
+app = ["pyyaml", "streamlit==1.64.0", "psycopg[binary]==3.3.6", "tzdata", "pytest"]
 api = ["pyyaml", "fastapi==0.141.1", "uvicorn", "psycopg[binary]==3.3.6"]
 dev = ["pyyaml", "pytest", "ruff==0.16.9", "pandas", "openpyxl", "streamlit==1.64.0", "psycopg[binary]==3.3.6", "tzdata"]
 
