@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from typing import TYPE_CHECKING, Any
 
-from pipelines.io import lineage, ops, raw
+from pipelines.io import lineage, ops, pg, raw
 from pipelines.io.scope import Scope, scope_predicate
 from pipelines.io.spark import get_spark
 from pipelines.io.storage import table_path
@@ -123,7 +123,11 @@ def read_pg(table: str) -> DataFrame:
 
 
 def write_pg_full(table: str, df: DataFrame, run_id: str, source_version: dict[str, int]) -> None:
-    raise NotImplementedError("write_pg_full")
+    pg.write_full(table, df, run_id, source_version)
+
+
+def read_pg(dataset_id: str) -> DataFrame:
+    return pg.read(dataset_id)
 
 
 def upsert_pg(table: str, df: DataFrame, scope: Scope, run_id: str) -> tuple[Any, Any]:
