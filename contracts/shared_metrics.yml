@@ -7,10 +7,10 @@ shared_metrics:
     metrics: [gross_value, is_first_observed]
   - dataset_id: mart_shared.campaign_spend_allocated
     grain: [campaign_id, date]
-    metrics: [allocated, unallocated]
+    metrics: [allocated]
   - dataset_id: mart_shared.spend_reconciliation
-    grain: []
-    metrics: []
+    grain: [date]
+    metrics: [online_spend, offline_spend, allocated, unallocated]
   - dataset_id: mart_shared.exceptions
     grain: [exception_id]
     metrics: []

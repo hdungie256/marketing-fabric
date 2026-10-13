@@ -1,0 +1,11 @@
+dataset_id: mart_shared.campaign_spend_allocated
+schema_version: 1.0.0
+grain: [campaign_id, date]
+columns:
+- {name: campaign_id, type: string, nullable: false}
+- {name: date, type: date, nullable: false}
+- {name: allocated, type: 'decimal(18,2)', nullable: false}
+- {name: provenance, type: string, nullable: false}
+- {name: _refreshed_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+- {name: _source_version, type: string, nullable: false}

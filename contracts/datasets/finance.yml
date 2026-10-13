@@ -15,3 +15,19 @@ datasets:
   job_id: unified/campaign_spend
   owner: finance
   tags: []
+- dataset_id: mart_shared.campaign_spend_allocated
+  om_fqn: serving.serving.mart_shared.campaign_spend_allocated
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_shared.campaign_spend_allocated
+  job_id: marts/shared/campaign_spend
+  owner: finance
+  tags: []
+- dataset_id: mart_shared.spend_reconciliation
+  om_fqn: serving.serving.mart_shared.spend_reconciliation
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_shared.spend_reconciliation
+  job_id: marts/shared/campaign_spend
+  owner: finance
+  tags: []

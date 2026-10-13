@@ -1,0 +1,13 @@
+rules:
+  - rule_id: date_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: date}
+    severity: critical
+  - rule_id: unallocated_not_negative
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: unallocated, min_value: 0}
+    severity: critical
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical
