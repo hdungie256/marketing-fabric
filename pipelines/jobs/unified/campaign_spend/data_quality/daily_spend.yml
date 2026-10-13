@@ -1,0 +1,21 @@
+rules:
+  - rule_id: date_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: date}
+    severity: critical
+  - rule_id: date_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: date}
+    severity: critical
+  - rule_id: online_spend_not_negative
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: online_spend, min_value: 0}
+    severity: critical
+  - rule_id: offline_spend_not_negative
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: offline_spend, min_value: 0}
+    severity: warning
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical

@@ -1,1 +1,17 @@
-datasets: []
+datasets:
+- dataset_id: unified/campaign_spend
+  om_fqn: lake_unified.default.lake.campaign_spend
+  openlineage:
+    namespace: s3://lake
+    name: unified/campaign_spend
+  job_id: unified/campaign_spend
+  owner: finance
+  tags: []
+- dataset_id: unified/daily_spend
+  om_fqn: lake_unified.default.lake.daily_spend
+  openlineage:
+    namespace: s3://lake
+    name: unified/daily_spend
+  job_id: unified/campaign_spend
+  owner: finance
+  tags: []
