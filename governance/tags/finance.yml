@@ -28,3 +28,16 @@ columns:
     _refreshed_at: Sensitivity.internal
     _run_id: Sensitivity.internal
     _source_version: Sensitivity.internal
+  mart_finance.budget_daily:
+    campaign_id: Sensitivity.internal
+    date: Sensitivity.internal
+    campaign_name: Sensitivity.internal
+    channel: Sensitivity.internal
+    campaign_budget: Sensitivity.internal
+    allocated: Sensitivity.internal
+    attributed_orders: Sensitivity.internal
+    attributed_gross_value: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal

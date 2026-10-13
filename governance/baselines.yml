@@ -10,3 +10,9 @@ load_rows:
   raw/spend/daily_spend: 365
   raw/spend/spend_recon: 365
   raw/tax/tax_rates: 20
+# Spend reconciliation marks from 00_Data_Guide.xlsx / Checks (BR10, R8).
+spend:
+  online_total: 695646.47
+  allocated_total: 98569.53
+  unallocated_total: 597076.94
+  difference: 0
