@@ -1,0 +1,5 @@
+table: mart_finance.contribution_sku
+grain: [campaign_id, product_sku]
+modes: [full, scope]
+scope_map: {campaign_id: campaign_id}
+metrics: [quantity, attributed_gross_value, reference_cogs]

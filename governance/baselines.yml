@@ -16,3 +16,9 @@ spend:
   allocated_total: 98569.53
   unallocated_total: 597076.94
   difference: 0
+# Exception marks for Story 3.3 (BR14, FR-8), checked against the source workbooks.
+exceptions:
+  shared_transaction_id: 1319
+  coupon_mismatch: 400
+  coupon_mismatch_used: 126
+  coupon_mismatch_by_category: {Backpacks: 89, Fun: 160, Google: 105, More Bags: 46}

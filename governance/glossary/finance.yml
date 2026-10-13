@@ -53,3 +53,25 @@ terms:
     limitations:
       - Attributed orders follow the sample attribution rule, not ad clicks.
     notes: [attributed_not_incremental, currency_unverified]
+  - display_name: Reference Cost of Goods
+    owner_slice: finance
+    dataset_id: mart_finance.contribution
+    column: reference_cogs
+    definition: Cost of goods of a campaign's attributed lines at the reference unit cost per SKU.
+    formula: SUM(quantity × estimated_unit_cost) over attributed lines whose SKU has a reference cost valid on the sale date.
+    rules: [R11, R16]
+    limitations:
+      - Reference estimate, not actual cost of goods (R11).
+      - SKU detail is visible to Finance only; Marketing Manager sees the campaign total (FR-20).
+    notes: [estimate_not_profit, currency_unverified]
+  - display_name: Estimated Contribution
+    owner_slice: finance
+    dataset_id: mart_finance.contribution
+    column: estimated_contribution
+    definition: What a campaign's attributed sales leave after reference cost of goods and campaign cost.
+    formula: attributed gross value − reference cost of goods − campaign cost (allocated spend).
+    rules: [R6, R8, R11]
+    limitations:
+      - An estimate, not net profit (R11): excludes returns, tax, shipping and overheads.
+      - SKUs without a reference cost add no cost of goods and are listed as items not yet available (FR-35).
+    notes: [estimate_not_profit, attributed_not_incremental]

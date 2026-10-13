@@ -41,3 +41,28 @@ columns:
     _refreshed_at: Sensitivity.internal
     _run_id: Sensitivity.internal
     _source_version: Sensitivity.internal
+  mart_finance.contribution:
+    campaign_id: Sensitivity.internal
+    campaign_name: Sensitivity.internal
+    attributed_gross_value: Sensitivity.internal
+    reference_cogs: Finance.aggregate
+    campaign_cost: Sensitivity.internal
+    estimated_contribution: Finance.aggregate
+    skus_without_cost: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
+  mart_finance.contribution_sku:
+    campaign_id: Sensitivity.internal
+    product_sku: Sensitivity.internal
+    product_description: Sensitivity.internal
+    quantity: Sensitivity.internal
+    attributed_gross_value: Sensitivity.internal
+    estimated_unit_cost: Finance.sku_cost
+    reference_cogs: Finance.sku_cost
+    cost_available: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
