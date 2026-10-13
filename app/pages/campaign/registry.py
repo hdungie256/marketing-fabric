@@ -1,3 +1,4 @@
+from app.pages.campaign import overview
 from app.pages.campaign.placeholder import placeholder
 from app.shell import PageSpec
 
@@ -6,7 +7,7 @@ PAGES = [
         key="campaign_overview",
         title="Campaign Overview",
         group="Campaigns",
-        render=placeholder("1.13"),
+        render=overview.render,
         roles=frozenset({"UG01", "UG03"}),
         home_for=frozenset({"UG01"}),
         icon=":material/campaign:",

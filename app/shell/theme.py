@@ -3,11 +3,11 @@ from pathlib import Path
 import streamlit as st
 
 CAMPAIGN_COLORS = {
-    "CMP-01": "#2a78d6",
-    "CMP-02": "#d95926",
-    "CMP-03": "#1baf7a",
-    "CMP-04": "#4a3aa7",
-    "CMP-05": "#eda100",
+    "CMP19_01": "#2a78d6",
+    "CMP19_02": "#d95926",
+    "CMP19_03": "#1baf7a",
+    "CMP19_04": "#4a3aa7",
+    "CMP19_05": "#eda100",
 }
 SERIES_NEUTRAL = "#848B97"
 STATUS_COLORS = {
