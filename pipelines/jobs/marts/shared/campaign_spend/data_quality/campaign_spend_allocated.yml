@@ -1,0 +1,13 @@
+rules:
+  - rule_id: campaign_id_date_unique
+    expectation: ExpectCompoundColumnsToBeUnique
+    kwargs: {column_list: [campaign_id, date]}
+    severity: critical
+  - rule_id: allocated_not_negative
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: allocated, min_value: 0}
+    severity: critical
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical

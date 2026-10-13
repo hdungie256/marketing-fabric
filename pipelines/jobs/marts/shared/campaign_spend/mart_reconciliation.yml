@@ -1,0 +1,5 @@
+table: mart_shared.spend_reconciliation
+grain: [date]
+modes: [full]
+scope_map: {}
+metrics: [online_spend, offline_spend, allocated, unallocated]

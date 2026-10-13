@@ -1,0 +1,1 @@
+DROP TABLE mart_shared.campaign_spend_allocated;

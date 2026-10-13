@@ -1,0 +1,5 @@
+table: mart_shared.campaign_spend_allocated
+grain: [campaign_id, date]
+modes: [full]
+scope_map: {}
+metrics: [allocated]

@@ -9,3 +9,22 @@ tags:
     classification: Finance
     description: Campaign-level cost of goods or contribution aggregated from SKU cost. Finance and Marketing Manager only.
     actions: {default: deny, UG03: allow, UG04: allow}
+columns:
+  mart_shared.campaign_spend_allocated:
+    campaign_id: Sensitivity.internal
+    date: Sensitivity.internal
+    allocated: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
+  mart_shared.spend_reconciliation:
+    date: Sensitivity.internal
+    online_spend: Sensitivity.internal
+    offline_spend: Sensitivity.internal
+    allocated: Sensitivity.internal
+    unallocated: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
