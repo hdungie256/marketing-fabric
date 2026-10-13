@@ -45,7 +45,7 @@ def render() -> None:
     st.subheader("By Campaign")
     headers = {term_id: fabric_control.term(term_id)["display_name"] for term_id, _ in CARDS}
     table(
-        rows[["campaign_id", "campaign_name", *headers]].rename(columns=headers),
+        rows[["campaign_id", "campaign_name", *headers]].rename(columns={"campaign_id": "Campaign", **headers}),
         dataset_id=svc.DATASET,
-        campaign_col="campaign_id",
+        campaign_col="Campaign",
     )
