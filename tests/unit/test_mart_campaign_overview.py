@@ -75,3 +75,16 @@ def test_columns_follow_contract_order(spark):
     )
     names = [n for n, _ in columns(load_schema("mart_campaign.campaign_overview")) if not n.startswith("_")]
     assert df.columns == names
+
+
+def test_overview_rules_pass_on_built_grid_and_fail_on_missing_row(spark):
+    from pipelines.jobs.marts.campaign.campaign_overview.job import overview_rules
+
+    daily = spark.createDataFrame([("CMP19_01", JAN16, 2, Decimal("10.00"), "synthetic")], DAILY)
+    orders = spark.createDataFrame([("CMP19_01", JAN16, 7, "synthetic"), ("CMP19_01", JAN16, 8, "synthetic")], ORDERS)
+    campaigns = spark.createDataFrame([("CMP19_01", "A", "synthetic")], CAMPAIGNS)
+    overview = transforms.build(daily, orders, campaigns)
+    assert all(r.passed for r in overview_rules(overview, daily, campaigns))
+    broken = overview.filter("NOT (period_id = 'FY2019' AND campaign_id = 'ALL')")
+    failed = {r.rule_id for r in overview_rules(broken, daily, campaigns) if not r.passed}
+    assert failed == {"fy_orders_match_daily", "full_grid"}

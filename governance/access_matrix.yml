@@ -13,6 +13,7 @@ read:
   mart_finance.budget_daily: [UG03, UG04]
   mart_finance.contribution: [UG03, UG04]
   mart_finance.contribution_sku: [UG03, UG04]
+  mart_campaign.campaign_overview: [UG01, UG03]
   ops.runs: [UG01, UG03, UG04, UG05, UG06]
   ops.alerts: [UG05, UG06]
   ops.load_reconciliation: [UG05, UG06]

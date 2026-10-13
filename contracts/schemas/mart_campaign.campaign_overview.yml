@@ -1,0 +1,18 @@
+dataset_id: mart_campaign.campaign_overview
+schema_version: 1.0.0
+grain: [period_id, campaign_id]
+columns:
+- {name: period_id, type: string, nullable: false}
+- {name: period_label, type: string, nullable: false}
+- {name: period_start, type: date, nullable: false}
+- {name: period_end, type: date, nullable: false}
+- {name: campaign_id, type: string, nullable: false}
+- {name: campaign_name, type: string, nullable: false}
+- {name: attributed_orders, type: int, nullable: false}
+- {name: attributed_buyers, type: int, nullable: false}
+- {name: attributed_gross_value, type: 'decimal(18,2)', nullable: false}
+- {name: average_order_value, type: 'decimal(18,2)', nullable: true}
+- {name: provenance, type: string, nullable: false}
+- {name: _refreshed_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+- {name: _source_version, type: string, nullable: false}

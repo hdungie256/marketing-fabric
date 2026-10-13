@@ -55,3 +55,11 @@ datasets:
   job_id: marts/shared/campaign_attributed_daily
   owner: campaign
   tags: []
+- dataset_id: mart_campaign.campaign_overview
+  om_fqn: serving.serving.mart_campaign.campaign_overview
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_campaign.campaign_overview
+  job_id: marts/campaign/campaign_overview
+  owner: campaign
+  tags: []
