@@ -1,1 +1,43 @@
-terms: []
+# Campaign-slice glossary terms (Story 1.13, FR-11). Owner: P2.
+# Term IDs derive as snake_case(display_name) (AD-16). Provenance is computed, never hand-assigned.
+terms:
+  - display_name: Attributed Orders
+    owner_slice: campaign
+    dataset_id: mart_campaign.campaign_overview
+    column: attributed_orders
+    definition: Orders attributed to a campaign in the period.
+    formula: SUM(attributed_orders) of mart_shared.campaign_attributed_daily over the period.
+    rules: [R6]
+    limitations:
+      - Attribution is a source-provided link, not proof the campaign caused the order.
+    notes: [attributed_not_incremental]
+  - display_name: Attributed Buyers
+    owner_slice: campaign
+    dataset_id: mart_campaign.campaign_overview
+    column: attributed_buyers
+    definition: Distinct customers with at least one attributed order in the period.
+    formula: COUNT(DISTINCT customer_id) of mart_shared.campaign_attributed_orders over the period.
+    rules: [R6]
+    limitations:
+      - Buyers are not additive across periods or campaigns; the All campaigns row is a distinct count.
+    notes: [attributed_not_incremental]
+  - display_name: Attributed Gross Value
+    owner_slice: campaign
+    dataset_id: mart_campaign.campaign_overview
+    column: attributed_gross_value
+    definition: Gross value of attributed orders in the period.
+    formula: SUM(attributed_gross_value) of mart_shared.campaign_attributed_daily over the period.
+    rules: [R6, R10]
+    limitations:
+      - Gross goods value, not net revenue.
+    notes: [currency_unverified, attributed_not_incremental]
+  - display_name: Average Order Value
+    owner_slice: campaign
+    dataset_id: mart_campaign.campaign_overview
+    column: average_order_value
+    definition: Attributed gross value per attributed order in the period.
+    formula: attributed_gross_value / attributed_orders, rounded to 2 decimals.
+    rules: [R10]
+    limitations:
+      - Empty when the period has no attributed orders.
+    notes: [currency_unverified]
