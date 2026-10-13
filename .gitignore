@@ -14,5 +14,5 @@ derby.log
 
 *.parquet
 !contracts/fixtures/*.parquet
-docs/
+docs/superpowers/
 CLAUDE.md
