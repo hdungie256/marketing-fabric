@@ -22,14 +22,28 @@ def frame():
         ("FY2019", "Jan–Dec 2019", date(2019, 1, 1), date(2019, 12, 31)),
         ("2019-Q2", "Q2 2019", date(2019, 4, 1), date(2019, 6, 30)),
     ]:
-        for cid, name, orders in [("ALL", "All campaigns", 1290), ("CMP19_01", "New-year Apparel", 278), ("CMP19_02", "Spring Nest", 442)]:
+        for cid, name, orders in [
+            ("ALL", "All campaigns", 1290),
+            ("CMP19_01", "New-year Apparel", 278),
+            ("CMP19_02", "Spring Nest", 442),
+        ]:
             n = 0 if (pid, cid) == ("2019-Q2", "CMP19_01") else orders
             rows.append(
                 {
-                    "period_id": pid, "period_label": label, "period_start": start, "period_end": end,
-                    "campaign_id": cid, "campaign_name": name, "attributed_orders": n, "attributed_buyers": n // 3,
-                    "attributed_gross_value": n * 217.14, "average_order_value": 217.14 if n else None,
-                    "provenance": "synthetic", "_refreshed_at": AT, "_run_id": "r", "_source_version": "{}",
+                    "period_id": pid,
+                    "period_label": label,
+                    "period_start": start,
+                    "period_end": end,
+                    "campaign_id": cid,
+                    "campaign_name": name,
+                    "attributed_orders": n,
+                    "attributed_buyers": n // 3,
+                    "attributed_gross_value": n * 217.14,
+                    "average_order_value": 217.14 if n else None,
+                    "provenance": "synthetic",
+                    "_refreshed_at": AT,
+                    "_run_id": "r",
+                    "_source_version": "{}",
                 }
             )
     return pd.DataFrame(rows)
