@@ -41,13 +41,19 @@ GROUP BY p.period_id, p.period_label, p.period_start, p.period_end, n.campaign_i
 
 def expected() -> dict:
     spark = io.get_spark()
-    for name, dataset_id in [("attribution", "unified/attribution"), ("orders", "unified/orders"), ("campaigns", "unified/campaigns")]:
+    for name, dataset_id in [
+        ("attribution", "unified/attribution"),
+        ("orders", "unified/orders"),
+        ("campaigns", "unified/campaigns"),
+    ]:
         io.read_delta(dataset_id).createOrReplaceTempView(name)
     out = {}
     for r in spark.sql(EXPECTED_SQL).collect():
         d = r.asDict()
         d["average_order_value"] = (
-            (d["attributed_gross_value"] / d["attributed_orders"]).quantize(Decimal("0.01")) if d["attributed_orders"] else None
+            (d["attributed_gross_value"] / d["attributed_orders"]).quantize(Decimal("0.01"))
+            if d["attributed_orders"]
+            else None
         )
         d["provenance"] = "synthetic"
         out[(d["period_id"], d["campaign_id"])] = d

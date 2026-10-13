@@ -23,7 +23,9 @@ def overview_rules(overview, daily, campaigns) -> list[RuleResult]:
         .groupBy("period_id")
         .agg(F.sum("attributed_buyers").alias("campaign_buyers"))
     )
-    buyers_ok = totals.join(per_campaign, "period_id").filter(F.col("attributed_buyers") > F.col("campaign_buyers")).isEmpty()
+    buyers_ok = (
+        totals.join(per_campaign, "period_id").filter(F.col("attributed_buyers") > F.col("campaign_buyers")).isEmpty()
+    )
     grid = len(transforms.periods(r.y for r in by_year)) * (campaigns.count() + 1)
     return [
         RuleResult("fy_orders_match_daily", "critical", fy == expected),
