@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Direction A — Clean SaaS | Marketing Data Fabric</title>
+<style>
+/* ============================================================
+   DESIGN TOKENS — Direction A "Clean SaaS"
+   Required tokens (hex):
+     bg       #F6F7F9   very light gray canvas
+     surface  #FFFFFF   card / panel surface
+     text     #1A1F29   primary text (near-black, warm neutral)
+     muted    #5B6472   secondary text / labels
+     accent   #2F5BEA   single confident blue accent
+     success  #146C2E   dark green — passes WCAG AA on white (~7.7:1)
+     warning  #92400E   dark amber/brown — passes WCAG AA on white (~7.3:1)
+     danger   #99180C   dark red — passes WCAG AA on white (~8.6:1)
+     border   #E4E7EC   hairline borders / dividers
+   Derived (not required, used only for light badge-chip backgrounds):
+     accent-tint #E8EEFE, success-tint #E5F3E9,
+     warning-tint #FCEEDC, danger-tint #FBE7E6
+   ============================================================ */
+:root{
+  --bg:#F6F7F9;
+  --surface:#FFFFFF;
+  --text:#1A1F29;
+  --muted:#5B6472;
+  --accent:#2F5BEA;
+  --accent-tint:#E8EEFE;
+  --success:#146C2E;
+  --success-tint:#E5F3E9;
+  --warning:#92400E;
+  --warning-tint:#FCEEDC;
+  --danger:#99180C;
+  --danger-tint:#FBE7E6;
+  --border:#E4E7EC;
+  --radius:12px;
+  --radius-sm:8px;
+  --shadow:0 1px 2px rgba(16,24,40,0.04), 0 2px 8px rgba(16,24,40,0.06);
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-sans);
+  background:#EEF0F3;
+  color:var(--text);
+  font-size:15px;
+  line-height:1.5;
+  padding:28px 0 60px;
+}
+.rationale{
+  max-width:1366px;
+  margin:0 auto 22px;
+  padding:0 24px;
+}
+.rationale h1{
+  font-size:20px;
+  margin:0 0 6px;
+  font-weight:700;
+}
+.rationale p{
+  max-width:980px;
+  color:#3A4150;
+  font-size:14.5px;
+  margin:0;
+}
+.rationale .tag{
+  display:inline-block;
+  background:var(--accent-tint);
+  color:#1F3FAE;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:600;
+  padding:3px 10px;
+  margin-bottom:10px;
+}
+
+/* Browser-like frame */
+.browser-frame{
+  width:1366px;
+  max-width:100%;
+  margin:0 auto;
+  background:var(--surface);
+  border-radius:14px;
+  overflow:hidden;
+  box-shadow:0 8px 30px rgba(16,24,40,0.12), 0 2px 6px rgba(16,24,40,0.06);
+  border:1px solid var(--border);
+}
+.browser-chrome{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:12px 16px;
+  background:#F1F2F5;
+  border-bottom:1px solid var(--border);
+}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.dot.red{background:#EE6A5F;}
+.dot.amber{background:#F5BD4F;}
+.dot.green{background:#61C554;}
+.addr-bar{
+  margin-left:14px;
+  background:#FFFFFF;
+  border:1px solid var(--border);
+  border-radius:7px;
+  padding:5px 12px;
+  font-size:12.5px;
+  color:var(--muted);
+  flex:1;
+  max-width:520px;
+}
+
+.app{display:flex;min-height:800px;}
+
+/* Sidebar */
+.sidebar{
+  width:236px;
+  flex-shrink:0;
+  background:#FBFBFC;
+  border-right:1px solid var(--border);
+  padding:20px 16px;
+}
+.app-name{
+  font-weight:700;
+  font-size:16px;
+  margin-bottom:2px;
+  letter-spacing:-0.01em;
+}
+.app-name .dot-logo{
+  display:inline-block;width:9px;height:9px;border-radius:50%;
+  background:var(--accent);margin-right:7px;
+}
+.app-sub{
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:18px;
+}
+.role-switch-label{
+  font-size:11px;
+  text-transform:uppercase;
+  letter-spacing:.04em;
+  color:var(--muted);
+  margin-bottom:6px;
+  font-weight:600;
+}
+.role-switch{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:9px 11px;
+  font-size:13.5px;
+  font-weight:600;
+  margin-bottom:6px;
+  box-shadow:var(--shadow);
+}
+.role-switch .chev{color:var(--muted);font-size:11px;}
+.role-note{
+  font-size:11px;
+  color:var(--muted);
+  margin-bottom:22px;
+}
+.role-note b{color:#1F3FAE;font-weight:700;}
+.nav-list{list-style:none;margin:0;padding:0;}
+.nav-list li{
+  padding:9px 12px;
+  border-radius:var(--radius-sm);
+  font-size:14px;
+  color:#3A4150;
+  margin-bottom:2px;
+  cursor:default;
+  display:flex;
+  align-items:center;
+  gap:9px;
+}
+.nav-list li .ic{width:16px;text-align:center;color:var(--muted);font-size:13px;}
+.nav-list li.active{
+  background:var(--accent-tint);
+  color:#1F3FAE;
+  font-weight:700;
+}
+.nav-list li.active .ic{color:#1F3FAE;}
+
+/* Main */
+.main{flex:1;padding:26px 30px 30px;background:var(--bg);min-width:0;}
+.page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px;}
+.page-head h2{font-size:22px;margin:0;font-weight:700;}
+.viewing-as{font-size:13px;color:var(--muted);}
+.viewing-as b{color:var(--text);}
+
+.filters-row{
+  display:flex;
+  gap:12px;
+  margin-bottom:20px;
+  flex-wrap:wrap;
+}
+.filter{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:9px 14px;
+  font-size:13.5px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  box-shadow:var(--shadow);
+  min-width:190px;
+}
+.filter .flabel{color:var(--muted);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;}
+.filter .fval{font-weight:600;}
+.filter .chev{margin-left:auto;color:var(--muted);font-size:11px;}
+
+/* KPI cards */
+.kpi-row{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  margin-bottom:22px;
+}
+.kpi-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 18px 16px;
+  box-shadow:var(--shadow);
+  position:relative;
+}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.kpi-label{font-size:12.5px;color:var(--muted);font-weight:600;letter-spacing:.01em;}
+.info-ico{
+  width:18px;height:18px;border-radius:50%;
+  background:#EEF1F5;color:var(--muted);
+  font-size:12px;line-height:18px;text-align:center;
+  cursor:default;flex-shrink:0;
+}
+.kpi-value{font-size:32px;font-weight:700;letter-spacing:-0.01em;margin-bottom:3px;}
+.kpi-note{font-size:11.5px;color:var(--muted);font-style:italic;margin-bottom:10px;}
+.kpi-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-weight:700;
+  padding:4px 9px;border-radius:999px;
+  white-space:nowrap;
+}
+.badge-fresh{background:var(--success-tint);color:var(--success);}
+.badge-synthetic{background:#EEF0F3;color:#3A4150;}
+.badge-warning{background:var(--warning-tint);color:var(--warning);white-space:normal;line-height:1.3;}
+.kpi-card.stale{border-color:#F3D9B8;}
+.kpi-card.stale .kpi-value{color:var(--warning);}
+
+/* Content grid: chart + table */
+.content-grid{
+  display:grid;
+  grid-template-columns:1.3fr 1fr;
+  gap:16px;
+  margin-bottom:18px;
+  align-items:stretch;
+}
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:18px 20px;
+  box-shadow:var(--shadow);
+}
+.card h3{font-size:14.5px;margin:0 0 14px;font-weight:700;}
+.card .sub{font-size:11.5px;color:var(--muted);font-weight:400;margin-left:6px;}
+
+.chart{display:flex;align-items:flex-end;gap:8px;height:190px;padding:0 2px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+.bar{
+  width:70%;
+  background:linear-gradient(180deg,#4A78F0,var(--accent));
+  border-radius:5px 5px 0 0;
+}
+.bar-mo{font-size:10.5px;color:var(--muted);margin-top:6px;}
+
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{
+  text-align:left;color:var(--muted);font-weight:600;
+  font-size:11.5px;text-transform:uppercase;letter-spacing:.02em;
+  padding:0 8px 8px 8px;border-bottom:1px solid var(--border);
+}
+td{padding:9px 8px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.camp-name{font-weight:600;}
+.camp-id{color:var(--muted);font-size:11px;display:block;}
+
+.footnote-strip{
+  background:#EEF0F3;
+  border:1px solid var(--border);
+  border-radius:var(--radius-sm);
+  padding:11px 16px;
+  font-size:12.5px;
+  color:var(--muted);
+  margin-bottom:24px;
+}
+.footnote-strip b{color:var(--text);}
+
+/* Glossary secondary panel */
+.glossary-panel{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:20px 22px;
+}
+.gloss-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;}
+.gloss-title{font-size:15px;font-weight:700;}
+.gloss-title .term{color:var(--accent);}
+.quality-pill{
+  display:inline-flex;align-items:center;gap:6px;
+  background:var(--success-tint);color:var(--success);
+  font-weight:700;font-size:12px;padding:5px 11px;border-radius:999px;
+}
+.quality-pill .dot{width:8px;height:8px;border-radius:50%;background:var(--success);}
+.gloss-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 28px;margin-bottom:14px;}
+.gloss-field{}
+.gloss-field .k{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;margin-bottom:4px;}
+.gloss-field .v{font-size:13.5px;}
+.gloss-field code{
+  background:#F1F2F5;border:1px solid var(--border);border-radius:5px;
+  padding:2px 6px;font-size:12px;font-family:ui-monospace,Consolas,monospace;
+}
+.not-roas{
+  display:inline-block;margin-top:6px;
+  background:var(--danger-tint);color:var(--danger);
+  font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;
+}
+.samples{display:flex;gap:20px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:14px;}
+.sample-cell{
+  flex:1;min-width:220px;
+  background:#FAFAFB;border:1px solid var(--border);border-radius:var(--radius-sm);
+  padding:10px 12px;
+}
+.sample-cell .k{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.02em;margin-bottom:6px;}
+.sample-cell .masked{font-family:ui-monospace,Consolas,monospace;font-size:14px;font-weight:600;}
+.sample-cell .denied{color:var(--danger);font-size:13px;font-weight:600;}
+</style>
+</head>
+<body>
+
+<div class="rationale">
+  <span class="tag">Direction A</span>
+  <h1>Clean SaaS</h1>
+  <p>White-and-blue canvas with roomy spacing, 12px rounded cards, and soft shadows — the register of Stripe or Linear dashboards. One confident accent color keeps status badges legible at a glance, and large numerals with high text/background contrast make the KPI row easy to read from the back of a classroom projector.</p>
+</div>
+
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+    <div class="addr-bar">localhost:8501/Campaign_Overview</div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="app-name"><span class="dot-logo"></span>Marketing Data Fabric</div>
+      <div class="app-sub">CO5173 · Academic demo</div>
+
+      <div class="role-switch-label">Role (demo mode)</div>
+      <div class="role-switch"><span>Marketing Analyst</span><span class="chev">▾</span></div>
+      <div class="role-note">Signed in as <b>UG01</b> · nav filtered to this role</div>
+
+      <ul class="nav-list">
+        <li class="active"><span class="ic">▣</span>Campaign Overview</li>
+        <li><span class="ic">⇄</span>Campaign Comparison</li>
+        <li><span class="ic">▤</span>Products &amp; Categories</li>
+        <li><span class="ic">◐</span>New vs Returning</li>
+        <li><span class="ic">▥</span>Glossary &amp; Catalog</li>
+        <li><span class="ic">⛓</span>Lineage</li>
+      </ul>
+    </aside>
+
+    <main class="main">
+      <div class="page-head">
+        <h2>Campaign Overview</h2>
+        <span class="viewing-as">Viewing as: <b>Marketing Analyst (UG01)</b></span>
+      </div>
+
+      <div class="filters-row">
+        <div class="filter"><span class="flabel">Period</span><span class="fval">Jan–Dec 2019</span><span class="chev">▾</span></div>
+        <div class="filter"><span class="flabel">Campaign</span><span class="fval">All campaigns</span><span class="chev">▾</span></div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Attributed Orders</span><span class="info-ico" title="Open glossary definition">ⓘ</span></div>
+          <div class="kpi-value">1,290</div>
+          <div class="kpi-badges">
+            <span class="badge badge-fresh">Refreshed 10:42</span>
+            <span class="badge badge-synthetic">Synthetic</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Buyers</span><span class="info-ico" title="Open glossary definition">ⓘ</span></div>
+          <div class="kpi-value">1,042</div>
+          <div class="kpi-badges">
+            <span class="badge badge-fresh">Refreshed 10:42</span>
+            <span class="badge badge-synthetic">Synthetic</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Attributed Gross Value</span><span class="info-ico" title="Open glossary definition">ⓘ</span></div>
+          <div class="kpi-value">154,800</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges">
+            <span class="badge badge-fresh">Refreshed 10:42</span>
+            <span class="badge badge-synthetic">Synthetic</span>
+          </div>
+        </div>
+        <div class="kpi-card stale">
+          <div class="kpi-top"><span class="kpi-label">Average Order Value</span><span class="info-ico" title="Open glossary definition">ⓘ</span></div>
+          <div class="kpi-value">120.0</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges">
+            <span class="badge badge-warning">⚠ Using previous version — quality check failed</span>
+            <span class="badge badge-synthetic">Synthetic</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div class="card">
+          <h3>Attributed Gross Value by Month <span class="sub">2019, currency unverified</span></h3>
+          <div class="chart">
+            <div class="bar-col"><div class="bar" style="height:46%" title="Jan · 9.8k"></div><div class="bar-mo">Jan</div></div>
+            <div class="bar-col"><div class="bar" style="height:38%" title="Feb · 8.1k"></div><div class="bar-mo">Feb</div></div>
+            <div class="bar-col"><div class="bar" style="height:49%" title="Mar · 10.4k"></div><div class="bar-mo">Mar</div></div>
+            <div class="bar-col"><div class="bar" style="height:53%" title="Apr · 11.2k"></div><div class="bar-mo">Apr</div></div>
+            <div class="bar-col"><div class="bar" style="height:45%" title="May · 9.6k"></div><div class="bar-mo">May</div></div>
+            <div class="bar-col"><div class="bar" style="height:60%" title="Jun · 12.8k"></div><div class="bar-mo">Jun</div></div>
+            <div class="bar-col"><div class="bar" style="height:63%" title="Jul · 13.5k"></div><div class="bar-mo">Jul</div></div>
+            <div class="bar-col"><div class="bar" style="height:75%" title="Aug · 15.9k"></div><div class="bar-mo">Aug</div></div>
+            <div class="bar-col"><div class="bar" style="height:57%" title="Sep · 12.1k"></div><div class="bar-mo">Sep</div></div>
+            <div class="bar-col"><div class="bar" style="height:54%" title="Oct · 11.4k"></div><div class="bar-mo">Oct</div></div>
+            <div class="bar-col"><div class="bar" style="height:88%" title="Nov · 18.7k"></div><div class="bar-mo">Nov</div></div>
+            <div class="bar-col"><div class="bar" style="height:100%" title="Dec · 21.3k"></div><div class="bar-mo">Dec</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>By Campaign</h3>
+          <table>
+            <thead><tr><th>Campaign</th><th class="num">Orders</th><th class="num">Value</th></tr></thead>
+            <tbody>
+              <tr><td><span class="camp-name">Holiday Push</span><span class="camp-id">CMP-01 · Email + Paid Social</span></td><td class="num">412</td><td class="num">51,200</td></tr>
+              <tr><td><span class="camp-name">Back-to-School</span><span class="camp-id">CMP-02 · Search</span></td><td class="num">268</td><td class="num">29,400</td></tr>
+              <tr><td><span class="camp-name">Summer Drinkware Launch</span><span class="camp-id">CMP-03 · Display</span></td><td class="num">235</td><td class="num">26,750</td></tr>
+              <tr><td><span class="camp-name">Spring Bags Refresh</span><span class="camp-id">CMP-04 · Paid Social</span></td><td class="num">198</td><td class="num">21,900</td></tr>
+              <tr><td><span class="camp-name">Always-On Retargeting</span><span class="camp-id">CMP-05 · Retargeting Display</span></td><td class="num">177</td><td class="num">25,550</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footnote-strip"><b>Note —</b> Attributed ≠ incremental revenue. Targets are retrospective simulations.</div>
+
+      <div class="glossary-panel">
+        <div class="gloss-head">
+          <div class="gloss-title">Glossary — <span class="term">Attributed Value / Spend Ratio</span></div>
+          <span class="quality-pill"><span class="dot"></span>Quality score 96% · Green</span>
+        </div>
+        <div class="gloss-grid">
+          <div class="gloss-field">
+            <div class="k">Definition</div>
+            <div class="v">Ratio of attributed gross order value to allocated online campaign spend for the same campaign and period. A directional efficiency signal, not a measured return.</div>
+          </div>
+          <div class="gloss-field">
+            <div class="k">Formula</div>
+            <div class="v"><code>Attributed_Gross_Value ÷ Campaign_Spend.Allocated_Online_Spend</code></div>
+          </div>
+          <div class="gloss-field">
+            <div class="k">Source columns</div>
+            <div class="v"><code>Attribution.Canonical_Order_ID</code>, <code>Sales_Lines.Avg_Price</code>, <code>Campaign_Spend.Allocated_Online_Spend</code></div>
+          </div>
+          <div class="gloss-field">
+            <div class="k">Owner</div>
+            <div class="v">Marketing Analytics — Data Fabric stewardship</div>
+          </div>
+          <div class="gloss-field">
+            <div class="k">Rules applied</div>
+            <div class="v">R7 — spend basis may lag order timing by allocation window</div>
+          </div>
+          <div class="gloss-field">
+            <div class="k">Caution</div>
+            <div class="v"><span class="not-roas">Not ROAS</span></div>
+          </div>
+        </div>
+        <div class="samples">
+          <div class="sample-cell">
+            <div class="k">Sample — masked cell (CustomerID)</div>
+            <div class="masked">C****42</div>
+          </div>
+          <div class="sample-cell">
+            <div class="k">Sample — denied cell (Raw Transaction_ID)</div>
+            <div class="denied">🔒 not permitted for role (UG01)</div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Key Screen — Campaign Overview (UG01 home) | Marketing Data Fabric</title>
+<style>
+/* ============================================================
+   KEY SCREEN: Campaign Overview — UG01 (Linh) home, FR-27
+   Governed by EXPERIENCE.md:
+     - Component Patterns: metric-card, filter-bar, chart, table,
+       footnote-strip, definition dialog (st.dialog, tabs
+       Definition/Lineage/Quality), lineage-graph, role-switcher, sidebar
+     - State Patterns: Fresh, Synthetic
+     - Key Flow 1 (Linh, UG01 Marketing Analyst) steps 1-4, climax = Lineage tab
+   Governed by DESIGN.md:
+     - Components: metric-card, badge-fresh, badge-synthetic, table,
+       dialog, lineage-graph, sidebar, role-switcher
+     - Colors/typography/rounded/spacing tokens (Direction A Clean SaaS)
+   Section 1 = canonical Campaign Overview at rest.
+   Section 2 = same page with the ⓘ definition dialog open on
+   "Attributed Gross Value", Lineage tab active (Flow 1 climax).
+   ============================================================ */
+:root{
+  --canvas:#F6F7F9; --surface:#FFFFFF; --sidebar-bg:#FBFBFC;
+  --surface-sunken:#EEF0F3; --surface-code:#F1F2F5; --info-icon-bg:#EEF1F5;
+  --text:#1A1F29; --text-secondary:#3A4150; --muted:#5B6472; --border:#E4E7EC;
+  --accent:#2F5BEA; --accent-strong:#1F3FAE; --accent-tint:#E8EEFE; --on-accent:#FFFFFF;
+  --success:#146C2E; --success-tint:#E5F3E9;
+  --warning:#92400E; --warning-tint:#FCEEDC; --warning-border:#F3D9B8;
+  --danger:#99180C; --danger-tint:#FBE7E6;
+  --neutral-status:#5B6472; --neutral-status-tint:#EEF0F3;
+  --series-1:#2a78d6; --series-2:#d95926; --series-3:#1baf7a; --series-4:#4a3aa7; --series-5:#eda100;
+  --radius-xs:5px; --radius-sm:8px; --radius-md:12px; --radius-full:9999px;
+  --shadow:0 1px 2px rgba(16,24,40,0.04), 0 2px 8px rgba(16,24,40,0.06);
+  --font-sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --font-mono:ui-monospace,Consolas,monospace;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{font-family:var(--font-sans);background:#DEE1E6;color:var(--text);font-size:16px;line-height:1.5;padding:26px 0 60px;}
+.section-tag{max-width:1366px;margin:0 auto 10px;padding:0 24px;}
+.section-tag span{display:inline-block;background:var(--accent-tint);color:var(--accent-strong);border-radius:999px;font-size:12px;font-weight:700;padding:4px 12px;}
+.section-cap{max-width:1366px;margin:0 auto 14px;padding:0 24px;font-size:13.5px;color:#3A4150;}
+.browser-frame{width:1366px;max-width:100%;margin:0 auto 40px;background:var(--surface);border-radius:14px;overflow:hidden;box-shadow:0 8px 30px rgba(16,24,40,0.14),0 2px 6px rgba(16,24,40,0.07);border:1px solid var(--border);}
+.browser-chrome{display:flex;align-items:center;gap:8px;padding:12px 16px;background:#F1F2F5;border-bottom:1px solid var(--border);}
+.dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+.dot.red{background:#EE6A5F;} .dot.amber{background:#F5BD4F;} .dot.green{background:#61C554;}
+.addr-bar{margin-left:14px;background:#FFFFFF;border:1px solid var(--border);border-radius:7px;padding:5px 12px;font-size:12.5px;color:var(--muted);flex:1;max-width:520px;}
+.app{display:flex;min-height:800px;position:relative;}
+
+/* Sidebar */
+.sidebar{width:244px;flex-shrink:0;background:var(--sidebar-bg);border-right:1px solid var(--border);padding:20px 16px;}
+.app-name{font-weight:700;font-size:16px;margin-bottom:2px;letter-spacing:-0.01em;}
+.app-name .dot-logo{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--accent);margin-right:7px;}
+.app-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+.role-switch-label{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-bottom:6px;font-weight:600;}
+.role-switch{display:flex;align-items:center;justify-content:space-between;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 11px;font-size:15px;font-weight:600;margin-bottom:6px;box-shadow:var(--shadow);}
+.role-switch .chev{color:var(--muted);font-size:11px;}
+.role-note{font-size:14px;color:var(--muted);margin-bottom:18px;}
+.role-note b{color:var(--accent-strong);font-weight:700;}
+.nav-group-label{font-size:14px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:600;margin:14px 0 6px 4px;}
+.nav-list{list-style:none;margin:0;padding:0;}
+.nav-list li{padding:9px 12px;border-radius:var(--radius-sm);font-size:16px;color:var(--text-secondary);margin-bottom:2px;cursor:default;display:flex;align-items:center;gap:9px;}
+.nav-list li .ic{width:16px;text-align:center;color:var(--muted);font-size:13px;}
+.nav-list li.active{background:var(--accent-tint);color:var(--accent-strong);font-weight:700;}
+.nav-list li.active .ic{color:var(--accent-strong);}
+
+/* Main */
+.main{flex:1;padding:26px 32px 32px;background:var(--canvas);min-width:0;}
+.page-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:8px;}
+.page-head h2{font-size:28px;margin:0;font-weight:700;letter-spacing:-0.01em;}
+.viewing-as{font-size:14px;color:var(--muted);}
+.viewing-as b{color:var(--text);}
+
+.filters-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;}
+.filter{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 14px;font-size:15px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow);min-width:190px;}
+.filter .flabel{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.03em;}
+.filter .fval{font-weight:600;}
+.filter .chev{margin-left:auto;color:var(--muted);font-size:11px;}
+
+/* KPI / metric-card */
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;box-shadow:var(--shadow);position:relative;}
+.kpi-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.kpi-label{font-size:15px;color:var(--muted);font-weight:600;letter-spacing:.01em;}
+.info-ico{width:20px;height:20px;border-radius:50%;background:var(--info-icon-bg);color:var(--muted);font-size:12px;line-height:20px;text-align:center;cursor:default;flex-shrink:0;}
+.info-ico.hot{outline:2px solid var(--accent);outline-offset:1px;color:var(--accent-strong);background:var(--accent-tint);}
+.kpi-value{font-size:40px;font-weight:700;letter-spacing:-0.01em;margin-bottom:3px;}
+.kpi-note{font-size:14px;color:var(--muted);font-style:italic;margin-bottom:8px;}
+.kpi-badges{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:14px;font-weight:700;padding:4px 10px;border-radius:var(--radius-full);white-space:nowrap;}
+.badge-fresh{background:var(--success-tint);color:var(--success);}
+.badge-synthetic{background:var(--surface-sunken);color:var(--text-secondary);}
+
+/* Content grid */
+.content-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:16px;margin-bottom:18px;align-items:stretch;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:18px 20px;box-shadow:var(--shadow);}
+.card h3{font-size:19px;margin:0 0 14px;font-weight:700;}
+.card .sub{font-size:14px;color:var(--muted);font-weight:400;margin-left:6px;}
+.chart{display:flex;align-items:flex-end;gap:8px;height:190px;padding:0 2px;}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;}
+.bar{width:70%;background:linear-gradient(180deg,#4A78F0,var(--accent));border-radius:5px 5px 0 0;}
+.bar-mo{font-size:12px;color:var(--muted);margin-top:6px;}
+
+table{width:100%;border-collapse:collapse;font-size:15px;}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.02em;padding:0 8px 8px 8px;border-bottom:1px solid var(--border);}
+td{padding:9px 8px;border-bottom:1px solid var(--border);}
+tr:last-child td{border-bottom:none;}
+td.num{text-align:right;font-variant-numeric:tabular-nums;}
+.camp-name{font-weight:600;}
+.camp-id{color:var(--muted);font-size:13px;display:block;}
+.swatch{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:7px;}
+
+.footnote-strip{background:var(--surface-sunken);border:1px solid var(--border);border-radius:var(--radius-sm);padding:11px 16px;font-size:14px;color:var(--muted);}
+.footnote-strip b{color:var(--text);}
+
+/* Dialog (definition) */
+.dialog-scrim{position:absolute;inset:0;background:rgba(26,31,41,0.45);display:flex;align-items:flex-start;justify-content:center;padding:56px 0;}
+.dialog{width:760px;max-width:92%;background:var(--surface);border-radius:var(--radius-md);box-shadow:0 20px 60px rgba(16,24,40,0.28);padding:24px;max-height:86%;overflow:auto;}
+.dialog-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+.dialog-title{font-size:19px;font-weight:700;color:var(--accent-strong);}
+.dialog-close{color:var(--muted);font-size:18px;cursor:default;}
+.dialog-sub{font-size:14px;color:var(--muted);margin-bottom:14px;}
+.dialog-tabs{display:flex;gap:22px;border-bottom:1px solid var(--border);margin-bottom:18px;}
+.dialog-tab{padding:8px 2px 10px;font-size:15px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;cursor:default;}
+.dialog-tab.active{color:var(--accent);border-bottom-color:var(--accent);}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px 28px;margin-bottom:14px;}
+.field .k{font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;margin-bottom:4px;}
+.field .v{font-size:15px;}
+.field code{background:var(--surface-code);border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-size:14px;font-family:var(--font-mono);}
+
+/* Lineage graph */
+.lineage-wrap{background:var(--surface-sunken);border:1px solid var(--border);border-radius:var(--radius-sm);padding:22px 18px;overflow-x:auto;}
+.lineage-row{display:flex;align-items:center;gap:6px;min-width:760px;}
+.lineage-col{display:flex;flex-direction:column;gap:10px;justify-content:center;}
+.lineage-arrow{color:var(--muted);font-size:18px;padding:0 4px;flex-shrink:0;}
+.lineage-node{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;min-width:160px;box-shadow:var(--shadow);}
+.lineage-node.focus{border:2px solid var(--accent);}
+.lineage-node .nid{font-family:var(--font-mono);font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;word-break:break-word;}
+.lineage-node .nmeta{font-size:12.5px;color:var(--muted);}
+.lineage-node .ntag{display:inline-block;margin-top:5px;font-size:11px;font-weight:700;color:var(--muted);background:var(--neutral-status-tint);border-radius:999px;padding:2px 8px;}
+.lineage-caption{margin-top:14px;font-size:14px;color:var(--muted);}
+.quality-row{display:flex;align-items:center;gap:14px;}
+.status-chip{display:inline-flex;align-items:center;gap:6px;font-size:14px;font-weight:700;padding:5px 12px;border-radius:var(--radius-full);}
+.status-chip.success{background:var(--success-tint);color:var(--success);}
+</style>
+</head>
+<body>
+
+<div class="section-tag"><span>Section 1 — Canonical</span></div>
+<div class="section-cap">Campaign Overview at rest — UG01 (Linh) home page, filters applied, all values fresh + synthetic-labelled.</div>
+
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+    <div class="addr-bar">localhost:8501/Campaign_Overview</div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="app-name"><span class="dot-logo"></span>Marketing Data Fabric</div>
+      <div class="app-sub">CO5173 · Academic demo</div>
+
+      <div class="role-switch-label">Role (demo mode)</div>
+      <div class="role-switch"><span>Marketing Analyst</span><span class="chev">▾</span></div>
+      <div class="role-note">Signed in as <b>UG01</b> · nav filtered to this role</div>
+
+      <div class="nav-group-label">Campaigns</div>
+      <ul class="nav-list">
+        <li class="active"><span class="ic">▣</span>Campaign Overview</li>
+        <li><span class="ic">⇄</span>Campaign Comparison</li>
+        <li><span class="ic">▤</span>Products &amp; Categories</li>
+        <li><span class="ic">◐</span>New vs Returning</li>
+      </ul>
+      <div class="nav-group-label">Customers</div>
+      <ul class="nav-list">
+        <li><span class="ic">✎</span>Audience Builder</li>
+      </ul>
+      <div class="nav-group-label">Data trust</div>
+      <ul class="nav-list">
+        <li><span class="ic">▥</span>Catalog &amp; Glossary</li>
+        <li><span class="ic">⛓</span>Lineage</li>
+      </ul>
+      <div class="nav-group-label">Operations</div>
+      <ul class="nav-list">
+        <li><span class="ic">↺</span>Change History</li>
+      </ul>
+    </aside>
+
+    <main class="main">
+      <div class="page-head">
+        <h2>Campaign Overview</h2>
+        <span class="viewing-as">Viewing as: <b>Marketing Analyst (UG01)</b></span>
+      </div>
+
+      <div class="filters-row">
+        <div class="filter"><span class="flabel">Period</span><span class="fval">Jan–Dec 2019</span><span class="chev">▾</span></div>
+        <div class="filter"><span class="flabel">Campaign</span><span class="fval">All campaigns</span><span class="chev">▾</span></div>
+      </div>
+
+      <div class="kpi-row">
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Attributed Orders</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">1,290</div>
+          <div class="kpi-badges">
+            <span class="badge badge-fresh">✓ Refreshed 10:42</span>
+            <span class="badge badge-synthetic">🧪 Synthetic</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Attributed Buyers</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">1,042</div>
+          <div class="kpi-badges">
+            <span class="badge badge-fresh">✓ Refreshed 10:42</span>
+            <span class="badge badge-synthetic">🧪 Synthetic</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Attributed Gross Value</span><span class="info-ico hot" title="Open definition — shown open in Section 2">ⓘ</span></div>
+          <div class="kpi-value">154,800</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges">
+            <span class="badge badge-fresh">✓ Refreshed 10:42</span>
+            <span class="badge badge-synthetic">🧪 Synthetic</span>
+          </div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-top"><span class="kpi-label">Average Order Value</span><span class="info-ico" title="Open definition">ⓘ</span></div>
+          <div class="kpi-value">120.0</div>
+          <div class="kpi-note">currency unverified</div>
+          <div class="kpi-badges">
+            <span class="badge badge-fresh">✓ Refreshed 10:42</span>
+            <span class="badge badge-synthetic">🧪 Synthetic</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-grid">
+        <div class="card">
+          <h3>Attributed Gross Value by Month <span class="sub">2019, currency unverified</span></h3>
+          <div class="chart">
+            <div class="bar-col"><div class="bar" style="height:46%" title="Jan · 9,800"></div><div class="bar-mo">Jan</div></div>
+            <div class="bar-col"><div class="bar" style="height:38%" title="Feb · 8,100"></div><div class="bar-mo">Feb</div></div>
+            <div class="bar-col"><div class="bar" style="height:49%" title="Mar · 10,400"></div><div class="bar-mo">Mar</div></div>
+            <div class="bar-col"><div class="bar" style="height:53%" title="Apr · 11,200"></div><div class="bar-mo">Apr</div></div>
+            <div class="bar-col"><div class="bar" style="height:45%" title="May · 9,600"></div><div class="bar-mo">May</div></div>
+            <div class="bar-col"><div class="bar" style="height:60%" title="Jun · 12,800"></div><div class="bar-mo">Jun</div></div>
+            <div class="bar-col"><div class="bar" style="height:63%" title="Jul · 13,500"></div><div class="bar-mo">Jul</div></div>
+            <div class="bar-col"><div class="bar" style="height:75%" title="Aug · 15,900"></div><div class="bar-mo">Aug</div></div>
+            <div class="bar-col"><div class="bar" style="height:57%" title="Sep · 12,100"></div><div class="bar-mo">Sep</div></div>
+            <div class="bar-col"><div class="bar" style="height:54%" title="Oct · 11,400"></div><div class="bar-mo">Oct</div></div>
+            <div class="bar-col"><div class="bar" style="height:88%" title="Nov · 18,700"></div><div class="bar-mo">Nov</div></div>
+            <div class="bar-col"><div class="bar" style="height:100%" title="Dec · 21,300"></div><div class="bar-mo">Dec</div></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>By Campaign <button class="info-ico" style="border:none" title="Table view toggle available">▤</button></h3>
+          <table>
+            <thead><tr><th>Campaign</th><th class="num">Orders</th><th class="num">Value</th></tr></thead>
+            <tbody>
+              <tr><td><span class="swatch" style="background:var(--series-1)"></span><span class="camp-name">Holiday Push</span><span class="camp-id">CMP-01</span></td><td class="num">412</td><td class="num">51,200</td></tr>
+              <tr><td><span class="swatch" style="background:var(--series-2)"></span><span class="camp-name">Back-to-School</span><span class="camp-id">CMP-02</span></td><td class="num">268</td><td class="num">29,400</td></tr>
+              <tr><td><span class="swatch" style="background:var(--series-3)"></span><span class="camp-name">Summer Drinkware Launch</span><span class="camp-id">CMP-03</span></td><td class="num">235</td><td class="num">26,750</td></tr>
+              <tr><td><span class="swatch" style="background:var(--series-4)"></span><span class="camp-name">Spring Bags Refresh</span><span class="camp-id">CMP-04</span></td><td class="num">198</td><td class="num">21,900</td></tr>
+              <tr><td><span class="swatch" style="background:var(--series-5)"></span><span class="camp-name">Always-On Retargeting</span><span class="camp-id">CMP-05</span></td><td class="num">177</td><td class="num">25,550</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="footnote-strip"><b>Note —</b> Attributed value is not incremental revenue driven by the campaign (R6). Currency unverified (R10).</div>
+
+    </main>
+  </div>
+</div>
+
+<div class="section-tag"><span>Section 2 — Definition dialog, Lineage tab (Flow 1 climax)</span></div>
+<div class="section-cap">Same Campaign Overview page, ⓘ opened on "Attributed Gross Value" → <b>st.dialog</b> tabs Definition · Lineage · Quality, Lineage tab active: the value traced from raw sources through unified and mart_shared to the metric, each node with refresh time and version.</div>
+
+<div class="browser-frame">
+  <div class="browser-chrome">
+    <span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span>
+    <div class="addr-bar">localhost:8501/Campaign_Overview</div>
+  </div>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="app-name"><span class="dot-logo"></span>Marketing Data Fabric</div>
+      <div class="app-sub">CO5173 · Academic demo</div>
+      <div class="role-switch-label">Role (demo mode)</div>
+      <div class="role-switch"><span>Marketing Analyst</span><span class="chev">▾</span></div>
+      <div class="role-note">Signed in as <b>UG01</b> · nav filtered to this role</div>
+      <div class="nav-group-label">Campaigns</div>
+      <ul class="nav-list">
+        <li class="active"><span class="ic">▣</span>Campaign Overview</li>
+        <li><span class="ic">⇄</span>Campaign Comparison</li>
+        <li><span class="ic">▤</span>Products &amp; Categories</li>
+        <li><span class="ic">◐</span>New vs Returning</li>
+      </ul>
+      <div class="nav-group-label">Customers</div>
+      <ul class="nav-list"><li><span class="ic">✎</span>Audience Builder</li></ul>
+      <div class="nav-group-label">Data trust</div>
+      <ul class="nav-list">
+        <li><span class="ic">▥</span>Catalog &amp; Glossary</li>
+        <li><span class="ic">⛓</span>Lineage</li>
+      </ul>
+      <div class="nav-group-label">Operations</div>
+      <ul class="nav-list"><li><span class="ic">↺</span>Change History</li></ul>
+    </aside>
+
+    <main class="main" style="position:relative;">
+      <div class="page-head">
+        <h2>Campaign Overview</h2>
+        <span class="viewing-as">Viewing as: <b>Marketing Analyst (UG01)</b></span>
+      </div>
+      <div class="filters-row">
+        <div class="filter"><span class="flabel">Period</span><span class="fval">Jan–Dec 2019</span><span class="chev">▾</span></div>
+        <div class="filter"><span class="flabel">Campaign</span><span class="fval">All campaigns</span><span class="chev">▾</span></div>
+      </div>
+      <div class="kpi-row" style="opacity:.35;filter:blur(0.3px);">
+        <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Attributed Orders</span></div><div class="kpi-value">1,290</div></div>
+        <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Attributed Buyers</span></div><div class="kpi-value">1,042</div></div>
+        <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Attributed Gross Value</span></div><div class="kpi-value">154,800</div></div>
+        <div class="kpi-card"><div class="kpi-top"><span class="kpi-label">Average Order Value</span></div><div class="kpi-value">120.0</div></div>
+      </div>
+
+      <!-- st.dialog overlay -->
+      <div class="dialog-scrim">
+        <div class="dialog">
+          <div class="dialog-head">
+            <div class="dialog-title">Attributed Gross Value</div>
+            <div class="dialog-close">✕</div>
+          </div>
+          <div class="dialog-sub">term_id: <code style="background:var(--surface-code);border:1px solid var(--border);border-radius:5px;padding:2px 6px;font-family:var(--font-mono);font-size:13px;">metric.attributed_gross_value</code></div>
+          <div class="dialog-tabs">
+            <div class="dialog-tab">Definition</div>
+            <div class="dialog-tab active">Lineage</div>
+            <div class="dialog-tab">Quality</div>
+          </div>
+
+          <div class="lineage-wrap">
+            <div class="lineage-row">
+              <div class="lineage-col">
+                <div class="lineage-node">
+                  <div class="nid">raw/sales_db/order_lines</div>
+                  <div class="nmeta">Refreshed 10:42 · v128</div>
+                  <span class="ntag">source</span>
+                </div>
+                <div class="lineage-node">
+                  <div class="nid">raw/attribution_api/campaign_attribution</div>
+                  <div class="nmeta">Refreshed 10:42 · v54</div>
+                  <span class="ntag">source</span>
+                </div>
+              </div>
+              <div class="lineage-arrow">→</div>
+              <div class="lineage-col">
+                <div class="lineage-node">
+                  <div class="nid">unified/orders</div>
+                  <div class="nmeta">Refreshed 10:42 · v212</div>
+                </div>
+              </div>
+              <div class="lineage-arrow">→</div>
+              <div class="lineage-col">
+                <div class="lineage-node">
+                  <div class="nid">mart_shared.campaign_attributed_daily</div>
+                  <div class="nmeta">Refreshed 10:42 · v87</div>
+                </div>
+              </div>
+              <div class="lineage-arrow">→</div>
+              <div class="lineage-col">
+                <div class="lineage-node focus">
+                  <div class="nid">Attributed Gross Value</div>
+                  <div class="nmeta">Refreshed 10:42</div>
+                  <span class="ntag">metric</span>
+                </div>
+              </div>
+            </div>
+            <div class="lineage-caption">Click a node for dataset id, refreshed time, version and quality (side detail). All nodes fresh — no stale border in this run.</div>
+          </div>
+
+          <div style="margin-top:16px;" class="quality-row">
+            <span class="field-k" style="font-size:12px;text-transform:uppercase;letter-spacing:.03em;color:var(--muted);font-weight:700;">Path quality</span>
+            <span class="status-chip success">✓ mart_shared.campaign_attributed_daily · 98% Green</span>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+</body>
+</html>
