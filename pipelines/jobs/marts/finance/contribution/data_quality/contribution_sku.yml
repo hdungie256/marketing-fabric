@@ -1,0 +1,13 @@
+rules:
+  - rule_id: campaign_id_product_sku_unique
+    expectation: ExpectCompoundColumnsToBeUnique
+    kwargs: {column_list: [campaign_id, product_sku]}
+    severity: critical
+  - rule_id: quantity_positive
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: quantity, min_value: 1}
+    severity: warning
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical

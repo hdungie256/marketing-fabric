@@ -1,0 +1,21 @@
+rules:
+  - rule_id: campaign_id_unique
+    expectation: ExpectColumnValuesToBeUnique
+    kwargs: {column: campaign_id}
+    severity: critical
+  - rule_id: campaign_name_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: campaign_name}
+    severity: critical
+  - rule_id: reference_cogs_not_negative
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: reference_cogs, min_value: 0}
+    severity: critical
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical
+  - rule_id: all_skus_have_reference_cost
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: skus_without_cost, max_value: 0}
+    severity: warning
