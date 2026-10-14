@@ -65,7 +65,7 @@ def _run(current: Run) -> Iterator[Run]:
     try:
         yield current
     except GateFailed as exc:
-        current.finish("gated", current.step)
+        current.finish("gated", ", ".join(exc.rules) or current.step)
         postgres.add_alert(current.run_id, job_id, "warning", str(exc))
         raise
     except Exception as exc:

@@ -12,6 +12,7 @@ from fabric_control.registry import load_registry
 from fabric_control.run import current_run_id
 
 SEVERITIES = ("critical", "warning")
+BREAK_RULE = "break_dq"
 # Rules over the whole table rather than single rows; in scope mode they see the post-merge image (AD-7).
 TABLE_LEVEL = {
     "ExpectColumnValuesToBeUnique",
@@ -83,16 +84,29 @@ def validate(df: Any, rules: list[dict[str, Any]]) -> list[RuleResult]:
     return results
 
 
+def injected(dataset_id: str) -> list[RuleResult]:
+    if mode() == "offline" or dataset_id not in postgres.dq_breaks():
+        return []
+    return [RuleResult(BREAK_RULE, "critical", False, "injected by make break-dq")]
+
+
+def break_dq(dataset_id: str, on: bool = True) -> None:
+    if dataset_id not in load_registry():
+        raise KeyError(f"{dataset_id} is not a registered dataset")
+    postgres.set_dq_break(dataset_id, on)
+    log.info("critical failure %s for %s", "injected" if on else "removed", dataset_id)
+
+
 def check(dataset_id: str, df: Any, scope: Scope) -> DataQualityResult:
     rules = load_rules(rules_path(dataset_id))
     if scope.get("mode") != "scope":
-        return DataQualityResult(dataset_id, scope, validate(df, rules))
+        return DataQualityResult(dataset_id, scope, validate(df, rules) + injected(dataset_id))
     row_rules = [r for r in rules if r["expectation"] not in TABLE_LEVEL]
     table_rules = [r for r in rules if r["expectation"] in TABLE_LEVEL]
     by_id = {r.rule_id: r for r in validate(df, row_rules)}
     if table_rules:
         by_id |= {r.rule_id: r for r in validate(post_merge(dataset_id, df, scope), table_rules)}
-    return DataQualityResult(dataset_id, scope, [by_id[r["rule_id"]] for r in rules])
+    return DataQualityResult(dataset_id, scope, [by_id[r["rule_id"]] for r in rules] + injected(dataset_id))
 
 
 def report_data_quality(result: DataQualityResult) -> None:
@@ -115,4 +129,4 @@ def gate(result: DataQualityResult) -> None:
     pct, status = score(result)
     if status == "Red":
         failed = [r.rule_id for r in result.rules if r.severity == "critical" and not r.passed]
-        raise GateFailed(f"{result.dataset_id}: critical rules failed {failed} ({pct}%)")
+        raise GateFailed(f"{result.dataset_id}: critical rules failed {failed} ({pct}%)", failed)

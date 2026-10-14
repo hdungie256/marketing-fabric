@@ -7,7 +7,10 @@
 [class*="st-key-kpi-value-"] p {
   font-size: 40px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; margin: 0;
 }
+[class*="st-key-metric-stale-"] { border-color: #F3D9B8; }
+[class*="st-key-metric-stale-"] [class*="st-key-kpi-value-"] p { color: #92400E; }
 [class*="st-key-kpi-badges-"] [data-testid="stMarkdownContainer"] span { font-size: 14px; font-weight: 700; }
 [data-testid="stAlertContainer"]:has([data-testid="stAlertContentError"]) { border-left: 4px solid #99180C; }
+[data-testid="stAlertContainer"]:has([data-testid="stAlertContentWarning"]) { border-left: 4px solid #92400E; }
 [data-testid="stAlertContentError"] code { font-family: monospace; font-size: 14px; }
 [data-testid="stDataFrame"] { font-variant-numeric: tabular-nums; }

@@ -3,10 +3,10 @@ from datetime import datetime
 import streamlit as st
 
 import fabric_control
-from app.shell.badges import badge_fresh, badge_synthetic
+from app.shell.badges import badge_fresh, badge_stale, badge_synthetic
 from app.shell.errors import UnknownTermError
 from app.shell.format import FORMATTERS
-from app.shell.page import add_footnote
+from app.shell.page import add_footnote, add_stale
 
 NOTE_TEXT: dict[str, str] = {
     "currency_unverified": "Currency of monetary values is not stated in the source (R10).",
@@ -31,13 +31,20 @@ def metric(term_id: str, value: float | int | None, freshness: datetime, *, kind
     if unknown:
         raise ValueError(f"{term_id}: unknown notes {unknown}")
 
-    with st.container(key=f"metric-{term_id}"):
+    state = fabric_control.status(term["dataset_id"]) if term.get("dataset_id") else {"stale": False}
+    if state["stale"]:
+        add_stale(state["datasets"])
+
+    with st.container(key=f"metric-{'stale-' if state['stale'] else ''}{term_id}"):
         with st.container(key=f"kpi-label-{term_id}"):
             st.markdown(term["display_name"])
         with st.container(key=f"kpi-value-{term_id}"):
             st.markdown(FORMATTERS[kind](value))
         with st.container(key=f"kpi-badges-{term_id}", horizontal=True):
-            badge_fresh(freshness)
+            if state["stale"]:
+                badge_stale()
+            else:
+                badge_fresh(freshness)
             if term.get("synthetic"):
                 badge_synthetic()
         inline = [NOTE_TEXT[note] for note in notes if note not in FOOTNOTE_NOTES]

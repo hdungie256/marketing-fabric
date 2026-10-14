@@ -1,17 +1,13 @@
+from fabric_control.catalog import NOT_MEASURED, catalog, latest_score, lineage, search, term
 from fabric_control.data_quality import check, gate, report_data_quality
 from fabric_control.decisions.scoring import score
 from fabric_control.glossary import GlossaryError
 from fabric_control.metadata import (
-    catalog,
     emit_lineage,
-    latest_score,
-    lineage,
     register,
     register_all,
-    search,
     sync_glossary,
     sync_tags,
-    term,
 )
 from fabric_control.migrations import run_migrations
 from fabric_control.models import DataQualityResult, GateFailed, RuleResult
@@ -22,6 +18,7 @@ from fabric_control.registry import RegistryError, load_registry
 from fabric_control.run import Run, run
 
 __all__ = [
+    "NOT_MEASURED",
     "DataQualityResult",
     "GateFailed",
     "GlossaryError",

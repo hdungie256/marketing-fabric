@@ -8,7 +8,9 @@ Status = Literal["Green", "Amber", "Red"]
 
 
 class GateFailed(Exception):
-    pass
+    def __init__(self, message: str, rules: list[str] | None = None):
+        super().__init__(message)
+        self.rules = rules or []
 
 
 @dataclass(frozen=True)

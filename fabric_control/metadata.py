@@ -1,4 +1,3 @@
-import functools
 from typing import Any
 
 from fabric_control.clients import openmetadata
@@ -6,7 +5,6 @@ from fabric_control.clients.http import HttpError
 from fabric_control.config import log, mode, stub
 from fabric_control.contracts import columns, load_schema
 from fabric_control.glossary import GLOSSARY_NAME, labelled_terms, load_tags
-from fabric_control.models import Status
 from fabric_control.registry import load_registry
 
 
@@ -102,30 +100,3 @@ def register_all() -> list[str]:
     for dataset_id in datasets:
         register(dataset_id)
     return datasets
-
-
-def catalog(filter: dict[str, Any] | None = None) -> list[dict[str, Any]]:
-    return stub("catalog", [], filter=filter)
-
-
-def search(q: str) -> list[dict[str, Any]]:
-    return stub("search", [], q=q)
-
-
-@functools.cache
-def _local_terms() -> dict[str, dict[str, Any]]:
-    return labelled_terms()
-
-
-def term(term_id: str) -> dict[str, Any] | None:
-    # ponytail: reads the repo glossary in both modes; Story 2.2 swaps the online branch to OpenMetadata
-    t = _local_terms().get(term_id)
-    return None if t is None else {**t, "synthetic": t["provenance"] == "synthetic"}
-
-
-def lineage(dataset_id: str, depth: int = 1) -> dict[str, list]:
-    return stub("lineage", {"nodes": [], "edges": []}, dataset_id=dataset_id, depth=depth)
-
-
-def latest_score(dataset_id: str) -> tuple[float, Status] | None:
-    return stub("latest_score", None, dataset_id=dataset_id)

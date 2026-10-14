@@ -168,6 +168,38 @@ def add_test_result(test_case_fqn: str, passed: bool, result: str) -> None:
     call("POST", f"dataQuality/testCases/testCaseResults/{quote(test_case_fqn)}", body)
 
 
+def test_results(page_size: int = 500) -> dict[str, list[tuple[str, str, bool]]]:
+    results: dict[str, list[tuple[str, str, bool]]] = {}
+    after = None
+    while True:
+        query = f"dataQuality/testCases?fields=testCaseResult&limit={page_size}"
+        page = call("GET", query + (f"&after={quote(after)}" if after else ""))
+        for case in page.get("data", []):
+            table = re.fullmatch(r"<#E::table::(.+?)>", case.get("entityLink", ""))
+            outcome = (case.get("testCaseResult") or {}).get("testCaseStatus")
+            if not table or outcome not in ("Success", "Failed"):
+                continue
+            severity = (case.get("description") or "").split(" ")[0]
+            severity = severity if severity in ("critical", "warning") else "warning"
+            results.setdefault(table[1], []).append((case["name"], severity, outcome == "Success"))
+        after = (page.get("paging") or {}).get("after")
+        if not after:
+            return results
+
+
+def lineage_edges(table_fqn: str, depth: int) -> list[tuple[str, str, str | None]]:
+    path = f"lineage/table/name/{quote(table_fqn)}?upstreamDepth={depth}&downstreamDepth={depth}"
+    graph = call("GET", path)
+    names = {n["id"]: n["fullyQualifiedName"] for n in [graph["entity"], *graph.get("nodes", [])]}
+    edges = []
+    for edge in [*graph.get("upstreamEdges", []), *graph.get("downstreamEdges", [])]:
+        pipeline = ((edge.get("lineageDetails") or {}).get("pipeline") or {}).get("fullyQualifiedName")
+        job_id = pipeline.removeprefix(f"{PIPELINE_SERVICE}.") if pipeline else None
+        if edge["fromEntity"] in names and edge["toEntity"] in names:
+            edges.append((names[edge["fromEntity"]], names[edge["toEntity"]], job_id))
+    return edges
+
+
 def put_glossary(name: str, display_name: str, description: str) -> str:
     body = {"name": name, "displayName": display_name, "description": description}
     return call("PUT", "glossaries", body)["id"]

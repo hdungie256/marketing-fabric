@@ -16,6 +16,10 @@ def contracts_dir() -> Path:
     return Path(os.environ.get("FABRIC_CONTRACTS_DIR", ROOT / "contracts"))
 
 
+def jobs_dir() -> Path:
+    return Path(os.environ.get("FABRIC_JOBS_DIR", ROOT / "pipelines" / "jobs"))
+
+
 def stub(name: str, default: Any = None, **kwargs: Any) -> Any:
     if mode() != "offline":
         raise NotImplementedError(name)
