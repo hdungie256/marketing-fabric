@@ -7,7 +7,7 @@ from streamlit.delta_generator import DeltaGenerator
 
 import fabric_control
 from app.shell import session
-from app.shell.components.feedback import banner_error, denied_block
+from app.shell.components.feedback import banner_error, banner_stale, denied_block
 from app.shell.errors import NotPermittedError
 from app.shell.registry import PageSpec
 from app.shell.roles import ROLES
@@ -16,6 +16,7 @@ log = logging.getLogger("app.shell")
 
 _FOOTNOTES = "_shell_footnotes"
 _BANNER = "_shell_banner_slot"
+_STALE = "_shell_stale"
 
 
 def add_footnote(text: str) -> None:
@@ -30,6 +31,15 @@ def footnotes() -> list[str]:
 
 def reset_footnotes() -> None:
     st.session_state[_FOOTNOTES] = []
+
+
+def add_stale(datasets: list[str]) -> None:
+    stale = st.session_state.setdefault(_STALE, [])
+    stale += [d for d in datasets if d not in stale]
+
+
+def stale_datasets() -> list[str]:
+    return list(st.session_state.get(_STALE, []))
 
 
 def banner_slot() -> DeltaGenerator:
@@ -63,6 +73,7 @@ def wrap(spec: PageSpec) -> Callable[[], None]:
         started = time.perf_counter()
         session.set_current_page(spec.key)
         reset_footnotes()
+        st.session_state[_STALE] = []
         try:
             _header(spec.title)
             st.session_state[_BANNER] = st.container()
@@ -73,6 +84,9 @@ def wrap(spec: PageSpec) -> Callable[[], None]:
             except Exception as e:
                 log.exception("page %s failed", spec.key)
                 banner_error("Could not load this page", cause=f"{type(e).__name__}: {e}")
+            if stale_datasets():
+                with banner_slot():
+                    banner_stale(stale_datasets())
             _footnote_strip()
         finally:
             _record(spec.key, (time.perf_counter() - started) * 1000)

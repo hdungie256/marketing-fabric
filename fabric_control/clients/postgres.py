@@ -130,3 +130,32 @@ def select_privileges(conn, login: str, table: str, view: str, columns: list[str
         (login, view, columns),
     ).fetchone()[0]
     return base, granted
+
+
+GATED_RUNS = """
+    SELECT r.job_id, coalesce(r.ended_at, r.started_at), r.failing_step,
+        ARRAY(SELECT DISTINCT d.dataset_id FROM ops.dq_results d WHERE d.run_id = r.run_id AND d.status = 'Red')
+    FROM (
+        SELECT DISTINCT ON (job_id) * FROM ops.runs
+        WHERE status IN ('success', 'gated') ORDER BY job_id, started_at DESC
+    ) r
+    WHERE r.status = 'gated'
+"""
+
+
+def gated_runs() -> list[tuple[str, Any, str | None, list[str]]]:
+    with connect() as conn:
+        return conn.execute(GATED_RUNS).fetchall()
+
+
+def dq_breaks() -> set[str]:
+    with connect() as conn:
+        return {row[0] for row in conn.execute("SELECT dataset_id FROM ops.dq_breaks")}
+
+
+def set_dq_break(dataset_id: str, on: bool) -> None:
+    with connect() as conn:
+        if on:
+            conn.execute("INSERT INTO ops.dq_breaks (dataset_id) VALUES (%s) ON CONFLICT DO NOTHING", (dataset_id,))
+        else:
+            conn.execute("DELETE FROM ops.dq_breaks WHERE dataset_id = %s", (dataset_id,))

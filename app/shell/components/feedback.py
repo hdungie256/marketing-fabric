@@ -16,6 +16,11 @@ def banner_error(message: str, cause: str | None = None) -> None:
     st.error(body, icon=":material/error:")
 
 
+def banner_stale(datasets: list[str]) -> None:
+    names = ", ".join(f"`{d}`" for d in datasets)
+    st.warning(f"Using previous version — quality check failed on {names}", icon=":material/warning:")
+
+
 def denied_block() -> None:
     st.markdown(":gray[:material/lock: *not permitted for role*]")
 
