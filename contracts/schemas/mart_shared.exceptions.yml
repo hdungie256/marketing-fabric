@@ -1,0 +1,34 @@
+dataset_id: mart_shared.exceptions
+schema_version: 1.0.0
+grain: [exception_id]
+columns:
+- name: exception_id
+  type: string
+  nullable: false
+- name: class
+  type: string
+  nullable: false
+- name: natural_key
+  type: string
+  nullable: false
+- name: dataset_id
+  type: string
+  nullable: false
+- name: detail
+  type: string
+  nullable: true
+- name: detected_at
+  type: timestamp
+  nullable: false
+- name: provenance
+  type: string
+  nullable: false
+- name: _refreshed_at
+  type: timestamp
+  nullable: false
+- name: _run_id
+  type: string
+  nullable: false
+- name: _source_version
+  type: string
+  nullable: false

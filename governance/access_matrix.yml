@@ -17,6 +17,8 @@ read:
   mart_campaign.product_sales: [UG01]
   mart_campaign.new_returning: [UG01, UG02]
   mart_campaign.comparison: [UG01, UG03]
+  mart_shared.exceptions: [UG05]
+  app.exception_status: [UG05]
   ops.runs: [UG01, UG03, UG04, UG05, UG06]
   ops.alerts: [UG05, UG06]
   ops.load_reconciliation: [UG05, UG06]
