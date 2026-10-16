@@ -1,4 +1,4 @@
-from app.pages.campaign import overview, products
+from app.pages.campaign import new_returning, overview, products
 from app.pages.campaign.placeholder import placeholder
 from app.shell import PageSpec
 
@@ -41,7 +41,7 @@ PAGES = [
         key="new_vs_returning",
         title="New vs Returning",
         group="Campaigns",
-        render=placeholder("4.3"),
+        render=new_returning.render,
         roles=frozenset({"UG01", "UG02"}),
         icon=":material/group:",
     ),
