@@ -15,10 +15,15 @@ def build(lines: DataFrame, attribution: DataFrame, category_map: DataFrame, cam
     from pyspark.sql import functions as F
 
     spark = lines.sparkSession
-    cats = category_map.select(F.col("raw_category").alias("product_category"), "canonical_category")
+    # unmapped categories pass through unchanged (R13), as in unified/_common.canonical_expr
+    cats = category_map.select(
+        F.col("raw_category").alias("product_category"), F.col("canonical_category").alias("mapped")
+    )
     base = (
         lines.drop("canonical_category")
-        .join(cats, "product_category")
+        .join(cats, "product_category", "left")
+        .withColumn("canonical_category", F.coalesce("mapped", "product_category"))
+        .drop("mapped")
         .withColumn("month", F.trunc("transaction_date_iso", "month"))
     )
     attributed = base.drop("provenance").join(attribution.select("order_key", "campaign_id", "provenance"), "order_key")

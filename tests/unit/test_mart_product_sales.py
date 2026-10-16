@@ -92,3 +92,16 @@ def test_product_rules_pass_and_fail(spark):
     over = sales.filter("campaign_id = 'CMP19_01'").withColumn("gross_value", sales.gross_value + 100)
     assert "campaign_not_above_all" in failed(sales.filter("campaign_id = 'ALL'").unionByName(over))
     assert "nest_categories_separate" in failed(sales.filter("canonical_category <> 'Nest-Canada'"))
+
+
+def test_unmapped_categories_pass_through_and_mapped_ones_are_renamed(spark):
+    lines = [
+        ("O1", JAN, "SKU-A", "Shirt", "Apparel-raw", 1, Decimal("10.00"), "original"),
+        ("O1", JAN, "SKU-N", "Nest", "Nest-Canada", 1, Decimal("3.00"), "original"),
+    ]
+    line_df, attribution, _, campaigns = frames(spark, lines)
+    category_map = spark.createDataFrame([("Apparel-raw", "Apparel")], CATEGORY_MAP)
+    got = rows(transforms.build(line_df, attribution, category_map, campaigns))
+    assert got[(date(2019, 1, 1), "ALL", "SKU-A")].canonical_category == "Apparel"
+    assert got[(date(2019, 1, 1), "ALL", "SKU-N")].canonical_category == "Nest-Canada"
+    assert sum(r.gross_value for k, r in got.items() if k[1] == "ALL") == Decimal("13.00")
