@@ -18,3 +18,9 @@ def test_campaign_terms_link_overview_mart_with_known_notes(term_id):
 def test_money_terms_carry_currency_note():
     assert "currency_unverified" in fabric_control.term("attributed_gross_value")["notes"]
     assert "currency_unverified" in fabric_control.term("average_order_value")["notes"]
+
+
+def test_quantity_sold_term_links_product_sales_mart():
+    t = fabric_control.term("quantity_sold")
+    assert t["dataset_id"] == "mart_campaign.product_sales"
+    assert t["column"] == "quantity"

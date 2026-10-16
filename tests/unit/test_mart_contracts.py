@@ -24,6 +24,10 @@ MARTS = {
         "campaign/campaign_overview/mart.yml",
         "mart_campaign/103_p2_campaign_overview",
     ),
+    "mart_campaign.product_sales": (
+        "campaign/product_sales/mart.yml",
+        "mart_campaign/104_p2_product_sales",
+    ),
 }
 MART_P2 = {k: v for k, v in MARTS.items() if k.startswith("mart_shared.")}
 
@@ -128,5 +132,16 @@ def test_campaign_overview_registry_and_graph():
     assert entry["om_fqn"] == "serving.serving.mart_campaign.campaign_overview"
     assert job_graph(ROOT)["marts/campaign/campaign_overview"] == {
         "marts/shared/campaign_attributed_daily",
+        "unified/campaigns",
+    }
+
+
+def test_product_sales_registry_and_graph():
+    entry = load_registry()["mart_campaign.product_sales"]
+    assert entry["job_id"] == "marts/campaign/product_sales"
+    assert job_graph(ROOT)["marts/campaign/product_sales"] == {
+        "unified/order_lines",
+        "unified/ref_category_map",
+        "unified/attribution",
         "unified/campaigns",
     }

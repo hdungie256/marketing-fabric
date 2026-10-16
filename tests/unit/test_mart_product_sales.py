@@ -53,9 +53,7 @@ def test_all_rows_include_unattributed_lines(spark):
 
 
 def test_nest_categories_stay_separate(spark):
-    lines = [
-        ("O1", JAN, f"SKU-{c}", c, c, 1, Decimal("1.00"), "original") for c in ("Nest", "Nest-USA", "Nest-Canada")
-    ]
+    lines = [("O1", JAN, f"SKU-{c}", c, c, 1, Decimal("1.00"), "original") for c in ("Nest", "Nest-USA", "Nest-Canada")]
     df = transforms.build(*frames(spark, lines))
     assert {r.canonical_category for r in df.collect()} == {"Nest", "Nest-USA", "Nest-Canada"}
 
@@ -74,3 +72,23 @@ def test_columns_follow_contract_order(spark):
     df = transforms.build(*frames(spark, two_lines()))
     names = [n for n, _ in columns(load_schema("mart_campaign.product_sales")) if not n.startswith("_")]
     assert df.columns == names
+
+
+def test_product_rules_pass_and_fail(spark):
+    from pipelines.jobs.marts.campaign.product_sales.job import product_rules
+
+    lines = two_lines() + [
+        ("O2", JAN, "SKU-A", "Shirt", "Apparel", 1, Decimal("10.00"), "original"),
+        ("O3", JAN, "SKU-N", "Nest", "Nest-Canada", 1, Decimal("3.00"), "original"),
+    ]
+    line_df, attribution, category_map, campaigns = frames(spark, lines)
+    sales = transforms.build(line_df, attribution, category_map, campaigns)
+    assert all(r.passed for r in product_rules(sales, line_df))
+
+    def failed(df):
+        return {r.rule_id for r in product_rules(df, line_df) if not r.passed}
+
+    assert "all_gross_matches_lines" in failed(sales.filter("NOT (campaign_id = 'ALL' AND product_sku = 'SKU-D')"))
+    over = sales.filter("campaign_id = 'CMP19_01'").withColumn("gross_value", sales.gross_value + 100)
+    assert "campaign_not_above_all" in failed(sales.filter("campaign_id = 'ALL'").unionByName(over))
+    assert "nest_categories_separate" in failed(sales.filter("canonical_category <> 'Nest-Canada'"))

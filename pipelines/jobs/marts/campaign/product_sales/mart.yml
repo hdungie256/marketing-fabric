@@ -1,0 +1,5 @@
+table: mart_campaign.product_sales
+grain: [month, campaign_id, product_sku]
+modes: [full]
+scope_map: {}
+metrics: [quantity, gross_value]

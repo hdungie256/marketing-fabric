@@ -41,3 +41,13 @@ terms:
     limitations:
       - Empty when the period has no attributed orders.
     notes: [currency_unverified]
+  - display_name: Quantity Sold
+    owner_slice: campaign
+    dataset_id: mart_campaign.product_sales
+    column: quantity
+    definition: Units sold in the period.
+    formula: SUM(quantity) of unified/order_lines for the selected campaign's attributed orders, or all sales lines for All campaigns.
+    rules: [R6]
+    limitations:
+      - All campaigns includes sales not attributed to any campaign.
+    notes: [attributed_not_incremental]

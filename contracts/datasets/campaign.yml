@@ -63,3 +63,11 @@ datasets:
   job_id: marts/campaign/campaign_overview
   owner: campaign
   tags: []
+- dataset_id: mart_campaign.product_sales
+  om_fqn: serving.serving.mart_campaign.product_sales
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_campaign.product_sales
+  job_id: marts/campaign/product_sales
+  owner: campaign
+  tags: []

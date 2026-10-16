@@ -37,3 +37,16 @@ columns:
     _refreshed_at: Sensitivity.internal
     _run_id: Sensitivity.internal
     _source_version: Sensitivity.internal
+  mart_campaign.product_sales:
+    month: Sensitivity.internal
+    campaign_id: Sensitivity.internal
+    campaign_name: Sensitivity.internal
+    product_sku: Sensitivity.internal
+    product_description: Sensitivity.internal
+    canonical_category: Sensitivity.internal
+    quantity: Sensitivity.internal
+    gross_value: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
