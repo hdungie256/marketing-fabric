@@ -1,4 +1,4 @@
-from app.pages.campaign import new_returning, overview, products
+from app.pages.campaign import comparison, new_returning, overview, products
 from app.pages.campaign.placeholder import placeholder
 from app.shell import PageSpec
 
@@ -16,7 +16,7 @@ PAGES = [
         key="campaign_comparison",
         title="Campaign Comparison",
         group="Campaigns",
-        render=placeholder("4.1"),
+        render=comparison.render,
         roles=frozenset({"UG01", "UG03"}),
         icon=":material/compare_arrows:",
     ),
