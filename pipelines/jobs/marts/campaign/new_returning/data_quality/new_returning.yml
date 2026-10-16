@@ -1,0 +1,13 @@
+rules:
+  - rule_id: period_id_campaign_id_unique
+    expectation: ExpectCompoundColumnsToBeUnique
+    kwargs: {column_list: [period_id, campaign_id]}
+    severity: critical
+  - rule_id: first_not_above_buyers
+    expectation: ExpectColumnPairValuesAToBeGreaterThanB
+    kwargs: {column_A: attributed_buyers, column_B: first_observed_buyers, or_equal: true}
+    severity: critical
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical

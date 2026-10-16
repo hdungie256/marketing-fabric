@@ -50,3 +50,17 @@ columns:
     _refreshed_at: Sensitivity.internal
     _run_id: Sensitivity.internal
     _source_version: Sensitivity.internal
+  mart_campaign.new_returning:
+    period_id: Sensitivity.internal
+    period_label: Sensitivity.internal
+    period_start: Sensitivity.internal
+    period_end: Sensitivity.internal
+    campaign_id: Sensitivity.internal
+    campaign_name: Sensitivity.internal
+    attributed_buyers: Sensitivity.internal
+    first_observed_buyers: Sensitivity.internal
+    returning_buyers: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal

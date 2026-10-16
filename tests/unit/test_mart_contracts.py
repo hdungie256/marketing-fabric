@@ -28,6 +28,10 @@ MARTS = {
         "campaign/product_sales/mart.yml",
         "mart_campaign/104_p2_product_sales",
     ),
+    "mart_campaign.new_returning": (
+        "campaign/new_returning/mart.yml",
+        "mart_campaign/105_p2_new_returning",
+    ),
 }
 MART_P2 = {k: v for k, v in MARTS.items() if k.startswith("mart_shared.")}
 
@@ -143,5 +147,14 @@ def test_product_sales_registry_and_graph():
         "unified/order_lines",
         "unified/ref_category_map",
         "unified/attribution",
+        "unified/campaigns",
+    }
+
+
+def test_new_returning_registry_and_graph():
+    entry = load_registry()["mart_campaign.new_returning"]
+    assert entry["job_id"] == "marts/campaign/new_returning"
+    assert job_graph(ROOT)["marts/campaign/new_returning"] == {
+        "marts/shared/campaign_attributed_daily",
         "unified/campaigns",
     }

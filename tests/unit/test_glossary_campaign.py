@@ -24,3 +24,12 @@ def test_quantity_sold_term_links_product_sales_mart():
     t = fabric_control.term("quantity_sold")
     assert t["dataset_id"] == "mart_campaign.product_sales"
     assert t["column"] == "quantity"
+
+
+def test_returning_buyers_term_links_new_returning_mart():
+    t = fabric_control.term("returning_buyers")
+    assert (t["dataset_id"], t["column"]) == ("mart_campaign.new_returning", "returning_buyers")
+
+
+def test_first_observed_buyers_carries_r9_note():
+    assert fabric_control.term("first_observed_buyers")["notes"] == ["first_in_observed_history"]

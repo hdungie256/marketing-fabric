@@ -51,3 +51,13 @@ terms:
     limitations:
       - All campaigns includes sales not attributed to any campaign.
     notes: [attributed_not_incremental]
+  - display_name: Returning Buyers
+    owner_slice: campaign
+    dataset_id: mart_campaign.new_returning
+    column: returning_buyers
+    definition: Attributed buyers in the period whose first observed order was earlier.
+    formula: attributed_buyers − first_observed_buyers of mart_campaign.new_returning.
+    rules: [R6, R9]
+    limitations:
+      - "Observed history only: a returning buyer is one seen earlier in 2019."
+    notes: [first_in_observed_history]
