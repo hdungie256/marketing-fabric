@@ -80,6 +80,9 @@ def test_missing_field_and_dangling_links_fail(tmp_path):
     write_glossary(tmp_path / "glossary" / "a.yml", [{**TERM, "column": "nope"}])
     with pytest.raises(GlossaryError, match="unknown column"):
         load_terms(tmp_path)
+    write_glossary(tmp_path / "glossary" / "a.yml", [{**TERM, "limitations": [{"Not ROAS": "sample"}]}])
+    with pytest.raises(GlossaryError, match="must be strings"):
+        load_terms(tmp_path)
 
 
 def project(tmp_path):

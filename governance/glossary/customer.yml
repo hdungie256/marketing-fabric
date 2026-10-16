@@ -11,10 +11,10 @@ terms:
     formula: SUM(quantity x avg_price) grouped by order_key.
     rules: [R2, R3, R10]
     limitations:
-      - Not net revenue: excludes returns, payments and real discounts.
+      - "Not net revenue: excludes returns, payments and real discounts."
       - Currency unit not verified; figures carry no currency symbol.
-    notes:
       - Shipping is counted once per order in shipping_fee (R3) and never in gross_value.
+    notes: [currency_unverified]
   - display_name: First Observed Buyers
     owner_slice: customer
     dataset_id: unified/customers
@@ -23,9 +23,9 @@ terms:
     formula: COUNT(customer_id) WHERE first_observed_order_date IN period.
     rules: [R9]
     limitations:
-      - Observed history only: a "new" buyer may have purchased before 2019.
-    notes:
+      - 'Observed history only: a "new" buyer may have purchased before 2019.'
       - Customers without a 2019 order have a null first_observed_order_date.
+    notes: [first_in_observed_history]
   - display_name: RFM Segment
     owner_slice: customer
     dataset_id: unified/orders
@@ -36,8 +36,8 @@ terms:
     limitations:
       - Quintiles are relative to the 2019 buyer population, not absolute thresholds.
       - Frequency counts technical orders (order_key), not source transaction IDs.
-    notes:
       - Ties broken by customer_id so reruns are identical.
+    notes: []
   - display_name: Estimated Unit Cost
     owner_slice: customer
     dataset_id: unified/product_cost
@@ -48,5 +48,5 @@ terms:
     limitations:
       - Estimate only, not actual COGS.
       - Any contribution built on it is estimated, never net profit.
-    notes:
-      - Synthetic reference data (R16): valid for demo math, not business truth.
+      - "Synthetic reference data (R16): valid for demo math, not business truth."
+    notes: [estimate_not_profit]
