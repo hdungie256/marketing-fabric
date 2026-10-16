@@ -4,18 +4,11 @@ import streamlit as st
 
 import fabric_control
 from app.shell.badges import badge_fresh, badge_stale, badge_synthetic
+from app.shell.components.definition_dialog import definition_dialog
 from app.shell.errors import UnknownTermError
 from app.shell.format import FORMATTERS
+from app.shell.notes import FOOTNOTE_NOTES, NOTE_TEXT
 from app.shell.page import add_footnote, add_stale
-
-NOTE_TEXT: dict[str, str] = {
-    "currency_unverified": "Currency of monetary values is not stated in the source (R10).",
-    "retrospective_target": "Retrospective synthetic target (R14).",
-    "estimate_not_profit": "Estimate, not accounting profit.",
-    "attributed_not_incremental": "Attributed, not incremental.",
-    "first_in_observed_history": "First within observed history.",
-}
-FOOTNOTE_NOTES = {"currency_unverified"}
 
 
 def metric(term_id: str, value: float | int | None, freshness: datetime, *, kind: str = "count") -> None:
@@ -36,8 +29,12 @@ def metric(term_id: str, value: float | int | None, freshness: datetime, *, kind
         add_stale(state["datasets"])
 
     with st.container(key=f"metric-{'stale-' if state['stale'] else ''}{term_id}"):
-        with st.container(key=f"kpi-label-{term_id}"):
+        label, info = st.columns([6, 1])
+        with label:
             st.markdown(term["display_name"])
+        with info:
+            if st.button("ⓘ", key=f"metric-info-{term_id}", help=f"About {term['display_name']}"):
+                definition_dialog(term_id)
         with st.container(key=f"kpi-value-{term_id}"):
             st.markdown(FORMATTERS[kind](value))
         with st.container(key=f"kpi-badges-{term_id}", horizontal=True):

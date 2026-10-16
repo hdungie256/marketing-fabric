@@ -6,6 +6,7 @@ import streamlit as st
 
 import fabric_control
 from app.shell import session
+from app.shell.components.definition_dialog import definition_dialog
 from app.shell.format import FORMATTERS
 
 LOCK = "🔒"
@@ -90,7 +91,11 @@ def table(
     dataset_id: str | None = None,
     campaign_col: str | None = None,
     formats: dict[str, str] | None = None,
+    info_terms: dict[str, str] | None = None,
 ) -> None:
     masked = _cached_masked_columns(session.role(), dataset_id) if dataset_id else frozenset()
     out, formatters, config = prepare_table(df, masked, campaign_col, formats)
     st.dataframe(out.style.format(formatters), column_config=config, hide_index=True, width="stretch")
+    for column, term_id in (info_terms or {}).items():
+        if column in out.columns and st.button(f"ⓘ {column}", key=f"table-info-{column}"):
+            definition_dialog(term_id)

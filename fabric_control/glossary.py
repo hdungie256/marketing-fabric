@@ -86,6 +86,12 @@ def load_terms(directory: Path | None = None, registry: dict[str, dict] | None =
             for field in ("rules", "limitations", "notes"):
                 if not isinstance(item[field], list):
                     raise GlossaryError(f"{filename}: term {tid!r} field {field} must be a list")
+                bad = [v for v in item[field] if not isinstance(v, str)]
+                if bad:
+                    raise GlossaryError(
+                        f"{filename}: term {tid!r} field {field} items must be strings "
+                        f"(quote '- key: value' lines), got {bad!r}"
+                    )
             if item["dataset_id"] not in registry:
                 raise GlossaryError(f"{filename}: term {tid!r} links unregistered dataset {item['dataset_id']!r}")
             try:

@@ -40,7 +40,7 @@ terms:
     formula: SUM(attributed_gross_value) / SUM(allocated); a ratio of sums, never an average of daily ratios.
     rules: [R6, R7, R8]
     limitations:
-      - Not ROAS (R7): attribution is a sample rule, not proof that the ad produced the order.
+      - "Not ROAS (R7): attribution is a sample rule, not proof that the ad produced the order."
       - Gross value, not revenue or profit.
     notes: [attributed_not_incremental]
   - display_name: Cost per Attributed Order
@@ -72,6 +72,6 @@ terms:
     formula: attributed gross value − reference cost of goods − campaign cost (allocated spend).
     rules: [R6, R8, R11]
     limitations:
-      - An estimate, not net profit (R11): excludes returns, tax, shipping and overheads.
+      - "An estimate, not net profit (R11): excludes returns, tax, shipping and overheads."
       - SKUs without a reference cost add no cost of goods and are listed as items not yet available (FR-35).
     notes: [estimate_not_profit, attributed_not_incremental]
