@@ -60,4 +60,5 @@ terms:
     rules: [R6, R9]
     limitations:
       - "Observed history only: a returning buyer is one seen earlier in 2019."
+      - "A buyer whose first observed order is not attributed to the campaign counts as returning there: first observed order is attributed only for first-time buyers of that campaign."
     notes: [first_in_observed_history]

@@ -49,3 +49,14 @@ def test_trend_limits_to_top_four_categories():
         [(date(2019, 1, 1), "ALL", "All campaigns", f"S{i}", "d", f"Cat{i}", 1, float(i + 1)) for i in range(6)]
     )
     assert set(svc.trend(rows)["canonical_category"]) == {"Cat5", "Cat4", "Cat3", "Cat2"}
+
+
+def test_top_skus_merges_a_sku_whose_description_changed():
+    rows = frame(
+        [
+            (date(2019, 1, 1), "ALL", "All campaigns", "SKU-A", "Shirt", "Apparel", 1, 10.0),
+            (date(2019, 2, 1), "ALL", "All campaigns", "SKU-A", "Shirt v2", "Apparel", 2, 20.0),
+        ]
+    )
+    top = svc.top_skus(rows, "gross_value")
+    assert len(top) == 1 and top["gross_value"].iloc[0] == 30.0

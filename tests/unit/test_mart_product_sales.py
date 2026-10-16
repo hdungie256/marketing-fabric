@@ -105,3 +105,14 @@ def test_unmapped_categories_pass_through_and_mapped_ones_are_renamed(spark):
     assert got[(date(2019, 1, 1), "ALL", "SKU-A")].canonical_category == "Apparel"
     assert got[(date(2019, 1, 1), "ALL", "SKU-N")].canonical_category == "Nest-Canada"
     assert sum(r.gross_value for k, r in got.items() if k[1] == "ALL") == Decimal("13.00")
+
+
+def test_sku_with_two_descriptions_and_mixed_provenance_stays_one_row(spark):
+    lines = [
+        ("O1", JAN, "SKU-A", "Shirt", "Apparel", 1, Decimal("10.00"), "original"),
+        ("O1", JAN, "SKU-A", "Shirt v2", "Apparel", 1, Decimal("10.00"), "synthetic"),
+    ]
+    df = transforms.build(*frames(spark, lines))
+    got = df.filter("campaign_id = 'ALL'").collect()
+    assert len(got) == 1
+    assert (got[0].quantity, got[0].gross_value, got[0].provenance) == (2, Decimal("20.00"), "synthetic")

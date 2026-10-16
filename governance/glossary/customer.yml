@@ -25,6 +25,7 @@ terms:
     limitations:
       - 'Observed history only: a "new" buyer may have purchased before 2019.'
       - Customers without a 2019 order have a null first_observed_order_date.
+      - 'On New vs Returning it counts only buyers whose first observed order is attributed to the selected campaign.'
     notes: [first_in_observed_history]
   - display_name: RFM Segment
     owner_slice: customer

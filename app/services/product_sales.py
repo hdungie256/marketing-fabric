@@ -6,7 +6,6 @@ from app.shell import DataSource
 from pipelines.jobs.marts.campaign.campaign_overview.transforms import periods
 
 DATASET = "mart_campaign.product_sales"
-SKU = ["product_sku", "product_description", "canonical_category"]
 
 
 def load(source: DataSource) -> pd.DataFrame:
@@ -28,7 +27,12 @@ def select(df: pd.DataFrame, period_id: str, campaign_id: str) -> pd.DataFrame:
 
 
 def top_skus(rows: pd.DataFrame, by: str, n: int = 10) -> pd.DataFrame:
-    sums = rows.groupby(SKU, as_index=False)[["quantity", "gross_value"]].sum()
+    sums = rows.groupby("product_sku", as_index=False).agg(
+        product_description=("product_description", "min"),
+        canonical_category=("canonical_category", "min"),
+        quantity=("quantity", "sum"),
+        gross_value=("gross_value", "sum"),
+    )
     return sums.sort_values(by, ascending=False).head(n).reset_index(drop=True)
 
 

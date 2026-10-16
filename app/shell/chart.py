@@ -8,6 +8,7 @@ from app.shell.theme import CAMPAIGN_COLORS
 # DESIGN.md colors.series-1..5
 SERIES_COLORS = ["#2a78d6", "#d95926", "#1baf7a", "#4a3aa7", "#eda100"]
 GRID_COLOR = "#E4E7EC"  # DESIGN.md colors.border
+TEXT_COLOR = "#1A1F29"  # DESIGN.md colors.text; series hues are never used as text color
 MAX_LABELLED_SERIES = 4
 
 
@@ -50,8 +51,16 @@ def build_chart(
     mark = base.mark_bar() if kind == "bar" else base.mark_line(point=True)
     if n_series > MAX_LABELLED_SERIES:
         return mark
-    text_kw = {"align": "left", "dx": 4} if horizontal else {"dy": -6}
-    labels = base.mark_text(**text_kw).encode(text=alt.Text(y, format=",.0f"))
+    # bars of one category stacked across series: text marks do not stack by default, so stack them too
+    stacked = kind == "bar" and series is not None and df.groupby(x)[series].nunique().max() > 1
+    label_enc = {k: v for k, v in enc.items() if k != "color"}
+    measure = "x" if horizontal else "y"
+    if stacked:
+        label_enc[measure] = (alt.X if horizontal else alt.Y)(y, stack="zero")
+        text_kw = {"align": "center"} if horizontal else {"baseline": "middle"}
+    else:
+        text_kw = {"align": "left", "dx": 4} if horizontal else {"dy": -6}
+    labels = alt.Chart(df).mark_text(color=TEXT_COLOR, **text_kw).encode(**label_enc, text=alt.Text(y, format=",.0f"))
     return mark + labels
 
 

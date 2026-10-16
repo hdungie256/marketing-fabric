@@ -33,3 +33,9 @@ def test_returning_buyers_term_links_new_returning_mart():
 
 def test_first_observed_buyers_carries_r9_note():
     assert fabric_control.term("first_observed_buyers")["notes"] == ["first_in_observed_history"]
+
+
+def test_new_vs_returning_terms_state_the_attribution_scope():
+    for term_id in ("first_observed_buyers", "returning_buyers"):
+        limitations = " ".join(fabric_control.term(term_id)["limitations"])
+        assert "first observed order is attributed" in limitations, term_id

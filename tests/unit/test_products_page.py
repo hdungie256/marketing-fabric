@@ -87,3 +87,10 @@ def test_campaign_without_sales_shows_empty_state():
     assert "No attributed sales for CMP19_03 in this period." in " ".join(m.value for m in at.markdown)
     assert "Clear the Campaign filter to see all." in [c.value for c in at.caption]
     assert not at.dataframe
+
+
+def test_all_campaigns_discloses_unattributed_sales():
+    at = AppTest.from_function(_script).run()
+    assert "Includes sales not attributed to any campaign." in [c.value for c in at.caption]
+    at.selectbox(key="_filter_products_categories_campaign").set_value("CMP19_01").run()
+    assert "Includes sales not attributed to any campaign." not in [c.value for c in at.caption]

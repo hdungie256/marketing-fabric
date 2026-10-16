@@ -1,3 +1,5 @@
+import streamlit as st
+
 import fabric_control
 from app.services import campaign_overview as overview
 from app.services import product_sales as svc
@@ -35,6 +37,8 @@ def render() -> None:
                 "Clear the Campaign filter to see all.",
             )
         return
+    if chosen["campaign"] == overview.ALL:
+        st.caption("Includes sales not attributed to any campaign.")
     by, label = chosen["rank_by"], labels[chosen["rank_by"]]
     chart(
         svc.top_skus(rows, by),

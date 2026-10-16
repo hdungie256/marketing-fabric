@@ -87,3 +87,21 @@ def test_table_view_toggle_renders_dataframe():
     at.toggle(key="t_table_view").set_value(True).run()
     assert not at.exception
     assert len(at.dataframe) == 1
+
+
+def _text_layer(s):
+    return next(
+        layer for layer in _layers(s) if layer.get("mark") == "text" or layer.get("mark", {}).get("type") == "text"
+    )
+
+
+def test_direct_labels_use_text_color_not_series_color():
+    df = pd.DataFrame({"x": ["a", "b"], "y": [1, 2], "s": ["CMP19_01", "CMP19_02"]})
+    encoding = _text_layer(spec(df, series="s"))["encoding"]
+    assert "color" not in encoding or "field" not in encoding["color"]
+
+
+def test_labels_on_stacked_bars_follow_the_stack():
+    df = pd.DataFrame({"x": ["a", "a"], "y": [1, 2], "s": ["First", "Returning"]})
+    layer = _text_layer(build_chart(df, x="x", y="y", x_title="X", y_title="Y", series="s", horizontal=True).to_dict())
+    assert layer["encoding"]["x"]["stack"] == "zero"

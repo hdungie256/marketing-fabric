@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from pyspark.sql import DataFrame
 
 KEYS = ["month", "campaign_id", "product_sku"]
-GROUP = [*KEYS, "product_description", "canonical_category", "provenance"]
 
 
 def build(lines: DataFrame, attribution: DataFrame, category_map: DataFrame, campaigns: DataFrame) -> DataFrame:
@@ -33,8 +32,15 @@ def build(lines: DataFrame, attribution: DataFrame, category_map: DataFrame, cam
     )
     return (
         attributed.unionByName(everything.select(attributed.columns))
-        .groupBy(GROUP)
-        .agg(F.sum("quantity").alias("quantity"), F.sum("line_gross_value").alias("gross_value"))
+        .groupBy(KEYS)
+        .agg(
+            F.sum("quantity").alias("quantity"),
+            F.sum("line_gross_value").alias("gross_value"),
+            # ponytail: one row per grain key; min() picks a deterministic description/category if a SKU has several
+            F.min("product_description").alias("product_description"),
+            F.min("canonical_category").alias("canonical_category"),
+            F.max("provenance").alias("provenance"),  # "synthetic" > "original": any synthetic line taints the row
+        )
         .join(names, "campaign_id")
         .select(
             "month",
