@@ -1,0 +1,22 @@
+dataset_id: unified/exceptions_shared_transaction_id
+schema_version: 1.0.0
+grain: [exception_id]
+columns:
+- name: exception_id
+  type: string
+  nullable: false
+- name: class
+  type: string
+  nullable: false
+- name: natural_key
+  type: string
+  nullable: false
+- name: dataset_id
+  type: string
+  nullable: false
+- name: detail
+  type: string
+  nullable: true
+- name: detected_at
+  type: timestamp
+  nullable: false
