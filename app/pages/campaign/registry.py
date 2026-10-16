@@ -1,4 +1,4 @@
-from app.pages.campaign import overview
+from app.pages.campaign import overview, products
 from app.pages.campaign.placeholder import placeholder
 from app.shell import PageSpec
 
@@ -33,7 +33,7 @@ PAGES = [
         key="products_categories",
         title="Products & Categories",
         group="Campaigns",
-        render=placeholder("4.2"),
+        render=products.render,
         roles=frozenset({"UG01"}),
         icon=":material/category:",
     ),
