@@ -1,3 +1,4 @@
+from app.shell.chart import chart
 from app.shell.components.empty_state import empty_state
 from app.shell.components.feedback import banner_error, banner_stale, denied_block, toast
 from app.shell.components.filter_bar import Filter, filter_bar
@@ -28,6 +29,7 @@ __all__ = [
     "banner_error",
     "banner_slot",
     "banner_stale",
+    "chart",
     "current_source",
     "denied_block",
     "empty_state",
