@@ -24,6 +24,18 @@ MARTS = {
         "campaign/campaign_overview/mart.yml",
         "mart_campaign/103_p2_campaign_overview",
     ),
+    "mart_campaign.product_sales": (
+        "campaign/product_sales/mart.yml",
+        "mart_campaign/104_p2_product_sales",
+    ),
+    "mart_campaign.new_returning": (
+        "campaign/new_returning/mart.yml",
+        "mart_campaign/105_p2_new_returning",
+    ),
+    "mart_campaign.comparison": (
+        "campaign/comparison/mart.yml",
+        "mart_campaign/106_p2_comparison",
+    ),
 }
 MART_P2 = {k: v for k, v in MARTS.items() if k.startswith("mart_shared.")}
 
@@ -127,6 +139,35 @@ def test_campaign_overview_registry_and_graph():
     assert entry["job_id"] == "marts/campaign/campaign_overview"
     assert entry["om_fqn"] == "serving.serving.mart_campaign.campaign_overview"
     assert job_graph(ROOT)["marts/campaign/campaign_overview"] == {
+        "marts/shared/campaign_attributed_daily",
+        "unified/campaigns",
+    }
+
+
+def test_product_sales_registry_and_graph():
+    entry = load_registry()["mart_campaign.product_sales"]
+    assert entry["job_id"] == "marts/campaign/product_sales"
+    assert job_graph(ROOT)["marts/campaign/product_sales"] == {
+        "unified/order_lines",
+        "unified/ref_category_map",
+        "unified/attribution",
+        "unified/campaigns",
+    }
+
+
+def test_new_returning_registry_and_graph():
+    entry = load_registry()["mart_campaign.new_returning"]
+    assert entry["job_id"] == "marts/campaign/new_returning"
+    assert job_graph(ROOT)["marts/campaign/new_returning"] == {
+        "marts/shared/campaign_attributed_daily",
+        "unified/campaigns",
+    }
+
+
+def test_comparison_registry_and_graph():
+    entry = load_registry()["mart_campaign.comparison"]
+    assert entry["job_id"] == "marts/campaign/comparison"
+    assert job_graph(ROOT)["marts/campaign/comparison"] == {
         "marts/shared/campaign_attributed_daily",
         "unified/campaigns",
     }

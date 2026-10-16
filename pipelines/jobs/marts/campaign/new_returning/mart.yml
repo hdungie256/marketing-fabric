@@ -1,0 +1,5 @@
+table: mart_campaign.new_returning
+grain: [period_id, campaign_id]
+modes: [full]
+scope_map: {}
+metrics: [attributed_buyers, first_observed_buyers, returning_buyers]

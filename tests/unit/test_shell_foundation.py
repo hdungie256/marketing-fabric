@@ -24,6 +24,7 @@ PUBLIC_API = {
     "banner_error",
     "banner_slot",
     "banner_stale",
+    "chart",
     "current_source",
     "denied_block",
     "empty_state",

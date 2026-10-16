@@ -1,0 +1,5 @@
+table: mart_campaign.comparison
+grain: [period_id, compare_by, group_id]
+modes: [full]
+scope_map: {}
+metrics: [attributed_orders, attributed_buyers, attributed_gross_value, average_order_value]

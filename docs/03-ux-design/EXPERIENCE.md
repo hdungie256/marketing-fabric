@@ -75,7 +75,7 @@ Short, precise, neutral English. Buttons are verbs. Every block/disable message 
 | "not permitted for role" | "Access denied!", "Error 403" |
 | "Change saved · partial refresh started" | "Success! 🎉" |
 | "Save change", "Reload source", "Save audience", "Mark accepted" | "OK", "Submit", "Go" |
-| "First observed in 2019 history" (R9 note via shell) | "New customers" without qualifier |
+| "First within observed history" (R9 note via shell) | "New customers" without qualifier |
 
 **Number & date format** (all pages, all roles):
 

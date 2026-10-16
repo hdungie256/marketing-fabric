@@ -37,3 +37,47 @@ columns:
     _refreshed_at: Sensitivity.internal
     _run_id: Sensitivity.internal
     _source_version: Sensitivity.internal
+  mart_campaign.product_sales:
+    month: Sensitivity.internal
+    campaign_id: Sensitivity.internal
+    campaign_name: Sensitivity.internal
+    product_sku: Sensitivity.internal
+    product_description: Sensitivity.internal
+    canonical_category: Sensitivity.internal
+    quantity: Sensitivity.internal
+    gross_value: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
+  mart_campaign.new_returning:
+    period_id: Sensitivity.internal
+    period_label: Sensitivity.internal
+    period_start: Sensitivity.internal
+    period_end: Sensitivity.internal
+    campaign_id: Sensitivity.internal
+    campaign_name: Sensitivity.internal
+    attributed_buyers: Sensitivity.internal
+    first_observed_buyers: Sensitivity.internal
+    returning_buyers: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
+  mart_campaign.comparison:
+    period_id: Sensitivity.internal
+    period_label: Sensitivity.internal
+    period_start: Sensitivity.internal
+    period_end: Sensitivity.internal
+    compare_by: Sensitivity.internal
+    group_id: Sensitivity.internal
+    group_name: Sensitivity.internal
+    channel: Sensitivity.internal
+    attributed_orders: Sensitivity.internal
+    attributed_buyers: Sensitivity.internal
+    attributed_gross_value: Sensitivity.internal
+    average_order_value: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal

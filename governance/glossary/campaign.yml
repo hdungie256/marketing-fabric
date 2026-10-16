@@ -41,3 +41,24 @@ terms:
     limitations:
       - Empty when the period has no attributed orders.
     notes: [currency_unverified]
+  - display_name: Quantity Sold
+    owner_slice: campaign
+    dataset_id: mart_campaign.product_sales
+    column: quantity
+    definition: Units sold in the period.
+    formula: SUM(quantity) of unified/order_lines for the selected campaign's attributed orders, or all sales lines for All campaigns.
+    rules: [R6]
+    limitations:
+      - All campaigns includes sales not attributed to any campaign.
+    notes: [attributed_not_incremental]
+  - display_name: Returning Buyers
+    owner_slice: campaign
+    dataset_id: mart_campaign.new_returning
+    column: returning_buyers
+    definition: Attributed buyers in the period whose first observed order was earlier.
+    formula: attributed_buyers − first_observed_buyers of mart_campaign.new_returning.
+    rules: [R6, R9]
+    limitations:
+      - "Observed history only: a returning buyer is one seen earlier in 2019."
+      - "A buyer whose first observed order is not attributed to the campaign counts as returning there: first observed order is attributed only for first-time buyers of that campaign."
+    notes: [first_in_observed_history]

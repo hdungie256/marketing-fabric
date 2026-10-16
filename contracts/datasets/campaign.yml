@@ -63,3 +63,27 @@ datasets:
   job_id: marts/campaign/campaign_overview
   owner: campaign
   tags: []
+- dataset_id: mart_campaign.product_sales
+  om_fqn: serving.serving.mart_campaign.product_sales
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_campaign.product_sales
+  job_id: marts/campaign/product_sales
+  owner: campaign
+  tags: []
+- dataset_id: mart_campaign.new_returning
+  om_fqn: serving.serving.mart_campaign.new_returning
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_campaign.new_returning
+  job_id: marts/campaign/new_returning
+  owner: campaign
+  tags: []
+- dataset_id: mart_campaign.comparison
+  om_fqn: serving.serving.mart_campaign.comparison
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_campaign.comparison
+  job_id: marts/campaign/comparison
+  owner: campaign
+  tags: []
