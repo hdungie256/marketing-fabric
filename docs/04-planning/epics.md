@@ -843,7 +843,7 @@ So that I can judge the portfolio without arguing about how numbers were compute
 **Then** a table and a chart compare the 5 campaigns and channels; every metric column uses a glossary term and its header ⓘ opens the definition dialog (FR-28)
 **And** the chart follows UX-DR17: title, labeled axes, legend, direct labels (≤ 4 series), hover tooltip, "Table view" toggle, no dual axis, each campaign in its fixed `series-n` color
 
-**Given** `tests/reconcile/test_br02.py` and `tests/e2e/test_br02.py`
+**Given** `tests/reconcile/test_reconcile_br02.py` and `tests/e2e/test_br02.py`
 **When** `make test` runs
 **Then** per-campaign totals equal Campaign Overview's values for the same period and every column maps to an existing term (T-BR02)
 
@@ -863,7 +863,7 @@ So that I can decide which products to feature.
 **Given** a campaign filter with no attributed sales
 **When** the page renders
 **Then** the empty state explains why and how to clear the filter
-**And** `tests/reconcile/test_br03.py` and `tests/e2e/test_br03.py` pass (T-BR03)
+**And** `tests/reconcile/test_reconcile_br03.py` and `tests/e2e/test_br03.py` pass (T-BR03)
 
 ### Story 4.3: New vs Returning buyers by campaign (BR06)
 
@@ -873,12 +873,12 @@ So that I know whether a campaign brought in new customers.
 
 **Acceptance Criteria:**
 
-**Given** a `mart_campaign.new_returning` mart using `first_observed_buyers` and `buyers` from `mart_shared.campaign_attributed_daily`
+**Given** a `mart_campaign.new_returning` mart using distinct `customer_id` and `is_first_observed` from `mart_shared.campaign_attributed_orders`
 **When** UG01 or UG02 opens New vs Returning and selects a campaign
-**Then** First Observed Buyers and returning buyers are shown via `shell.metric`, with the R9 note "First observed in 2019 history" rendered from the term notes (FR-30)
+**Then** First Observed Buyers and returning buyers are shown via `shell.metric`, with the R9 note "First within observed history" rendered from the term notes (FR-30)
 **And** First Observed Buyers + returning buyers = buyers of that campaign
 
-**Given** `tests/reconcile/test_br06.py` and `tests/e2e/test_br06.py`
+**Given** `tests/reconcile/test_reconcile_br06.py` and `tests/e2e/test_br06.py`
 **When** they run
 **Then** the totals reconcile against an independent query using `unified/customers.first_observed_order_date` (T-BR06)
 
