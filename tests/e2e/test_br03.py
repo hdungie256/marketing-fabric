@@ -16,7 +16,7 @@ def as_role(login, query, *params):
 def test_nest_categories_separate_in_view():
     rows = as_role(
         "marketing_analyst",
-        f"SELECT DISTINCT canonical_category FROM {VIEW} WHERE canonical_category LIKE 'Nest%'",
+        f"SELECT DISTINCT canonical_category FROM {VIEW} WHERE canonical_category LIKE 'Nest%%'",
     )
     assert {r[0] for r in rows} == {"Nest", "Nest-USA", "Nest-Canada"}
 

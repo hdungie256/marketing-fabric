@@ -4,10 +4,11 @@ import psycopg
 import pytest
 
 import fabric_control as fc
-from app.services.comparison import METRICS
 
 VIEW = "mart_campaign_v.comparison"
 DSN = os.environ.get("SERVING_DB_DSN", "")
+# same list as app.services.comparison.METRICS; not imported because the e2e image has no streamlit
+METRICS = ["attributed_gross_value", "attributed_orders", "attributed_buyers", "average_order_value"]
 
 
 def as_role(login, query, *params):
