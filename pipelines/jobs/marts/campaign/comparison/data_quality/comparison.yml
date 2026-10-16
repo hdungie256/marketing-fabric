@@ -1,0 +1,17 @@
+rules:
+  - rule_id: period_compare_group_unique
+    expectation: ExpectCompoundColumnsToBeUnique
+    kwargs: {column_list: [period_id, compare_by, group_id]}
+    severity: critical
+  - rule_id: orders_not_negative
+    expectation: ExpectColumnValuesToBeBetween
+    kwargs: {column: attributed_orders, min_value: 0}
+    severity: critical
+  - rule_id: buyers_not_above_orders
+    expectation: ExpectColumnPairValuesAToBeGreaterThanB
+    kwargs: {column_A: attributed_orders, column_B: attributed_buyers, or_equal: true}
+    severity: critical
+  - rule_id: provenance_not_null
+    expectation: ExpectColumnValuesToNotBeNull
+    kwargs: {column: provenance}
+    severity: critical

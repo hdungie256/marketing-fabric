@@ -64,3 +64,20 @@ columns:
     _refreshed_at: Sensitivity.internal
     _run_id: Sensitivity.internal
     _source_version: Sensitivity.internal
+  mart_campaign.comparison:
+    period_id: Sensitivity.internal
+    period_label: Sensitivity.internal
+    period_start: Sensitivity.internal
+    period_end: Sensitivity.internal
+    compare_by: Sensitivity.internal
+    group_id: Sensitivity.internal
+    group_name: Sensitivity.internal
+    channel: Sensitivity.internal
+    attributed_orders: Sensitivity.internal
+    attributed_buyers: Sensitivity.internal
+    attributed_gross_value: Sensitivity.internal
+    average_order_value: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
