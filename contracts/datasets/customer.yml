@@ -1,4 +1,34 @@
 datasets:
+- dataset_id: mart_shared.exceptions
+  om_fqn: serving.serving.mart_shared.exceptions
+  openlineage:
+    namespace: s3://lake
+    name: serving.mart_shared.exceptions
+  job_id: marts/shared/exceptions
+  owner: p3
+  tags: []
+  grain:
+  - exception_id
+- dataset_id: unified/exceptions_shared_transaction_id
+  om_fqn: lake_unified.default.lake.exceptions_shared_transaction_id
+  openlineage:
+    namespace: s3://lake
+    name: unified/exceptions_shared_transaction_id
+  job_id: unified/sales_exceptions
+  owner: p3
+  tags: []
+  natural_key:
+  - exception_id
+- dataset_id: unified/exceptions_coupon_mismatch
+  om_fqn: lake_unified.default.lake.exceptions_coupon_mismatch
+  openlineage:
+    namespace: s3://lake
+    name: unified/exceptions_coupon_mismatch
+  job_id: unified/sales_exceptions
+  owner: p3
+  tags: []
+  natural_key:
+  - exception_id
 - dataset_id: unified/orders
   om_fqn: lake_unified.default.lake.orders
   openlineage:

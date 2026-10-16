@@ -1,0 +1,6 @@
+table: mart_shared.exceptions
+grain: [exception_id]
+modes: [full]
+scope_map:
+  exception_id: exception_id
+metrics: []

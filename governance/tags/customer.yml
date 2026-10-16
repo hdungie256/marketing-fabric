@@ -8,3 +8,20 @@ tags:
   - name: cost_estimate
     classification: Finance
     description: Estimated unit-cost reference. Aggregate-only except UG04 SKU detail.
+columns:
+  mart_shared.exceptions:
+    exception_id: Sensitivity.internal
+    class: Sensitivity.internal
+    natural_key: Sensitivity.internal
+    dataset_id: Sensitivity.internal
+    detail: Sensitivity.internal
+    detected_at: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
+  app.exception_status:
+    exception_id: Sensitivity.internal
+    status: Sensitivity.internal
+    updated_at: Sensitivity.internal
+    updated_by: Sensitivity.internal
