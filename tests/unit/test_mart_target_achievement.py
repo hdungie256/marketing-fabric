@@ -127,3 +127,39 @@ def test_columns_follow_contract_order(spark):
     c = spark.createDataFrame([("A", "n", "synthetic")], CAMPAIGNS)
     out = transforms.build(t, c, spark.createDataFrame([], DAILY), spark.createDataFrame([], SPEND))
     assert out.columns == names
+
+
+def rule_frames(spark):
+    targets = [target("A", ORDERS, "10"), target("B", ORDERS, "10")]
+    t = spark.createDataFrame(targets, TARGETS)
+    c = spark.createDataFrame([(r[0], f"Name {r[0]}", "synthetic") for r in targets], CAMPAIGNS)
+    d = spark.createDataFrame([day("A", FROM, orders=7), day("B", FROM, orders=10)], DAILY)
+    return t, transforms.build(t, c, d, spark.createDataFrame([], SPEND))
+
+
+def failed(rules):
+    return {r.rule_id for r in rules if not r.passed}
+
+
+def test_rules_pass_on_built_output(spark):
+    from pipelines.jobs.marts.campaign.target_achievement.job import target_rules
+
+    t, df = rule_frames(spark)
+    assert failed(target_rules(df, t)) == set()
+
+
+def test_rules_fail_when_recommendation_disagrees(spark):
+    from pyspark.sql import functions as F
+
+    from pipelines.jobs.marts.campaign.target_achievement.job import target_rules
+
+    t, df = rule_frames(spark)
+    flipped = df.withColumn("recommendation", F.when(F.col("campaign_id") == "A", "stop").otherwise(F.col("recommendation")))
+    assert failed(target_rules(flipped, t)) == {"recommendation_matches_thresholds"}
+
+
+def test_rules_fail_on_missing_target_row(spark):
+    from pipelines.jobs.marts.campaign.target_achievement.job import target_rules
+
+    t, df = rule_frames(spark)
+    assert failed(target_rules(df.filter("campaign_id <> 'B'"), t)) == {"one_row_per_target"}
