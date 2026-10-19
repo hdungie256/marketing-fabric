@@ -5,9 +5,10 @@ import pytest
 import yaml
 
 from fabric_control.contracts import columns, load_schema
-from tests.unit.test_mart_contracts import METADATA, MIGRATIONS, ROOT, migration_columns
+from tests.unit.test_mart_contracts import METADATA, ROOT, migration_columns
 
 MART_DIR = ROOT / "pipelines" / "jobs" / "marts" / "shared" / "campaign_spend"
+MIGRATIONS = ROOT / "migrations" / "mart_shared"
 MARTS = {
     "mart_shared.campaign_spend_allocated": ("mart.yml", "302_p4_campaign_spend_allocated"),
     "mart_shared.spend_reconciliation": ("mart_reconciliation.yml", "303_p4_spend_reconciliation"),
@@ -38,8 +39,6 @@ def test_shared_metrics_match_contracts():
     for dataset_id in MARTS:
         assert entries[dataset_id]["grain"] == load_schema(dataset_id)["grain"], dataset_id
 
-
-pytest.importorskip("pyspark.sql")
 
 from pipelines.jobs.marts.shared.campaign_spend import transforms  # noqa: E402
 from tests.unit.unified_fixtures import contract, frame, schema  # noqa: E402

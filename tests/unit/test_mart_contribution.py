@@ -27,8 +27,6 @@ def test_contract_manifest_and_migration_agree(dataset_id):
     assert migration_columns(sql) == names
 
 
-pytest.importorskip("pyspark.sql")
-
 import fabric_control as fc  # noqa: E402
 from pipelines import io  # noqa: E402
 from pipelines.jobs.marts.finance.contribution import job, transforms  # noqa: E402
