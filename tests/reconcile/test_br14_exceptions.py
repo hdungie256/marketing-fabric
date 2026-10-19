@@ -23,8 +23,10 @@ def expected() -> dict[str, dict]:
 
     from pipelines.jobs.unified._common import canonical_expr
 
-    sales = io.read_delta("raw/sales/sales_lines")
-    plan = io.read_delta("raw/promotion/coupon_plan")
+    sales = io.read_raw("raw/sales/sales_lines")
+    plan = io.read_raw("raw/promotion/coupon_plan")
+    months = {m: i for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], 1)}
+    plan = plan.withColumn("month", F.create_map(*[F.lit(x) for kv in months.items() for x in kv])[F.initcap(F.trim("month"))])
     canonical = canonical_expr(F.col("product_category"), load_mapping())
     shared = (
         sales.groupBy("transaction_id")
@@ -36,8 +38,8 @@ def expected() -> dict[str, dict]:
     mismatch = (
         sales.withColumn("_canonical", canonical)
         .join(
-            plan,
-            (F.month("transaction_date_iso") == F.col("month")) & (F.col("_canonical") == F.col("product_category")),
+            plan.select("month", F.col("product_category").alias("plan_category")),
+            (F.month("transaction_date_iso") == F.col("month")) & (F.col("_canonical") == F.col("plan_category")),
             "left_anti",
         )
         .select(F.col("sales_line_id").alias("natural_key"))
@@ -54,7 +56,9 @@ def expected() -> dict[str, dict]:
 def actual() -> dict[tuple[str, str], str]:
     with psycopg.connect(os.environ["SERVING_DB_DSN"]) as conn, conn.transaction(force_rollback=True):
         conn.execute("SET LOCAL ROLE data_steward")
-        cursor = conn.execute(f"SELECT class, natural_key, exception_id FROM {VIEW}")
+        cursor = conn.execute(
+            f"SELECT class, natural_key, exception_id FROM {VIEW} WHERE class IN ('shared_transaction_id', 'coupon_plan_mismatch')"
+        )
         return {(r[1], r[0]): r[2] for r in cursor.fetchall()}
 
 
