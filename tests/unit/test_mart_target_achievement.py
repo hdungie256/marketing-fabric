@@ -106,7 +106,11 @@ def test_unknown_metric_raises(spark):
 
 def test_scope_ignores_date(spark):
     targets = [target("CMP19_03", BUYERS, "40"), target("CMP19_04", BUYERS, "40")]
-    daily = [day("CMP19_03", FROM, buyers=10), day("CMP19_03", date(2019, 5, 20), buyers=18), day("CMP19_04", FROM, buyers=1)]
+    daily = [
+        day("CMP19_03", FROM, buyers=10),
+        day("CMP19_03", date(2019, 5, 20), buyers=18),
+        day("CMP19_04", FROM, buyers=1),
+    ]
     scope = {"mode": "scope", "keys": {"campaign_id": ["CMP19_03"], "date": ["2019-05-20"]}}
     narrowed = build(spark, targets, daily, scope=scope)
     assert list(narrowed) == ["CMP19_03"]
@@ -154,7 +158,9 @@ def test_rules_fail_when_recommendation_disagrees(spark):
     from pipelines.jobs.marts.campaign.target_achievement.job import target_rules
 
     t, df = rule_frames(spark)
-    flipped = df.withColumn("recommendation", F.when(F.col("campaign_id") == "A", "stop").otherwise(F.col("recommendation")))
+    flipped = df.withColumn(
+        "recommendation", F.when(F.col("campaign_id") == "A", "stop").otherwise(F.col("recommendation"))
+    )
     assert failed(target_rules(flipped, t)) == {"recommendation_matches_thresholds"}
 
 

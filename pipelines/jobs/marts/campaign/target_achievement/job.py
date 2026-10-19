@@ -21,10 +21,14 @@ def target_rules(df, targets) -> list[RuleResult]:
 
     ratio = F.col("actual").cast("double") / F.col("target_value").cast("double")
     expected = (
-        F.when(ratio >= transforms.CONTINUE_AT, "continue").when(ratio >= transforms.STOP_BELOW, "adjust").otherwise("stop")
+        F.when(ratio >= transforms.CONTINUE_AT, "continue")
+        .when(ratio >= transforms.STOP_BELOW, "adjust")
+        .otherwise("stop")
     )
     return [
-        RuleResult("recommendation_matches_thresholds", "critical", df.filter(F.col("recommendation") != expected).isEmpty()),
+        RuleResult(
+            "recommendation_matches_thresholds", "critical", df.filter(F.col("recommendation") != expected).isEmpty()
+        ),
         RuleResult("one_row_per_target", "critical", df.count() == targets.count()),
     ]
 

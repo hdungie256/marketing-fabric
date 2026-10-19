@@ -31,6 +31,8 @@ def rows(df: pd.DataFrame) -> pd.DataFrame:
         goal=[goal_text(m, t) for m, t in zip(out["target_metric"], out["target_value"], strict=True)],
         detail=[
             detail_text(m, a, t, s)
-            for m, a, t, s in zip(out["target_metric"], out["actual"], out["target_value"], out["allocated_spend"], strict=True)
+            for m, a, t, s in zip(
+                out["target_metric"], out["actual"], out["target_value"], out["allocated_spend"], strict=True
+            )
         ],
     ).reset_index(drop=True)

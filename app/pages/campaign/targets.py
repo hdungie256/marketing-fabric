@@ -66,7 +66,16 @@ def table_view(df: pd.DataFrame) -> None:
     names = {t: fabric_control.term(t)["display_name"] for t in ("target_achievement", "allocated_spend")}
     shown = df.assign(goal_metric=[fabric_control.term(m)["display_name"] for m in df["target_metric"]])
     out = shown[
-        ["campaign_id", "campaign_name", "goal_metric", "target_value", "actual", "achievement", "allocated_spend", "recommendation"]
+        [
+            "campaign_id",
+            "campaign_name",
+            "goal_metric",
+            "target_value",
+            "actual",
+            "achievement",
+            "allocated_spend",
+            "recommendation",
+        ]
     ].rename(
         columns={
             "campaign_id": "Campaign",

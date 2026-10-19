@@ -60,7 +60,9 @@ class Source:
 @pytest.fixture(autouse=True)
 def stubs(monkeypatch):
     monkeypatch.setattr(
-        fabric_control, "term", lambda t: {"display_name": NAMES[t], "notes": [], "synthetic": True} if t in NAMES else None
+        fabric_control,
+        "term",
+        lambda t: {"display_name": NAMES[t], "notes": [], "synthetic": True} if t in NAMES else None,
     )
     monkeypatch.setattr(fabric_control, "record_timing", lambda page, ms: None)
     monkeypatch.setattr(fabric_control, "status", lambda d: {"stale": False, "datasets": []})

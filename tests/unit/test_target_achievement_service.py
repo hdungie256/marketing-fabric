@@ -2,7 +2,7 @@ import pandas as pd
 import pytest
 
 import fabric_control
-from app.services.target_achievement import goal_text, detail_text, rows
+from app.services.target_achievement import detail_text, goal_text, rows
 
 NAMES = {
     "first_observed_buyers": "First Observed Buyers",
