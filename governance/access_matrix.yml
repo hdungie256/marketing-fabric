@@ -16,6 +16,7 @@ read:
   mart_campaign.campaign_overview: [UG01, UG03]
   mart_campaign.product_sales: [UG01]
   mart_campaign.new_returning: [UG01, UG02]
+  mart_campaign.target_achievement: [UG03]
   mart_campaign.comparison: [UG01, UG03]
   mart_shared.exceptions: [UG05]
   app.exception_status: [UG05]

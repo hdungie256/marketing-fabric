@@ -1,5 +1,4 @@
-from app.pages.campaign import comparison, new_returning, overview, products
-from app.pages.campaign.placeholder import placeholder
+from app.pages.campaign import comparison, new_returning, overview, products, targets
 from app.shell import PageSpec
 
 PAGES = [
@@ -24,7 +23,7 @@ PAGES = [
         key="targets",
         title="Targets",
         group="Campaigns",
-        render=placeholder("4.4"),
+        render=targets.render,
         roles=frozenset({"UG03"}),
         home_for=frozenset({"UG03"}),
         icon=":material/flag:",

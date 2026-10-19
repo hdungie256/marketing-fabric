@@ -1,0 +1,18 @@
+dataset_id: mart_campaign.target_achievement
+schema_version: 1.0.0
+grain: [campaign_id]
+columns:
+- {name: campaign_id, type: string, nullable: false}
+- {name: campaign_name, type: string, nullable: false}
+- {name: target_metric, type: string, nullable: false}
+- {name: target_value, type: 'decimal(18,2)', nullable: false}
+- {name: evaluation_from, type: date, nullable: false}
+- {name: evaluation_through, type: date, nullable: false}
+- {name: actual, type: 'decimal(18,2)', nullable: false}
+- {name: achievement, type: 'decimal(9,6)', nullable: false}
+- {name: allocated_spend, type: 'decimal(18,2)', nullable: false}
+- {name: recommendation, type: string, nullable: false}
+- {name: provenance, type: string, nullable: false}
+- {name: _refreshed_at, type: timestamp, nullable: false}
+- {name: _run_id, type: string, nullable: false}
+- {name: _source_version, type: string, nullable: false}

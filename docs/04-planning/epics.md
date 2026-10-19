@@ -892,14 +892,14 @@ So that I can decide which campaigns to continue, adjust or stop.
 
 **Given** a `mart_campaign.target_achievement` mart (grain `campaign_id`) reading `unified/campaign_targets`, `mart_shared.campaign_attributed_daily` and `mart_shared.campaign_spend_allocated`, with `mart.yml` `modes: [full, scope]` and `scope_map: {campaign_id: campaign_id}`
 **When** UG03 lands on Targets (home)
-**Then** the table shows per campaign its own target metric (attributed gross value / attributed orders / first observed buyers), actual, achievement = actual / target, and campaign cost (FR-31, R14)
-**And** the recommendation status-chip is Continue (≥ 100%, success), Adjust (70% – < 100%, warning) or Stop (< 70%, danger), with thresholds displayed next to the result and the note "retrospective synthetic target" plus the Synthetic badge
+**Then** a shared achievement ruler shows per campaign its own target metric (attributed gross value / attributed orders / first observed buyers) and achievement = actual / target; actual, target and campaign cost are in the tooltip and table view (FR-31, R14)
+**And** the recommendation status-chip is Continue (≥ 100%, success), Adjust (70% – < 100%, warning) or Stop (< 70%, danger), with thresholds displayed on the ruler and the footnote "Goals were set after the fact for this demo" plus the Synthetic badge
 
 **Given** a stale source dataset for a campaign
 **When** the page renders
 **Then** the recommendation still displays with a stale badge and the page banner names the dataset
 
-**Given** `tests/reconcile/test_br12.py` and `tests/e2e/test_br12.py`
+**Given** `tests/reconcile/test_reconcile_br12.py` and `tests/e2e/test_br12.py`
 **When** they run
 **Then** every recommendation matches the FR-31 thresholds (T-BR12)
 

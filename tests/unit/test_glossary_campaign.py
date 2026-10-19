@@ -39,3 +39,12 @@ def test_new_vs_returning_terms_state_the_attribution_scope():
     for term_id in ("first_observed_buyers", "returning_buyers"):
         limitations = " ".join(fabric_control.term(term_id)["limitations"])
         assert "first observed order is attributed" in limitations, term_id
+
+
+def test_target_achievement_term_links_target_mart():
+    t = fabric_control.term("target_achievement")
+    assert t["display_name"] == "Target Achievement"
+    assert t["dataset_id"] == "mart_campaign.target_achievement"
+    assert t["column"] == "achievement"
+    assert "retrospective_target" in t["notes"]
+    assert "R14" in t["rules"]

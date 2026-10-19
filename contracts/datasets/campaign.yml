@@ -79,6 +79,14 @@ datasets:
   job_id: marts/campaign/new_returning
   owner: campaign
   tags: []
+- dataset_id: mart_campaign.target_achievement
+  om_fqn: serving.serving.mart_campaign.target_achievement
+  openlineage:
+    namespace: postgres://postgres:5432
+    name: serving.mart_campaign.target_achievement
+  job_id: marts/campaign/target_achievement
+  owner: campaign
+  tags: []
 - dataset_id: mart_campaign.comparison
   om_fqn: serving.serving.mart_campaign.comparison
   openlineage:
