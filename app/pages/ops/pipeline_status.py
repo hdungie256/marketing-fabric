@@ -1,4 +1,4 @@
-"""Pipeline Status page (Story 7.1, FR-23, UX-DR33, UX-DR41). Home page of UG06."""
+"""Pipeline Status page (Stories 7.1, 7.4; FR-23, FR-26, UX-DR33, UX-DR41). Home page of UG06."""
 
 from __future__ import annotations
 
@@ -11,6 +11,7 @@ from app.shell.roles import ROLES
 
 CHIPS = {"queued": "neutral", "running": "info", "success": "success", "failed": "danger", "gated": "warning"}
 REFRESH_SECONDS = 5
+BROKEN = ("failed", "gated")
 
 
 def load():
@@ -25,7 +26,7 @@ def render_runs(latest) -> None:
     for row in latest.itertuples():
         job, last, duration, rows, status = st.columns([4, 1, 1, 2, 2])
         job.markdown(f"`{row.job_id}`")
-        if row.status in ("failed", "gated"):
+        if row.status in BROKEN:
             job.caption(f"Failed at {row.failing_step or 'unknown step'} — {row.cause or 'no alert recorded'}")
         last.markdown(fmt_time(row.started_at))
         duration.markdown(ps.fmt_duration(row.duration_s))
@@ -48,8 +49,33 @@ def render_event(runs, event_id: str) -> None:
     render_runs(ps.latest_runs(chosen))
 
 
+def measure(label: str, value: str, over: bool, target: str) -> None:
+    left, mid, right = st.columns([4, 2, 2])
+    left.markdown(label)
+    mid.markdown(f"{value} · target {target}")
+    with right:
+        status_chip("warning" if over else "success", "Over target" if over else "Within target")
+
+
+def render_performance(runs, timings) -> None:
+    st.subheader("Performance")
+    full = ps.last_full_refresh_seconds(runs)
+    if full is not None:
+        measure("Last full refresh", ps.fmt_duration(full), full > ps.FULL_REFRESH_TARGET_SECONDS, "10:00")
+    for row in ps.event_latencies(runs).itertuples():
+        measure(
+            f"Partial refresh `{row.event_id}`", ps.fmt_duration(row.seconds), row.seconds > ps.TARGET_SECONDS, "2:00"
+        )
+    for row in ps.page_percentiles(timings).itertuples():
+        over = row.p95_ms > ps.PAGE_TARGET_MS
+        value = f"p50 {row.p50_ms / 1000:.2f}s · p95 {row.p95_ms / 1000:.2f}s ({row.samples} views)"
+        measure(f"Page `{row.page}`", value, over, "3s")
+    if full is None and timings.empty:
+        empty_state("No timings recorded yet.")
+
+
 def section(was_active: bool) -> None:
-    runs, alerts, reconciliation = load()
+    runs, alerts, reconciliation, timings = load()
     if runs.empty:
         empty_state("No pipeline runs yet.", "Runs appear after bootstrap starts full_refresh.")
         return
@@ -57,11 +83,14 @@ def section(was_active: bool) -> None:
     if event_id:
         render_event(runs, event_id)
     latest = ps.latest_runs(runs, alerts)
-    broken = latest[latest["status"].isin(["failed", "gated"])]
+    broken = latest[latest["status"].isin(BROKEN)]
     if not broken.empty:
         with banner_slot():
             st.warning(f"{len(broken)} step(s) failed or gated. Dependent pages keep their previous values.")
     st.subheader("Sources & steps")
+    if st.query_params.get("status") == "failed":
+        st.caption("Filtered to failed runs (from the alert indicator).")
+        latest = broken
     render_runs(latest)
     st.subheader("Load reconciliation")
     if reconciliation.empty:
@@ -69,6 +98,7 @@ def section(was_active: bool) -> None:
     else:
         last = reconciliation.sort_values("checked_at").groupby("dataset_id").tail(1).sort_values("dataset_id")
         table(last[["dataset_id", "source_rows", "raw_rows", "baseline_rows", "passed", "reason", "checked_at"]])
+    render_performance(runs, timings)
     active = ps.is_active(runs)
     if active:
         st.caption(f"Auto-refreshes every {REFRESH_SECONDS}s while a run is active.")
@@ -77,6 +107,5 @@ def section(was_active: bool) -> None:
 
 
 def render() -> None:
-    runs, _, _ = load()
-    active = ps.is_active(runs)
+    active = ps.is_active(load()[0])
     st.fragment(run_every=REFRESH_SECONDS if active else None)(section)(active)

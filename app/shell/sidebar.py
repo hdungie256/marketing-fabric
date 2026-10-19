@@ -34,7 +34,10 @@ def render(pages: Sequence[PageSpec], st_pages: dict[str, StreamlitPage]) -> Non
             args=(pages,),
         )
         st.caption(f"Signed in as {role} · nav filtered to this role")
-        st.container(key="alert-indicator")  # Story 7.2 renders the alert count here
+        with st.container(key="alert-indicator"):
+            from app.pages.ops.alerts import alert_indicator
+
+            alert_indicator(role, st_pages)
         for group, specs in grouped(role, pages).items():
             st.caption(group)
             for spec in specs:
