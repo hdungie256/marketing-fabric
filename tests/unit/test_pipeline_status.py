@@ -175,3 +175,44 @@ def test_alert_indicator_hidden_at_zero_and_for_other_roles(count, links):
     app = AppTest.from_function(_indicator, args=(count,)).run()
     assert not app.exception, app.exception
     assert [link.label for link in app.get("page_link")] == links
+
+
+def test_sources_and_reload_targets(monkeypatch):
+    import fabric_control
+
+    calls = []
+    monkeypatch.setattr(fabric_control, "trigger", lambda dag_id, conf: calls.append((dag_id, conf)) or "run-1")
+    assert ps.sources(RUNS) == ["spend"]
+    assert ps.reload("spend") == "run-1" and ps.reload(None) == "run-1"
+    assert calls == [("reload_source", {"source": "spend"}), ("full_refresh", {})]
+
+
+@pytest.mark.parametrize(
+    "choice,error,expected",
+    [
+        ("spend", None, [("reload_source", {"source": "spend"})]),
+        ("Whole pipeline", None, [("full_refresh", {})]),
+        ("spend", 404, []),
+    ],
+)
+def test_reload_asks_once_then_triggers(monkeypatch, choice, error, expected):
+    import fabric_control
+    from fabric_control.clients.http import HttpError
+
+    calls = []
+
+    def trigger(dag_id, conf):
+        if error:
+            raise HttpError("POST", "/dags", error, "")
+        calls.append((dag_id, conf))
+        return "run-1"
+
+    monkeypatch.setattr(fabric_control, "trigger", trigger)
+    app = run_page(monkeypatch, (RUNS, ALERTS, RECON, TIMINGS))
+    app.selectbox(key="reload-source").set_value(choice).run()
+    app.button(key="reload-start").click().run()
+    assert calls == []  # nothing starts before confirming
+    app.button(key="reload-confirm").click().run()
+    assert calls == expected
+    if error:
+        assert "not deployed" in app.error[0].value

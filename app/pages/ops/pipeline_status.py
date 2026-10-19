@@ -5,13 +5,14 @@ from __future__ import annotations
 import streamlit as st
 
 from app.services import pipeline_status as ps
-from app.shell import banner_slot, empty_state, fmt_count, fmt_time, session, table
+from app.shell import banner_slot, empty_state, fmt_count, fmt_time, session, table, toast
 from app.shell.components.status_chip import status_chip
 from app.shell.roles import ROLES
 
 CHIPS = {"queued": "neutral", "running": "info", "success": "success", "failed": "danger", "gated": "warning"}
 REFRESH_SECONDS = 5
 BROKEN = ("failed", "gated")
+ALL = "Whole pipeline"
 
 
 def load():
@@ -74,6 +75,39 @@ def render_performance(runs, timings) -> None:
         empty_state("No timings recorded yet.")
 
 
+PENDING = "_reload_pending"
+
+
+def start_reload(source: str | None) -> None:
+    try:
+        run_id = ps.reload(source)
+    except Exception as e:
+        missing = getattr(e, "status", None) == 404
+        st.error(
+            "Reload did not start: the DAG is not deployed in Airflow." if missing else f"Reload did not start: {e}"
+        )
+        return
+    toast(f"Reload started · {run_id}", "success")
+
+
+def render_reload(runs) -> None:
+    st.subheader("Reload")
+    choice = st.selectbox("Source", [ALL, *ps.sources(runs)], key="reload-source")
+    if st.button("Reload source" if choice != ALL else "Reload all", key="reload-start"):
+        st.session_state[PENDING] = choice
+    pending = st.session_state.get(PENDING)
+    if pending is None:
+        return
+    st.warning(f"Reload {pending.lower() if pending == ALL else pending}? Dependent jobs rerun after it.")
+    confirm, cancel = st.columns(2)
+    if confirm.button("Confirm reload", type="primary", key="reload-confirm"):
+        del st.session_state[PENDING]
+        start_reload(None if pending == ALL else pending)
+    elif cancel.button("Cancel", key="reload-cancel"):
+        del st.session_state[PENDING]
+        st.rerun()
+
+
 def section(was_active: bool) -> None:
     runs, alerts, reconciliation, timings = load()
     if runs.empty:
@@ -107,5 +141,8 @@ def section(was_active: bool) -> None:
 
 
 def render() -> None:
-    active = ps.is_active(load()[0])
+    runs = load()[0]
+    active = ps.is_active(runs)
     st.fragment(run_every=REFRESH_SECONDS if active else None)(section)(active)
+    if not runs.empty:
+        render_reload(runs)  # outside the auto-refreshing fragment so the confirm dialog stays open

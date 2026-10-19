@@ -127,3 +127,17 @@ def page_percentiles(timings: pd.DataFrame) -> pd.DataFrame:
     ms = timings.assign(ms=timings["ms"].astype(float)).groupby("page")["ms"]
     out = pd.DataFrame({"p50_ms": ms.quantile(0.5), "p95_ms": ms.quantile(0.95), "samples": ms.size()})
     return out.reset_index()
+
+
+def sources(runs: pd.DataFrame) -> list[str]:
+    """Reloadable sources: the <source> of every ingest/<source> job seen in ops.runs."""
+    return sorted({job.split("/", 1)[1] for job in runs["job_id"] if job.startswith("ingest/")})
+
+
+def reload(source: str | None) -> str:
+    """Start reload_source for one source, or full_refresh when source is None (FR-24). Returns the DAG run id."""
+    import fabric_control
+
+    if source is None:
+        return fabric_control.trigger("full_refresh", {})
+    return fabric_control.trigger("reload_source", {"source": source})
