@@ -191,11 +191,11 @@ Lands: BR01 (total attributed orders = 1,290), BR02, BR03, BR06.
 
 Minh must decide which of the 5 campaigns to continue, adjust or stop.
 
-1. Lands on **Targets**: per-campaign table, achievement = actual / target on each campaign's own target metric (R14), thresholds shown beside results (≥100% Continue, 70–<100% Adjust, <70% Stop), note "retrospective simulated target", Synthetic badge.
+1. Lands on **Targets**: one shared achievement ruler, achievement = actual / target on each campaign's own target metric (R14), thresholds shown on the ruler (≥100% Continue, 70–<100% Adjust, <70% Stop), footnote "Goals were set after the fact for this demo", Synthetic badge.
 2. Opens ⓘ on the target column header to confirm the definition.
 3. Opens **Budget & Spend** (read-only) for *Attributed Value / Spend Ratio* and *Cost per Attributed Order*.
 4. Opens **Contribution**: *Estimated Contribution* per campaign visible; SKU reference cost column shows "not permitted for role".
-5. **Climax:** a campaign's status-chip reads "Stop" with its own target and threshold beside it — Minh decides from one governed table, and sees that cost detail he may not see is hidden by the platform, not the page.
+5. **Climax:** Summer Drinkware sits exactly on the Stop line at 70%, Adjust, with its own target and threshold beside it — Minh decides from one governed table, and sees that cost detail he may not see is hidden by the platform, not the page.
 6. **Failure path:** if a target's source dataset is stale, Targets shows {components.banner-stale} naming it; that campaign's recommendation still displays, tagged with a stale badge, and Minh defers the stop/keep decision until it refreshes.
 
 Lands: BR12, BR11 (UG03 aggregate only), BR02.
