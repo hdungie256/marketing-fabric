@@ -26,8 +26,6 @@ def test_contract_manifest_and_migration_agree():
     assert MIGRATION.with_suffix(".rollback.sql").read_text().strip() == f"DROP TABLE {DATASET};"
 
 
-pytest.importorskip("pyspark.sql")
-
 import fabric_control as fc  # noqa: E402
 from fabric_control.models import GateFailed  # noqa: E402
 from pipelines import io  # noqa: E402
