@@ -85,3 +85,13 @@ def test_merge_unions_classes_with_provenance(spark, sales, plan):
     assert merged.count() == 2
     assert {r["class"] for r in merged.collect()} == {transforms.SHARED_CLASS, transforms.MISMATCH_CLASS}
     assert {r.provenance for r in merged.collect()} == {"original"}
+
+
+def test_merge_drops_lake_metadata_so_pg_writer_can_stamp_its_own(spark, sales, plan):
+    from pyspark.sql import functions as F
+
+    from pipelines.jobs.marts.shared.exceptions import transforms as merge_t
+
+    stored = transforms.shared_transaction_ids(sales, AT).withColumn("_run_id", F.lit("lake-run"))
+    merged = merge_t.merge(stored, stored)
+    assert merged.columns == [*(c for c in stored.columns if c != "_run_id"), "provenance"]
