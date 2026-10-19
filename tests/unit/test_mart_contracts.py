@@ -36,6 +36,10 @@ MARTS = {
         "campaign/comparison/mart.yml",
         "mart_campaign/106_p2_comparison",
     ),
+    "mart_campaign.target_achievement": (
+        "campaign/target_achievement/mart.yml",
+        "mart_campaign/107_p2_target_achievement",
+    ),
 }
 MART_P2 = {k: v for k, v in MARTS.items() if k.startswith("mart_shared.")}
 
@@ -71,7 +75,7 @@ def test_mart_yml_matches_contract(dataset_id):
     contract = load_schema(dataset_id)
     assert data["table"] == dataset_id
     assert data["grain"] == contract["grain"]
-    assert data["modes"] == ["full"]
+    assert data["modes"] == (["full", "scope"] if dataset_id == "mart_campaign.target_achievement" else ["full"])
     assert set(data["metrics"]) <= {name for name, _ in columns(contract)}
 
 

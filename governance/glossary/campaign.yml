@@ -62,3 +62,13 @@ terms:
       - "Observed history only: a returning buyer is one seen earlier in 2019."
       - "A buyer whose first observed order is not attributed to the campaign counts as returning there: first observed order is attributed only for first-time buyers of that campaign."
     notes: [first_in_observed_history]
+  - display_name: Target Achievement
+    owner_slice: campaign
+    dataset_id: mart_campaign.target_achievement
+    column: achievement
+    definition: How far a campaign got toward its own goal.
+    formula: "actual / target_value, where actual is the campaign's own target metric summed over its evaluation window. Continue ≥ 100%, Adjust 70% – < 100%, Stop < 70%."
+    rules: [R14, R6]
+    limitations:
+      - Goals were set after the fact for this demo, so achievement is a retrospective reading, not a forecast.
+    notes: [retrospective_target, attributed_not_incremental]

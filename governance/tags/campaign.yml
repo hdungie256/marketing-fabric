@@ -64,6 +64,21 @@ columns:
     _refreshed_at: Sensitivity.internal
     _run_id: Sensitivity.internal
     _source_version: Sensitivity.internal
+  mart_campaign.target_achievement:
+    campaign_id: Sensitivity.internal
+    campaign_name: Sensitivity.internal
+    target_metric: Sensitivity.internal
+    target_value: Sensitivity.internal
+    evaluation_from: Sensitivity.internal
+    evaluation_through: Sensitivity.internal
+    actual: Sensitivity.internal
+    achievement: Sensitivity.internal
+    allocated_spend: Sensitivity.internal
+    recommendation: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
   mart_campaign.comparison:
     period_id: Sensitivity.internal
     period_label: Sensitivity.internal

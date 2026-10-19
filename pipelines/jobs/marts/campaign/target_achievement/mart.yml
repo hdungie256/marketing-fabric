@@ -1,0 +1,5 @@
+table: mart_campaign.target_achievement
+grain: [campaign_id]
+modes: [full, scope]
+scope_map: {campaign_id: campaign_id}
+metrics: [actual, achievement, allocated_spend]
