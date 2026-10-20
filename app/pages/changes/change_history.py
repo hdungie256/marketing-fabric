@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import UTC
 
 import pandas as pd
 import psycopg
@@ -18,6 +19,7 @@ from app.shell import (
     current_source,
     empty_state,
     filter_bar,
+    fmt_date,
     fmt_money,
     fmt_time,
     session,
@@ -27,6 +29,7 @@ from app.shell.components.definition_dialog import definition_dialog
 from app.shell.components.lineage_graph import lineage_flow
 from app.shell.components.spend_edit import PAGE_TITLE
 from app.shell.data_source import data_mode
+from app.shell.format import DASH, app_tz
 from app.shell.roles import ROLES
 from fabric_control.glossary import load_terms
 
@@ -48,32 +51,46 @@ def _read(dataset_id: str) -> pd.DataFrame | None:
         return None  # the viewer cannot read it: skipped from the kept count
 
 
+def _money(value) -> str:
+    return fmt_money(value, places=2)
+
+
 def _signed(value) -> str:
-    return ("+" if value is not None and value > 0 else "") + fmt_money(value)
+    if pd.isna(value):
+        return DASH
+    return ("+" if value > 0 else "\u2212" if value < 0 else "") + _money(abs(value))  # U+2212 minus, as the spec
+
+
+def _saved(value) -> str:
+    if pd.isna(value):
+        return DASH
+    value = value if value.tzinfo else value.replace(tzinfo=UTC)
+    return f"{fmt_date(value.astimezone(app_tz()))} {fmt_time(value)}"  # date in APP_TZ too, not UTC
 
 
 def _summary(event: dict, rows: pd.DataFrame, terms: dict) -> None:
-    event = ch._event(event)
+    event = ch.parse_event(event)
     marts = [a["dataset_id"] for a in fabric_control.affected_by(event) if a["dataset_id"].startswith("mart_")]
     # Metric columns: glossary-defined ones plus the columns the change log tracks.
     metrics = {
         d: sorted(
             {t["column"] for t in terms.values() if t["dataset_id"] == d}
-            | {c for s, c in ch.MEANING if s == ch._short(d)}
+            | {c for s, c in ch.MEANING if s == ch.short_name(d)}
         )
         for d in marts
     }
     m, latest = ch.kept({d: _read(d) for d in marts}, metrics, event["emitted_at"])
     st.markdown(f"**{len(rows)} metrics changed** · {m} unchanged kept refresh time {fmt_time(latest)}")
-    campaign = ch._first(event["keys"].get("campaign_id"))
+    campaign = ch.first(event["keys"].get("campaign_id"))
     st.caption(f"{campaign} only. Other campaigns and datasets not downstream of spend were not refreshed.")
 
 
-def _changed_values(rows: pd.DataFrame) -> None:
+def _changed_values(rows: pd.DataFrame, campaign: str) -> None:
     st.subheader("Changed values")
     if rows.empty:
         st.caption("No values changed for this event.")
         return
+    st.caption(f"{campaign}. Select ⓘ for the metric definition.")
     widths = [3, 1, 3, 2, 2, 2, 2]
     for column, title in zip(st.columns(widths), HEADERS, strict=True):
         column.caption(title)
@@ -83,9 +100,13 @@ def _changed_values(rows: pd.DataFrame) -> None:
         if row["info_term"] and info.button("ⓘ", key=f"change-info-{i}"):
             definition_dialog(row["info_term"])
         level.markdown(row["level"])
-        page.markdown(PAGE_TITLE.get(row["page"], row["page"] or "—"))
-        old.markdown(fmt_money(row["old"]))
-        new.markdown(fmt_money(row["new"]))
+        if not row["page"]:
+            page.markdown(DASH)
+        elif page.button(PAGE_TITLE.get(row["page"], row["page"]), key=f"change-page-{i}", type="tertiary"):
+            session.request_redirect(row["page"])
+            st.rerun()
+        old.markdown(_money(row["old"]))
+        new.markdown(_money(row["new"]))
         change.markdown(_signed(row["change"]))
 
 
@@ -118,7 +139,7 @@ def render() -> None:
         format_func=lambda e: listed.set_index("event_id").loc[e, "change"],
     )  # fmt: skip
     shown = listed.assign(
-        saved_at=listed["saved_at"].map(fmt_time),
+        saved_at=listed["saved_at"].map(_saved),
         refresh_seconds=listed["refresh_seconds"].map(pipeline_status.fmt_duration),
     ).rename(
         columns={
@@ -140,7 +161,8 @@ def render() -> None:
     st.subheader("How the change flowed")
     lineage_flow(ch.flow(event, runs, change_log))
     rest = ch.not_downstream(event)
-    more = f" and {len(rest) - 5} more" if len(rest) > 5 else ""
-    st.caption(f"Not downstream of spend, not refreshed: {', '.join(rest[:5])}{more}")
+    if rest:
+        more = f" and {len(rest) - 5} more" if len(rest) > 5 else ""
+        st.caption(f"Not downstream of spend, not refreshed: {', '.join(rest[:5])}{more}")
 
-    _changed_values(rows)
+    _changed_values(rows, ch.first(ch.parse_event(event)["keys"].get("campaign_id")))

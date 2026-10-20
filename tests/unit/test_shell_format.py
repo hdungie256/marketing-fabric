@@ -1,5 +1,6 @@
 import math
 from datetime import UTC, date, datetime
+from decimal import Decimal
 
 import numpy as np
 import pandas as pd
@@ -24,6 +25,12 @@ def test_fmt_count(value, expected):
 )
 def test_fmt_money_rounds_half_away_from_zero_without_symbol(value, expected):
     assert fmt_money(value) == expected
+
+
+def test_fmt_money_with_places_keeps_cents():
+    assert fmt_money(Decimal("1356.325"), places=2) == "1,356.33"
+    assert fmt_money(0.4, places=2) == "0.40"
+    assert fmt_money(None, places=2) == "—"
 
 
 @pytest.mark.parametrize("value,expected", [(3.4178, "3.42×"), (0, "0.00×"), (1.005, "1.01×"), (1234.5, "1,234.50×")])

@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 
 import pandas as pd
 import pytest
@@ -14,7 +14,7 @@ OLD = T0 - timedelta(hours=1)
 E2 = {
     **EVENT,
     "event_id": "e2",
-    "emitted_at": T0 - timedelta(days=1),
+    "emitted_at": datetime(2026, 10, 19, 20, 0, tzinfo=UTC),  # 03:00 on 2026-10-20 in APP_TZ (UTC+7)
     "keys": '{"campaign_id": "CMP19_01", "date": "2019-11-01"}',
 }
 
@@ -94,8 +94,28 @@ def test_event_id_query_param_selects_event(monkeypatch):
 def test_info_button_only_for_glossary_metrics(monkeypatch):
     at, text = _app(monkeypatch)
     assert len([b for b in at.button if b.label == "ⓘ"]) == 2
-    assert "−200" in text or "-200" in text
-    assert "+200" in text
+    assert "\u2212200.00" in text and "+200.00" in text  # signed with the U+2212 minus, 2 decimals
+    assert "1,356.33" in text and "1,156.33" in text
+    assert "CMP19_05. Select ⓘ for the metric definition." in text
+
+
+def test_shown_on_links_to_page(monkeypatch):
+    at, _ = _app(monkeypatch)
+    labels = [b.label for b in at.button if b.key and b.key.startswith("change-page-")]
+    assert labels == ["Budget & Spend", "Budget & Spend", "Targets", "Contribution"]
+    at.button(key="change-page-2").click().run()
+    assert at.session_state["_shell_redirect"] == "targets"
+
+
+def test_saved_at_shows_date_and_time_in_app_tz(monkeypatch):
+    at, _ = _app(monkeypatch)
+    assert list(at.dataframe[0].value["Saved at"]) == ["2026-10-20 17:42", "2026-10-20 03:00"]
+
+
+def test_no_downstream_caption_when_everything_refreshed(monkeypatch):
+    monkeypatch.setattr(page.ch, "not_downstream", lambda event: [])
+    _, text = _app(monkeypatch)
+    assert "Not downstream of spend" not in text
 
 
 def test_ug01_without_contribution_access_still_renders(monkeypatch):

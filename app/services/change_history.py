@@ -38,7 +38,7 @@ RECOMPUTED = ("neutral", "Recomputed, no tracked change")
 CHANGE_DATASET = "mart_shared.campaign_spend_allocated"
 
 
-def _short(dataset_id: str) -> str:
+def short_name(dataset_id: str) -> str:
     return dataset_id.rsplit(".", 1)[-1]
 
 
@@ -46,13 +46,13 @@ def _json(value: Any) -> dict:
     return json.loads(value) if isinstance(value, str) else dict(value)
 
 
-def _event(row: Any) -> dict[str, Any]:
+def parse_event(row: Any) -> dict[str, Any]:
     event = dict(row)
     event["keys"] = _json(event["keys"])
     return event
 
 
-def _first(value: Any) -> Any:
+def first(value: Any) -> Any:
     return value[0] if isinstance(value, list) else value
 
 
@@ -79,13 +79,13 @@ def _same(a: tuple, b: tuple) -> bool:
 
 
 def changed_values(log: pd.DataFrame, event: dict, terms: dict) -> pd.DataFrame:
-    event = _event(event)
+    event = parse_event(event)
     order = {a["dataset_id"]: i for i, a in enumerate(fabric_control.affected_by(event))}
     groups: list[dict[str, Any]] = []
     for row in _for_event(log, event).to_dict("records"):
         column = column_of(row["dataset_id"], row["term_id"], terms)
         grain = _json(row["grain_key"])
-        meaning = MEANING.get((_short(row["dataset_id"]), column), column)
+        meaning = MEANING.get((short_name(row["dataset_id"]), column), column)
         key = (meaning, grain.get("campaign_id"), grain.get("date"))
         values = (row["old_value"], row["new_value"])
         match = next((g for g in groups if g["values"] == values and _same(g["key"], key)), None)
@@ -109,7 +109,7 @@ def changed_values(log: pd.DataFrame, event: dict, terms: dict) -> pd.DataFrame:
                 "metric": metric_label(meaning),
                 "info_term": info if defined else None,
                 "level": f"{campaign} · {date}" if campaign and date else date or "Campaign total",
-                "page": PAGE_OF.get(_short(min(g["rows"], key=lambda r: order.get(r[0], len(order)))[0])),
+                "page": PAGE_OF.get(short_name(min(g["rows"], key=lambda r: order.get(r[0], len(order)))[0])),
                 "old": old,
                 "new": new,
                 "change": None if pd.isna(old) or pd.isna(new) else round(float(new) - float(old), 2),
@@ -140,9 +140,9 @@ def event_table(events: pd.DataFrame, runs: pd.DataFrame, log: pd.DataFrame, lim
     runs = with_emitted_at(runs, events)
     out = []
     for row in events.sort_values("emitted_at", ascending=False).head(limit).to_dict("records"):
-        event = _event(row)
+        event = parse_event(row)
         rows = _for_event(log, event)
-        date = _first(event["keys"].get("date"))
+        date = first(event["keys"].get("date"))
         new = next(
             (
                 r["new_value"]
@@ -156,7 +156,7 @@ def event_table(events: pd.DataFrame, runs: pd.DataFrame, log: pd.DataFrame, lim
                 "event_id": event["event_id"],
                 "saved_at": event["emitted_at"],
                 "change": f"Allocated spend for {date} " + ("changed" if new is None else f"set to {float(new):,.2f}"),
-                "campaign_id": _first(event["keys"].get("campaign_id")),
+                "campaign_id": first(event["keys"].get("campaign_id")),
                 "datasets": len(fabric_control.affected_by(event)) - 1,
                 "values_changed": len(changed_values(rows, event, terms)),
                 "refresh_seconds": event_runs(runs, event["event_id"])[1],
@@ -181,7 +181,7 @@ def _refreshed(run: dict | None) -> str:
 
 
 def flow(event: dict, runs: pd.DataFrame, log: pd.DataFrame) -> list[tuple[str, list[dict]]]:
-    event = _event(event)
+    event = parse_event(event)
     chosen, _ = event_runs(runs, event["event_id"])
     by_job = {r["job_id"]: r for r in chosen.to_dict("records")}  # start order: latest run per job wins
     counts = _for_event(log, event)["dataset_id"].value_counts().to_dict()
@@ -190,7 +190,7 @@ def flow(event: dict, runs: pd.DataFrame, log: pd.DataFrame) -> list[tuple[str, 
     for item in fabric_control.affected_by(event):
         dataset_id, job_id = item["dataset_id"], item["job_id"]
         column, run = _column(dataset_id), by_job.get(job_id)
-        first = job_id not in first_output
+        first_of_job = job_id not in first_output
         first_output.add(job_id)
         k = counts.get(dataset_id, 0)
         chip = ("info", f"{k} changed") if k else RECOMPUTED
@@ -200,13 +200,13 @@ def flow(event: dict, runs: pd.DataFrame, log: pd.DataFrame) -> list[tuple[str, 
             meta, chip = f"Source version {version - 1} → {version}", ("info", "Edited")
         elif (
             column == "Unified"
-            and first
+            and first_of_job
             and run
             and pd.notna(run.get("delta_version"))
             and pd.notna(run.get("delta_version_before"))
         ):
             meta = f"Delta version {int(run['delta_version_before'])} → {int(run['delta_version'])}"
-        page = PAGE_OF.get(_short(dataset_id)) if column == "Page marts" else None
+        page = PAGE_OF.get(short_name(dataset_id)) if column == "Page marts" else None
         columns[column].append(
             {"dataset_id": dataset_id, "label": label(dataset_id), "meta": meta, "chip": chip, "page": page}
         )
@@ -214,6 +214,6 @@ def flow(event: dict, runs: pd.DataFrame, log: pd.DataFrame) -> list[tuple[str, 
 
 
 def not_downstream(event: dict) -> list[str]:
-    event = _event(event)
+    event = parse_event(event)
     affected = {a["dataset_id"] for a in fabric_control.affected_by(event)}
     return sorted(label(d) for d in fabric_control.load_registry() if d.startswith("mart_") and d not in affected)
