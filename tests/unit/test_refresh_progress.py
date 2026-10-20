@@ -59,6 +59,19 @@ def test_event_without_progress_times_out():
     assert rp.finished(st)
 
 
+def test_retry_order_does_not_matter():
+    rows = [("marts/shared/campaign_spend", "e1", "failed", T0), ("marts/shared/campaign_spend", "e1", "success", T0 + timedelta(seconds=30))]
+    for order in (rows, rows[::-1]):
+        r = pd.DataFrame(order, columns=["job_id", "event_id", "status", "started_at"])
+        assert rp.statuses(rp.steps(EVENT), r, "e1", T0, T0)[2] == "done"
+
+
+def test_unknown_status_is_running():
+    st = rp.statuses(rp.steps(EVENT), runs(("unified/campaign_spend", "e1", "weird")), "e1", T0, T0)
+    assert st[:2] == ["running", "running"]
+    assert not rp.finished(st)
+
+
 def _events():
     return pd.DataFrame(
         [

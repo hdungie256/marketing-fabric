@@ -38,13 +38,15 @@ def steps(event: dict[str, Any]) -> list[dict[str, str]]:
 
 def statuses(steps: list[dict], runs: pd.DataFrame, event_id: str, emitted_at: datetime, now: datetime) -> list[str]:
     rows = runs[runs["event_id"] == event_id]
-    by_job = dict(zip(rows["job_id"], rows["status"], strict=False))  # ponytail: last row per job wins
+    if "started_at" in rows:
+        rows = rows.sort_values("started_at", kind="stable")  # retry: latest run per job wins
+    by_job = dict(zip(rows["job_id"], rows["status"], strict=False))
     timed_out = (now - emitted_at).total_seconds() > TIMEOUT_SECONDS
     out: list[str] = []
     for step in steps:
         status = by_job.get(step["job_id"])
         if status is not None:
-            out.append(_RUN_STATE[status])
+            out.append(_RUN_STATE.get(status, "running"))  # unknown status: not finished
         elif "failed" in out:
             out.append("skipped")
         else:
