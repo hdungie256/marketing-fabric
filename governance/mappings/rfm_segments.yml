@@ -1,0 +1,23 @@
+# RFM segment rule table (Story 5.1, FR-32, R18). Ordered: first match wins.
+# Bounds are inclusive quintile scores 1-5. `when: {}` matches everything
+# (Lost must stay last). Transforms evaluate these generically; the yml order
+# is authoritative and asserted by unit tests.
+segments:
+  - name: Champions
+    when: {r_min: 4, f_min: 4, m_min: 4}
+  - name: Can't Lose
+    when: {r_max: 2, any: [{f_min: 4}, {m_min: 4}]}
+  - name: At Risk
+    when: {r_max: 2, any: [{f_eq: 3}, {m_eq: 3}]}
+  - name: Loyal
+    when: {r_min: 3, f_min: 4}
+  - name: Potential Loyalist
+    when: {r_min: 4, f_in: [2, 3]}
+  - name: Recent First Buyers
+    when: {r_min: 4, f_eq: 1}
+  - name: Needs Attention
+    when: {r_eq: 3}
+  - name: Hibernating
+    when: {r_eq: 2}
+  - name: Lost
+    when: {}

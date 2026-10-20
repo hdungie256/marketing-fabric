@@ -25,3 +25,27 @@ columns:
     status: Sensitivity.internal
     updated_at: Sensitivity.internal
     updated_by: Sensitivity.internal
+  mart_customer.rfm:
+    customer_id: Sensitivity.direct_identifier
+    recency_days: Sensitivity.internal
+    recency_score: Sensitivity.internal
+    frequency_orders: Sensitivity.internal
+    frequency_score: Sensitivity.internal
+    monetary_value: Sensitivity.internal
+    monetary_score: Sensitivity.internal
+    segment: Sensitivity.internal
+    categories: Sensitivity.internal
+    gender: Sensitivity.internal
+    location: Sensitivity.internal
+    tenure_months: Sensitivity.internal
+    provenance: Sensitivity.internal
+    _refreshed_at: Sensitivity.internal
+    _run_id: Sensitivity.internal
+    _source_version: Sensitivity.internal
+  app.segments:
+    audience_id: Sensitivity.internal
+    name: Sensitivity.internal
+    criteria: Sensitivity.internal
+    customer_count: Sensitivity.internal
+    created_by: Sensitivity.internal
+    created_at: Sensitivity.internal

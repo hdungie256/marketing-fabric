@@ -315,7 +315,14 @@ def effective_matrix() -> list[dict[str, Any]]:
     return [dict(zip(("role", "dataset_id", "column", "action"), row, strict=True)) for row in rows]
 
 
+NO_CONSENT_DATASETS = frozenset({"mart_customer.rfm", "app.segments"})
+NO_CONSENT_REASON = "Contact export disabled — no marketing consent data (R12)"
+
+
 def can_export(dataset_id: str, role: str) -> tuple[bool, str]:
+    """Contact export is locked: customer data carries no consent metadata (R12, FR-21)."""
+    if dataset_id in NO_CONSENT_DATASETS:
+        return False, NO_CONSENT_REASON
     return stub("can_export", (False, "not implemented"), dataset_id=dataset_id, role=role)
 
 

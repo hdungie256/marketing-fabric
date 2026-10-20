@@ -1,0 +1,6 @@
+table: mart_customer.rfm
+grain: [customer_id]
+modes: [full]
+scope_map:
+  customer_id: customer_id
+metrics: [recency_score, frequency_score, monetary_score, segment]

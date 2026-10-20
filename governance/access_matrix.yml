@@ -20,6 +20,8 @@ read:
   mart_campaign.comparison: [UG01, UG03]
   mart_shared.exceptions: [UG05]
   app.exception_status: [UG05]
+  mart_customer.rfm: [UG01, UG02]
+  app.segments: [UG01, UG02]
   ops.runs: [UG01, UG03, UG04, UG05, UG06]
   ops.alerts: [UG05, UG06]
   ops.load_reconciliation: [UG05, UG06]

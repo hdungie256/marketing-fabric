@@ -1,0 +1,52 @@
+dataset_id: mart_customer.rfm
+schema_version: 1.0.0
+grain: [customer_id]
+columns:
+- name: customer_id
+  type: bigint
+  nullable: false
+- name: recency_days
+  type: int
+  nullable: false
+- name: recency_score
+  type: int
+  nullable: false
+- name: frequency_orders
+  type: int
+  nullable: false
+- name: frequency_score
+  type: int
+  nullable: false
+- name: monetary_value
+  type: decimal(18,2)
+  nullable: false
+- name: monetary_score
+  type: int
+  nullable: false
+- name: segment
+  type: string
+  nullable: false
+- name: categories
+  type: string
+  nullable: false
+- name: gender
+  type: string
+  nullable: true
+- name: location
+  type: string
+  nullable: true
+- name: tenure_months
+  type: int
+  nullable: true
+- name: provenance
+  type: string
+  nullable: false
+- name: _refreshed_at
+  type: timestamp
+  nullable: false
+- name: _run_id
+  type: string
+  nullable: false
+- name: _source_version
+  type: string
+  nullable: false
