@@ -132,3 +132,18 @@ def test_offline_calls_do_nothing(monkeypatch):
     assert fc.sync_policies() is None
     assert fc.verify_policies() is None
     assert fc.effective_matrix() == []
+
+
+def test_only_finance_controller_can_edit_campaign_spend():
+    assert fc.can_edit("raw/spend/campaign_spend", "UG04") == (True, "")
+    allowed, reason = fc.can_edit("raw/spend/campaign_spend", "UG03")
+    assert not allowed and "only UG04" in reason
+    assert fc.can_edit("raw/sales/sales_lines", "UG04")[0] is False
+
+
+def test_unknown_edit_role_fails(tmp_path):
+    write(tmp_path)
+    matrix = yaml.safe_load((tmp_path / "access_matrix.yml").read_text())
+    (tmp_path / "access_matrix.yml").write_text(yaml.safe_dump({**matrix, "edit": {"raw/a/b": ["UG09"]}}))
+    with pytest.raises(PolicyError, match="unknown roles"):
+        load_policy(tmp_path)

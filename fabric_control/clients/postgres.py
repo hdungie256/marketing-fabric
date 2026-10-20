@@ -23,6 +23,24 @@ def start_run(run_id: str, job_id: str, event_id: str | None, scope: dict[str, A
         )
 
 
+def insert_event(event: dict[str, Any], dag_run_id: str | None) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO ops.source_events (event_id, emitted_at, source, keys, source_version, dag_run_id)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (
+                event["event_id"],
+                event["emitted_at"],
+                event["source"],
+                json.dumps(event["keys"]),
+                event["source_version"],
+                dag_run_id,
+            ),
+        )
+
+
 def end_run(
     run_id: str,
     status: str,

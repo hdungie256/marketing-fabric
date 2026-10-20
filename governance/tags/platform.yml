@@ -59,3 +59,10 @@ columns:
     page: Sensitivity.internal
     ms: Sensitivity.internal
     recorded_at: Sensitivity.internal
+  ops.source_events:
+    event_id: Sensitivity.internal
+    emitted_at: Sensitivity.internal
+    source: Sensitivity.internal
+    keys: Sensitivity.internal
+    source_version: Sensitivity.internal
+    dag_run_id: Sensitivity.internal

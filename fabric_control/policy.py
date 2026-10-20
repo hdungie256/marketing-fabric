@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -55,6 +55,7 @@ class Policy:
     readers: dict[str, list[str]]
     actions: dict[str, dict[str, str]]
     column_tags: dict[str, dict[str, str]]
+    editors: dict[str, list[str]] = field(default_factory=dict)
 
     def tag_action(self, role: str, dataset_id: str, column: str) -> str:
         actions = self.actions[self.column_tags[dataset_id][column]]
@@ -98,7 +99,8 @@ def load_policy(directory: Path | None = None) -> Policy:
     matrix = yaml.safe_load((base / "access_matrix.yml").read_text()) or {}
     roles = matrix.get("roles") or {}
     readers = matrix.get("read") or {}
-    for dataset_id, codes in readers.items():
+    editors = matrix.get("edit") or {}
+    for dataset_id, codes in [*readers.items(), *editors.items()]:
         unknown = sorted(set(codes) - set(roles))
         if unknown:
             raise PolicyError(f"access_matrix.yml: {dataset_id} lists unknown roles {unknown}")
@@ -122,7 +124,7 @@ def load_policy(directory: Path | None = None) -> Policy:
                     raise PolicyError(f"{path.name}: {dataset_id}.{column} uses unknown tag {tag!r}")
             column_tags[dataset_id] = columns
             origins[dataset_id] = path.name
-    return Policy(roles, readers, actions, column_tags)
+    return Policy(roles, readers, actions, column_tags, editors)
 
 
 def logins(names: list[str]) -> str:
@@ -315,3 +317,12 @@ def effective_matrix() -> list[dict[str, Any]]:
 
 def can_export(dataset_id: str, role: str) -> tuple[bool, str]:
     return stub("can_export", (False, "not implemented"), dataset_id=dataset_id, role=role)
+
+
+def can_edit(dataset_id: str, role: str) -> tuple[bool, str]:
+    policy = load_policy()
+    editors = policy.editors.get(dataset_id, [])
+    if role in editors:
+        return True, ""
+    allowed = ", ".join(editors) or "no role"
+    return False, f"{role or 'a request with no role'} may not edit {dataset_id}; only {allowed} can"
