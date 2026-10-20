@@ -54,7 +54,7 @@ def test_field_errors_reads_detail():
     assert field_errors(403, {"detail": {"reason": "no"}}) == {}
 
 
-def _form():
+def _form(missing=False):
     from datetime import date
     from decimal import Decimal
 
@@ -72,7 +72,7 @@ def _form():
     recon = pd.DataFrame(
         {
             "date": [date(2019, 11, 12), date(2019, 11, 13), date(2019, 1, 15)],
-            "online_spend": [Decimal("3390.82"), Decimal("2400.95"), Decimal("100")],
+            "online_spend": [None if missing else Decimal("3390.82"), Decimal("2400.95"), Decimal("100")],
             "allocated": [Decimal("1356.33"), Decimal("936.37"), Decimal("10")],
             "unallocated": [Decimal("2034.49"), Decimal("1464.58"), Decimal("90")],
         }
@@ -113,6 +113,33 @@ def test_form_shows_hint_for_chosen_day(monkeypatch):
     text = " ".join(c.value for c in at.caption)
     assert "Online spend that day is 3,390.82. Allocated must be between 0 and that amount." in text
     assert at.button[0].label == "Save change"
+
+
+def test_hint_shows_dash_when_online_spend_missing(monkeypatch):
+    monkeypatch.setenv("APP_DATA_MODE", "pg")
+    at = AppTest.from_function(_form, kwargs={"missing": True}).run()
+    at.selectbox[0].select("CMP19_05").run()
+    assert not at.exception, at.exception
+    assert "Online spend that day is —." in " ".join(c.value for c in at.caption)
+
+
+def test_put_spend_wraps_error_body_read_failure(monkeypatch):
+    import io
+    import urllib.error
+
+    import pytest
+
+    class Broken(io.BytesIO):
+        def read(self, *args):
+            raise ConnectionResetError("reset")
+
+    def fake(request, timeout):
+        raise urllib.error.HTTPError(request.full_url, 500, "Server Error", {}, Broken())
+
+    monkeypatch.setenv("API_URL", "http://api:8000")
+    monkeypatch.setattr(urllib.request, "urlopen", fake)
+    with pytest.raises(SpendServiceUnavailable):
+        put_spend("CMP19_05", date(2019, 11, 12), Decimal("1"), "UG04")
 
 
 def test_empty_value_does_not_call_api(monkeypatch):

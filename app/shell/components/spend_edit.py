@@ -40,7 +40,8 @@ def spend_edit_form(days: pd.DataFrame, recon: pd.DataFrame) -> None:
     gen = st.session_state.setdefault(_VALUE_GEN, 0)
     value = st.number_input("Allocated spend", value=None, step=0.01, format="%.2f", key=f"spend_edit_value_{gen}")
     row = recon[recon["date"].map(fmt_date) == fmt_date(day)]
-    online = f"{Decimal(str(row['online_spend'].iloc[0])):,.2f}" if not row.empty else DASH  # cents: the API's bound
+    v = row["online_spend"].iloc[0] if not row.empty else None
+    online = DASH if v is None or pd.isna(v) else f"{Decimal(str(v)):,.2f}"  # cents: the API's bound
     st.caption(f"Online spend that day is {online}. Allocated must be between 0 and that amount.")
     slots["allocated_online_spend"] = st.empty()
     live = data_mode() == "pg"
