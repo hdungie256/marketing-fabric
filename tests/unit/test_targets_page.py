@@ -110,4 +110,14 @@ def test_stale_keeps_recommendation(monkeypatch):
     assert not at.exception
     assert any(STALE_DATASET in w.value for w in at.warning)
     assert len(chips(at)) == 5
-    assert sum("Using previous version" in m.value for m in at.markdown) == 5
+    assert sum("Using previous version" in m.value for m in at.markdown) == 6  # 5 chips + the page badge
+    assert not any("Refreshed" in m.value for m in at.markdown)
+
+
+def test_targets_badge_shows_refreshing(monkeypatch):
+    monkeypatch.setattr(targets, "current_in_flight", lambda campaigns: frozenset({"mart_campaign.target_achievement"}))
+    monkeypatch.setattr(targets, "watch", lambda campaigns, shown: None)
+    at = AppTest.from_function(_script).run()
+    assert not at.exception, at.exception
+    shown = " ".join(m.value for m in at.markdown)
+    assert "Refreshing…" in shown and "Refreshed" not in shown

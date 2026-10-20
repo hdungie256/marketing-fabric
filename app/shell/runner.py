@@ -20,9 +20,9 @@ def run() -> None:
         st.stop()
     nav, st_pages = build_navigation(session.role(), pages, session.current_page())
     sidebar.render(pages, st_pages)
-    target = session.pop_redirect()
+    target, params = session.pop_redirect(), session.pop_redirect_params()
     if target in st_pages:
-        st.switch_page(st_pages[target])
+        st.switch_page(st_pages[target], query_params=params)
     message = session.pop_toast()
     if message:
         st.toast(message, icon=":material/swap_horiz:")

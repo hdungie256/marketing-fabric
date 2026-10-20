@@ -4,8 +4,19 @@ import streamlit as st
 
 import fabric_control
 from app.services import target_achievement as svc
-from app.shell import CAMPAIGN_COLORS, add_footnote, add_stale, current_source, fmt_pct, status_chip, table
-from app.shell.badges import badge_fresh, badge_stale, badge_synthetic
+from app.shell import (
+    CAMPAIGN_COLORS,
+    add_footnote,
+    add_stale,
+    current_in_flight,
+    current_source,
+    fmt_pct,
+    freshness_badge,
+    status_chip,
+    table,
+    watch,
+)
+from app.shell.badges import badge_stale, badge_synthetic
 
 SUBTITLE = "How far each campaign got toward its own goal."
 FOOTNOTE = "Stop below 70%, Continue from 100%. Goals were set after the fact for this demo."
@@ -111,7 +122,13 @@ def render() -> None:
         add_stale(state.get("datasets", []))
     st.caption(SUBTITLE)
     badge_synthetic()
-    badge_fresh(raw["_refreshed_at"].max())
+    shown = current_in_flight(None)
+    if stale:
+        badge_stale()
+    else:
+        freshness_badge(raw["_refreshed_at"].max(), svc.DATASET, shown)
+    if shown:
+        watch(None, shown)
     if st.toggle("Table view", key="targets_table_view"):
         table_view(df)
     else:

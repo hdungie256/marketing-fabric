@@ -34,8 +34,12 @@ def fmt_count(value: Any) -> str:
     return DASH if _missing(value) else f"{int(_quantize(value, '1')):,}"
 
 
-def fmt_money(value: Any) -> str:
-    return DASH if _missing(value) else f"{int(_quantize(value, '1')):,}"
+def fmt_money(value: Any, places: int = 0) -> str:
+    if _missing(value):
+        return DASH
+    if not places:
+        return f"{int(_quantize(value, '1')):,}"
+    return f"{_quantize(value, '0.' + '0' * places):,}"
 
 
 def fmt_ratio(value: Any) -> str:

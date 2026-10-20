@@ -69,3 +69,16 @@ def test_sku_cost_visible_to_finance_and_denied_for_manager(monkeypatch, role, d
     assert "Estimated Contribution" in text and "33" in text
     assert "1 SKUs have no reference cost" in text
     assert len(at.dataframe) == 3
+
+
+def test_contribution_metrics_show_refreshing(monkeypatch):
+    terms = load_terms()
+    monkeypatch.setattr(fabric_control, "term", lambda term_id: terms.get(term_id))
+    monkeypatch.setattr(fabric_control, "effective_matrix", lambda: [])
+    monkeypatch.setattr(contribution, "current_source", lambda: Source())
+    monkeypatch.setattr(contribution, "current_in_flight", lambda campaigns: frozenset({contribution.CAMPAIGNS}))
+    monkeypatch.setattr(contribution, "watch", lambda campaigns, shown: None)
+    at = AppTest.from_function(_script).run()
+    assert not at.exception, at.exception
+    values = [m.value for m in at.markdown]
+    assert " ".join(values).count("Refreshing…") == 2 and "33" in values

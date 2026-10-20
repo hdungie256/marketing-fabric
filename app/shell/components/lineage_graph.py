@@ -12,8 +12,10 @@ from typing import Any
 import streamlit as st
 
 import fabric_control
+from app.shell import session
 from app.shell.components.status_chip import status_chip
 from app.shell.format import fmt_time
+from app.shell.navigation import can_open
 
 LAYER_ORDER = ["raw", "unified", "mart", "serving"]
 
@@ -85,3 +87,25 @@ def lineage_graph(dataset_id: str, depth: int = 1, key: str = "lineage") -> None
     default = dataset_id if dataset_id in ids else ids[0]
     chosen = st.selectbox("Dataset", ids, index=ids.index(default), key=f"{key}-node")
     render_detail(next(n for n in graph["nodes"] if n["dataset_id"] == chosen))
+
+
+def lineage_flow(columns: list[tuple[str, list[dict[str, Any]]]], key: str = "flow") -> None:
+    """Draw a change event's flow: one column per layer, nodes carry a chip and optional page link."""
+    row = st.columns(len(columns))
+    for index, (column, (title, nodes)) in enumerate(zip(row, columns, strict=True)):
+        with column:
+            st.caption(title)
+            for node in nodes:
+                with st.container(border=True, key=f"{key}-node-{node['dataset_id']}"):
+                    st.markdown(f"**{node['label']}**")
+                    st.markdown(f"`{node['dataset_id']}`")
+                    st.caption(node["meta"])
+                    status_chip(*node["chip"])
+                    page = node.get("page")
+                    if page and not can_open(session.role(), page):
+                        st.caption(f"{node['label']} page")  # the role cannot open it: text, not a dead button
+                    elif page and st.button(f"Open {node['label']} page", key=f"{key}-open-{node['dataset_id']}"):
+                        session.request_redirect(node["page"])
+                        st.rerun()
+            if index < len(columns) - 1:
+                st.caption("→")

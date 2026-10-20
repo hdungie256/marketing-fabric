@@ -7,7 +7,9 @@ from streamlit.testing.v1 import AppTest
 
 import fabric_control
 from app.pages.finance import budget_spend
-from app.pages.finance.budget_spend import by_campaign, stack, summarize
+from app.pages.finance.budget_spend import by_campaign, edited_window, stack, summarize
+from app.services.spend_edit import EVENT_KEY
+from app.shell import fmt_money
 from fabric_control.glossary import load_terms
 
 FRESH = datetime(2026, 10, 13, 7, 0, tzinfo=UTC)
@@ -85,3 +87,109 @@ def test_page_renders_metrics_chart_and_table(monkeypatch, table_view):
     text = " ".join(m.value for m in at.markdown)
     assert "Attributed Value / Spend Ratio" in text and "3.50×" in text
     assert len(at.dataframe) == (2 if table_view else 1)
+
+
+def _role_script(role):
+    from app.pages.finance.budget_spend import render
+    from app.shell import session
+
+    session.set_role(role)
+    render()
+
+
+def _page(monkeypatch, role="UG04", in_flight=frozenset(), event=None, chosen=None):
+    monkeypatch.setenv("APP_TZ", "UTC")
+    terms = load_terms()
+    monkeypatch.setattr(fabric_control, "term", lambda term_id: terms.get(term_id))
+    monkeypatch.setattr(fabric_control, "effective_matrix", lambda: [])
+    monkeypatch.setattr(budget_spend, "current_source", lambda: Source())
+    flight = in_flight if callable(in_flight) else lambda campaigns: frozenset(in_flight)
+    monkeypatch.setattr(budget_spend, "current_in_flight", flight)
+    monkeypatch.setattr(budget_spend, "watch", lambda campaigns, shown: None)
+    monkeypatch.setattr(budget_spend, "progress_strip", lambda: None)
+    at = AppTest.from_function(_role_script, kwargs={"role": role})
+    if event:
+        at.session_state[EVENT_KEY] = event
+    at.run()
+    if chosen:
+        at.selectbox(key="_filter_budget_spend_campaign").set_value(chosen).run()
+    assert not at.exception, at.exception
+    return at
+
+
+def test_ug04_sees_spend_form_ug03_does_not(monkeypatch):
+    assert "**Edit daily spend**" in [m.value for m in _page(monkeypatch, "UG04").markdown]
+    at = _page(monkeypatch, "UG03")
+    assert "**Edit daily spend**" not in [m.value for m in at.markdown]
+    assert "Save change" not in [b.label for b in at.button]
+
+
+def test_in_flight_cards_show_refreshing_and_keep_value(monkeypatch):
+    at = _page(monkeypatch, in_flight={"mart_finance.budget_daily", "mart_shared.campaign_spend_allocated"})
+    values = [m.value for m in at.markdown]
+    assert "40" in values  # Allocated Spend keeps its previous value
+    assert " ".join(values).count("Refreshing…") == 4  # every card but Unallocated (spend_reconciliation)
+
+
+def test_edited_window_is_seven_days_centred():
+    recon = pd.DataFrame({"date": [date(2019, 11, d) for d in range(1, 21)]})
+    assert [d.day for d in edited_window(recon, date(2019, 11, 12))["date"]] == list(range(9, 16))
+    assert [d.day for d in edited_window(recon, date(2019, 11, 2))["date"]] == list(range(1, 8))
+    assert [d.day for d in edited_window(recon, date(2019, 11, 20))["date"]] == list(range(14, 21))
+    assert len(edited_window(recon.head(3), date(2019, 11, 2))) == 3
+
+
+EVENT = {
+    "event": {
+        "event_id": "e1",
+        "emitted_at": "2026-10-13T06:59:00+00:00",  # just before FRESH: the recon row is newer, so it landed
+        "keys": {"campaign_id": "CMP19_01", "date": "2019-01-16"},
+    },
+    "dag_run_id": "r1",
+    "campaign_name": "Spring",
+    "old": {"allocated": Decimal("10.00"), "unallocated": Decimal("20.00")},
+    "new": Decimal("30.00"),
+}
+
+
+def _recon_table(at):
+    return next(d.value for d in at.dataframe if "note" in d.value.columns)
+
+
+def test_reconciliation_note_while_updating(monkeypatch):
+    at = _page(monkeypatch, in_flight={"mart_shared.spend_reconciliation"}, event=EVENT)
+    assert "**Daily reconciliation**" in [m.value for m in at.markdown]
+    row = _recon_table(at).set_index("date").loc[D2]
+    assert row["note"] == "↻ Saved 30.00, updating" and row["allocated"] == "30.00"
+
+
+def test_reconciliation_note_after_refresh_shows_old_and_new(monkeypatch):
+    at = _page(monkeypatch, event=EVENT)
+    df = _recon_table(at).set_index("date")
+    row = df.loc[D2]
+    assert row["note"] == "Refreshed 07:00 · difference 0 · see Change History"
+    assert row["allocated"] == "10.00 → 30.00" and row["unallocated"] == "20.00 → 0.00"
+    assert df.loc[D1, "note"] == "" and df.loc[D1, "allocated"] == "10.00"
+
+
+def test_reconciliation_busy_ignores_campaign_filter(monkeypatch):
+    def flight(campaigns):
+        return frozenset({budget_spend.RECON}) if campaigns is None else frozenset()
+
+    at = _page(monkeypatch, in_flight=flight, event=EVENT, chosen="CMP19_02")
+    assert _recon_table(at).set_index("date").loc[D2, "note"] == "↻ Saved 30.00, updating"
+
+
+def test_reconciliation_says_stopped_when_row_not_refreshed_after_event(monkeypatch):
+    late = {**EVENT, "event": {**EVENT["event"], "emitted_at": "2026-10-13T08:00:00+00:00"}}
+    row = _recon_table(_page(monkeypatch, event=late)).set_index("date").loc[D2]
+    assert row["note"] == "Refresh stopped · see Pipeline Status" and row["allocated"] == "30.00"
+
+
+def test_cents_shows_dash_for_missing():  # the reconciliation table formats with fmt_money(places=2)
+    assert [fmt_money(v, places=2) for v in (None, pd.NA, float("nan"), Decimal("1234.5"))] == [
+        "—",
+        "—",
+        "—",
+        "1,234.50",
+    ]

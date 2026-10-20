@@ -6,6 +6,7 @@ _ROLE = "_shell_role"
 _LOGGED_IN = "_shell_logged_in"
 _CURRENT_PAGE = "_shell_current_page"
 _REDIRECT = "_shell_redirect"
+_REDIRECT_PARAMS = "_shell_redirect_params"
 _TOAST = "_shell_toast"
 _FILTERS = "_shell_filters"
 
@@ -35,12 +36,17 @@ def set_current_page(key: str) -> None:
     st.session_state[_CURRENT_PAGE] = key
 
 
-def request_redirect(key: str) -> None:
+def request_redirect(key: str, query_params: dict[str, str] | None = None) -> None:
     st.session_state[_REDIRECT] = key
+    st.session_state[_REDIRECT_PARAMS] = query_params  # only what the caller asks for, never the current page's
 
 
 def pop_redirect() -> str | None:
     return st.session_state.pop(_REDIRECT, None)
+
+
+def pop_redirect_params() -> dict[str, str] | None:
+    return st.session_state.pop(_REDIRECT_PARAMS, None)
 
 
 def request_toast(message: str) -> None:
