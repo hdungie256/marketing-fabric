@@ -165,6 +165,9 @@ def test_200_stores_event_and_toasts(monkeypatch):
     assert stored["old"] == {"allocated": Decimal("1356.33"), "unallocated": Decimal("2034.49")}
     assert stored["new"] == Decimal("1156.33")
     assert [t.value for t in at.toast] == ["Change saved · partial refresh started"]
+    assert at.number_input[0].value is None  # the rerun after save clears the value at once
+    at.run()
+    assert not at.toast  # shown once
 
 
 def test_403_shows_reason_banner(monkeypatch):
@@ -176,6 +179,13 @@ def test_502_shows_saved_but_not_started(monkeypatch):
     at, _ = _run(monkeypatch, (502, {"detail": {"reason": "airflow down", "event": EVENT}}))
     assert "Change saved, but the refresh did not start: airflow down" in _errors(at)
     assert spend_edit.EVENT_KEY not in at.session_state
+
+
+def test_502_does_not_repeat_the_api_prefix(monkeypatch):
+    reason = "Change saved but partial refresh did not start: airflow down"  # api/services/spend.py wording
+    at, _ = _run(monkeypatch, (502, {"detail": {"reason": reason, "event": EVENT}}))
+    assert "Change saved, but the refresh did not start: airflow down" in _errors(at)
+    assert "partial refresh" not in _errors(at)
 
 
 def test_put_spend_wraps_dropped_connection_and_bad_json(monkeypatch):
@@ -278,8 +288,8 @@ def test_strip_done_links_to_change_history(monkeypatch):
     at, text = _strip_app(monkeypatch, runs)
     assert "0 metrics changed" in text
     at.button[0].click().run()
-    assert at.query_params["event_id"] == ["e1"]
     assert at.session_state["_shell_redirect"] == "change_history"
+    assert at.session_state["_shell_redirect_params"] == {"event_id": "e1"}
 
 
 def test_strip_failed_run_shows_cause(monkeypatch):
@@ -287,3 +297,82 @@ def test_strip_failed_run_shows_cause(monkeypatch):
     at, text = _strip_app(monkeypatch, runs)
     assert "Refresh stopped: dq_gate. See Pipeline Status." in text
     assert "skipped" in text and not at.button
+
+
+def test_budget_spend_save_shows_refreshing_at_once(monkeypatch):
+    """Regression: the save run must rerun the page so cards and the edited row see the event in flight."""
+    import streamlit as st
+
+    from app.pages.finance import budget_spend
+    from fabric_control.glossary import load_terms
+    from tests.unit.test_budget_spend_page import Source, _role_script
+
+    monkeypatch.setenv("APP_DATA_MODE", "pg")
+    monkeypatch.setenv("APP_TZ", "UTC")
+    terms = load_terms()
+    monkeypatch.setattr(fabric_control, "term", lambda t: terms.get(t))
+    monkeypatch.setattr(fabric_control, "effective_matrix", lambda: [])
+    monkeypatch.setattr(budget_spend, "current_source", lambda: Source())
+    flying = frozenset({"mart_finance.budget_daily", "mart_shared.campaign_spend_allocated", budget_spend.RECON})
+    monkeypatch.setattr(
+        budget_spend, "current_in_flight", lambda c: flying if spend_edit.EVENT_KEY in st.session_state else frozenset()
+    )
+    monkeypatch.setattr(budget_spend, "watch", lambda c, s: None)
+    monkeypatch.setattr(budget_spend, "progress_strip", lambda: None)
+    event = {
+        **EVENT,
+        "emitted_at": "2099-01-01T00:00:00+00:00",
+        "keys": {"campaign_id": "CMP19_01", "date": "2019-01-16"},
+    }
+    monkeypatch.setattr(spend_edit, "put_spend", lambda *a, **k: (200, {"event": event, "dag_run_id": "r1"}))
+    at = AppTest.from_function(_role_script, kwargs={"role": "UG04"}).run()
+    day = at.selectbox(key="spend_edit_date_CMP19_01")
+    day.set_value(day.options[1]).run()
+    at.number_input[0].set_value(5.0).run()
+    next(b for b in at.button if b.label == "Save change").click().run()
+    assert not at.exception, at.exception
+    assert "Refreshing" in " ".join(m.value for m in at.markdown)
+    [notes] = [d.value["note"] for d in at.dataframe if "note" in d.value.columns]
+    assert any("updating" in n for n in notes)
+    assert not any("Refresh stopped" in n for n in notes)
+    assert [t.value for t in at.toast] == ["Change saved · partial refresh started"]
+
+
+def test_see_change_history_opens_that_event(monkeypatch):
+    """Strip done -> redirect with ?event_id -> Change History selects that event (runner keeps the param)."""
+    from pathlib import Path
+
+    from app.pages.changes import change_history
+    from app.shell import runner
+    from app.shell.components import spend_edit as component
+    from tests.unit import test_change_history_page as ch_page
+    from tests.unit.shell_matrix import full_registry
+    from tests.unit.test_shell_app import PASSWORDS, login
+
+    for name, value in PASSWORDS.items():
+        monkeypatch.setenv(name, value)
+    monkeypatch.setenv("APP_DATA_MODE", "pg")
+    from fabric_control.glossary import load_terms
+
+    terms = load_terms()
+    monkeypatch.setattr(fabric_control, "term", lambda t: terms.get(t))
+    monkeypatch.setattr(fabric_control, "effective_matrix", lambda: [])
+    monkeypatch.setattr(fabric_control, "record_timing", lambda page, ms: None)
+    monkeypatch.setattr(change_history, "current_source", lambda: ch_page.Source())
+    monkeypatch.setattr(change_history, "load", lambda role: (ch_page.events(), ch_page.runs(), ch_page.log()))
+    affected = [{"dataset_id": "raw/spend/campaign_spend", "job_id": "raw"}]
+    affected += [{"dataset_id": d, "job_id": f"job_{i}"} for i, d in enumerate(STEPS)]
+    monkeypatch.setattr(fabric_control, "affected_by", lambda event: affected)
+    done = pd.DataFrame({"event_id": ["e2"] * 8, "job_id": [f"job_{i}" for i in range(8)], "status": ["success"] * 8})
+    monkeypatch.setattr(component, "_read", lambda role: (done, pd.DataFrame()))
+    renders = {"budget_spend": component.progress_strip, "change_history": change_history.render}
+    monkeypatch.setattr(runner, "load_pages", lambda: full_registry(renders))
+    main = str(Path(__file__).resolve().parents[2] / "app" / "main.py")
+    at = AppTest.from_file(main, default_timeout=10)
+    event = {**EVENT, "event_id": "e2", "emitted_at": datetime.now(UTC).isoformat()}
+    at.session_state[spend_edit.EVENT_KEY] = {"event": event, "campaign_name": "Spring", "old": {}, "new": Decimal("1")}
+    login(at, "UG04", "pw4")
+    assert not at.exception, at.exception
+    next(b for b in at.button if b.label == "See Change History").click().run()
+    assert not at.exception, at.exception
+    assert at.selectbox(key="change_event").value == "e2"  # not the default (most recent) e1

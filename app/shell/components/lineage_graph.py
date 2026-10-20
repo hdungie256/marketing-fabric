@@ -15,6 +15,7 @@ import fabric_control
 from app.shell import session
 from app.shell.components.status_chip import status_chip
 from app.shell.format import fmt_time
+from app.shell.navigation import can_open
 
 LAYER_ORDER = ["raw", "unified", "mart", "serving"]
 
@@ -100,9 +101,10 @@ def lineage_flow(columns: list[tuple[str, list[dict[str, Any]]]], key: str = "fl
                     st.markdown(f"`{node['dataset_id']}`")
                     st.caption(node["meta"])
                     status_chip(*node["chip"])
-                    if node.get("page") and st.button(
-                        f"Open {node['label']} page", key=f"{key}-open-{node['dataset_id']}"
-                    ):
+                    page = node.get("page")
+                    if page and not can_open(session.role(), page):
+                        st.caption(f"{node['label']} page")  # the role cannot open it: text, not a dead button
+                    elif page and st.button(f"Open {node['label']} page", key=f"{key}-open-{node['dataset_id']}"):
                         session.request_redirect(node["page"])
                         st.rerun()
             if index < len(columns) - 1:

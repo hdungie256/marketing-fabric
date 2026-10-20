@@ -13,6 +13,13 @@ def pages_for(role: str, pages: Sequence[PageSpec]) -> list[PageSpec]:
     return [p for p in pages if role in p.roles]
 
 
+def can_open(role: str | None, key: str, pages: Sequence[PageSpec] | None = None) -> bool:
+    """Same rule the runner uses: a redirect only lands on pages in the role's navigation."""
+    from app.shell.registry import load_pages
+
+    return any(p.key == key for p in pages_for(role, load_pages() if pages is None else pages))
+
+
 def home_for(role: str, pages: Sequence[PageSpec]) -> PageSpec | None:
     permitted = pages_for(role, pages)
     return next((p for p in permitted if role in p.home_for), permitted[0] if permitted else None)

@@ -114,11 +114,20 @@ def test_lineage_page_lists_catalog_datasets(monkeypatch):
     assert set(at.selectbox(key="_filter_lineage_dataset").options) == {"unified/orders", "unified/customers"}
 
 
-def _flow_script():
+def _flow_script(role):
+    from app.shell import session
     from app.shell.components.lineage_graph import lineage_flow
 
+    session.set_role(role)
+
     def node(i, page):
-        return {"dataset_id": f"ds/{i}", "label": f"Label {i}", "meta": f"meta {i}", "chip": ("info", f"chip {i}"), "page": page}
+        return {
+            "dataset_id": f"ds/{i}",
+            "label": f"Label {i}",
+            "meta": f"meta {i}",
+            "chip": ("info", f"chip {i}"),
+            "page": page,
+        }
 
     lineage_flow(
         [
@@ -131,8 +140,15 @@ def _flow_script():
 
 
 def test_lineage_flow_renders_all_nodes_and_page_buttons():
-    at = AppTest.from_function(_flow_script).run()
+    at = AppTest.from_function(_flow_script, kwargs={"role": "UG03"}).run()
     assert not at.exception
     text = " ".join(m.value for m in at.markdown)
     assert all(f"Label {i}" in text and f"ds/{i}" in text for i in range(1, 9))
     assert [b.label for b in at.button] == ["Open Label 4 page", "Open Label 5 page", "Open Label 6 page"]
+
+
+def test_lineage_flow_shows_text_for_pages_the_role_cannot_open():
+    at = AppTest.from_function(_flow_script, kwargs={"role": "UG04"}).run()
+    assert not at.exception
+    assert [b.label for b in at.button] == ["Open Label 6 page"]
+    assert "Label 4 page" in [c.value for c in at.caption]

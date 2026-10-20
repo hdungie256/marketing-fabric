@@ -1,5 +1,6 @@
 """Spend edit form and partial refresh progress strip (Story 8.5). The API judges the value; the form shows it."""
 
+import re
 from datetime import UTC, datetime
 from decimal import Decimal
 
@@ -16,16 +17,21 @@ from app.services.spend_edit import EVENT_KEY, SpendServiceUnavailable, field_er
 from app.shell import session
 from app.shell.components.feedback import banner_error, toast
 from app.shell.data_source import data_mode
-from app.shell.format import DASH, fmt_date
+from app.shell.format import fmt_date, fmt_money
 from app.shell.roles import ROLES
 from fabric_control.glossary import load_terms
 
 PAGE_TITLE = {"budget_spend": "Budget & Spend", "contribution": "Contribution", "targets": "Targets"}
 _VALUE_GEN = "_spend_edit_value_gen"  # bumped after a save so the value field comes back empty
+_SAVED = "_spend_edit_saved"  # one-shot: toast on the run after a save
+SAVED_TOAST = "Change saved · partial refresh started"
+_NOT_STARTED = re.compile(r"^change saved,? but (the )?partial refresh did not start:\s*", re.IGNORECASE)
 
 
 def spend_edit_form(days: pd.DataFrame, recon: pd.DataFrame) -> None:
     """Caller contract: `recon` must cover every date in `days` (the hint and the saved old values read from it)."""
+    if st.session_state.pop(_SAVED, False):
+        toast(SAVED_TOAST, "success")
     st.markdown("**Edit daily spend**")
     st.caption("Correct one day's allocated spend for a campaign.")
     banner = st.empty()
@@ -40,8 +46,7 @@ def spend_edit_form(days: pd.DataFrame, recon: pd.DataFrame) -> None:
     gen = st.session_state.setdefault(_VALUE_GEN, 0)
     value = st.number_input("Allocated spend", value=None, step=0.01, format="%.2f", key=f"spend_edit_value_{gen}")
     row = recon[recon["date"].map(fmt_date) == fmt_date(day)]
-    v = row["online_spend"].iloc[0] if not row.empty else None
-    online = DASH if v is None or pd.isna(v) else f"{Decimal(str(v)):,.2f}"  # cents: the API's bound
+    online = fmt_money(row["online_spend"].iloc[0] if not row.empty else None, places=2)  # cents: the API's bound
     st.caption(f"Online spend that day is {online}. Allocated must be between 0 and that amount.")
     slots["allocated_online_spend"] = st.empty()
     live = data_mode() == "pg"
@@ -69,7 +74,6 @@ def spend_edit_form(days: pd.DataFrame, recon: pd.DataFrame) -> None:
     detail = body.get("detail")
     reason = detail.get("reason") if isinstance(detail, dict) else None
     if status == 200:
-        toast("Change saved · partial refresh started", "success")
         st.session_state[EVENT_KEY] = {
             "event": body["event"],
             "dag_run_id": body["dag_run_id"],
@@ -78,10 +82,11 @@ def spend_edit_form(days: pd.DataFrame, recon: pd.DataFrame) -> None:
             "new": new,
         }
         st.session_state[_VALUE_GEN] = gen + 1
-        return
+        st.session_state[_SAVED] = True
+        st.rerun()  # the whole page again: cards and the reconciliation row must see the new event in flight
     with banner.container():
         if status == 502:
-            banner_error(f"Change saved, but the refresh did not start: {reason}")
+            banner_error(f"Change saved, but the refresh did not start: {_NOT_STARTED.sub('', reason or '')}")
         else:
             banner_error(reason or f"The spend service answered {status}")
 
@@ -127,8 +132,7 @@ def _render(state: dict) -> bool:
             count = len(changed_values(log, event, load_terms()))
             st.markdown(f"{count} metrics changed — see Change History")
             if st.button("See Change History"):
-                st.query_params["event_id"] = event["event_id"]
-                session.request_redirect("change_history")
+                session.request_redirect("change_history", {"event_id": event["event_id"]})
                 st.rerun()
         elif done:
             bad = mine[mine["status"].isin(["failed", "gated"])]

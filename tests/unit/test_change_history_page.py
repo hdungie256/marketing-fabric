@@ -34,11 +34,11 @@ class Source:
         return pd.DataFrame()
 
 
-def _script():
+def _script(role="UG01"):
     from app.pages.changes.change_history import render
     from app.shell import session
 
-    session.set_role("UG01")
+    session.set_role(role)
     render()
 
 
@@ -52,11 +52,11 @@ def _env(monkeypatch):
     monkeypatch.setattr(page, "current_source", lambda: Source())
 
 
-def _app(monkeypatch, loaded=None, event_id=None):
+def _app(monkeypatch, loaded=None, event_id=None, role="UG01"):
     if loaded is None:
         loaded = (events(), runs(), log())
     monkeypatch.setattr(page, "load", lambda role: loaded)
-    at = AppTest.from_function(_script)
+    at = AppTest.from_function(_script, kwargs={"role": role})
     if event_id:
         at.query_params["event_id"] = event_id
     at.run()
@@ -100,11 +100,18 @@ def test_info_button_only_for_glossary_metrics(monkeypatch):
 
 
 def test_shown_on_links_to_page(monkeypatch):
-    at, _ = _app(monkeypatch)
+    at, _ = _app(monkeypatch, role="UG03")
     labels = [b.label for b in at.button if b.key and b.key.startswith("change-page-")]
     assert labels == ["Budget & Spend", "Budget & Spend", "Targets", "Contribution"]
     at.button(key="change-page-2").click().run()
     assert at.session_state["_shell_redirect"] == "targets"
+
+
+def test_shown_on_is_text_for_pages_the_role_cannot_open(monkeypatch):
+    at, text = _app(monkeypatch, role="UG04")
+    labels = [b.label for b in at.button if b.key and b.key.startswith("change-page-")]
+    assert labels == ["Budget & Spend", "Budget & Spend", "Contribution"]  # UG04 has no Targets page
+    assert "Targets" in text
 
 
 def test_saved_at_shows_date_and_time_in_app_tz(monkeypatch):

@@ -30,6 +30,7 @@ from app.shell.components.lineage_graph import lineage_flow
 from app.shell.components.spend_edit import PAGE_TITLE
 from app.shell.data_source import data_mode
 from app.shell.format import DASH, app_tz
+from app.shell.navigation import can_open
 from app.shell.roles import ROLES
 from fabric_control.glossary import load_terms
 
@@ -100,9 +101,12 @@ def _changed_values(rows: pd.DataFrame, campaign: str) -> None:
         if row["info_term"] and info.button("ⓘ", key=f"change-info-{i}"):
             definition_dialog(row["info_term"])
         level.markdown(row["level"])
+        title = PAGE_TITLE.get(row["page"], row["page"])
         if not row["page"]:
             page.markdown(DASH)
-        elif page.button(PAGE_TITLE.get(row["page"], row["page"]), key=f"change-page-{i}", type="tertiary"):
+        elif not can_open(session.role(), row["page"]):
+            page.markdown(title)
+        elif page.button(title, key=f"change-page-{i}", type="tertiary"):
             session.request_redirect(row["page"])
             st.rerun()
         old.markdown(_money(row["old"]))
