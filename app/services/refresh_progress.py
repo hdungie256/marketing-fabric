@@ -12,6 +12,15 @@ import fabric_control
 
 TIMEOUT_SECONDS = 600
 LABELS = {
+    "raw/spend/campaign_spend": "Campaign spend",
+    "mart_campaign.campaign_overview": "Campaign Overview",
+    "mart_campaign.comparison": "Comparison",
+    "mart_campaign.new_returning": "New vs Returning",
+    "mart_campaign.product_sales": "Product Sales",
+    "mart_customer.rfm": "RFM",
+    "mart_shared.campaign_attributed_daily": "Attributed orders by day",
+    "mart_shared.campaign_attributed_orders": "Attributed orders",
+    "mart_shared.exceptions": "Exceptions",
     "unified/campaign_spend": "Spend source data",
     "unified/daily_spend": "Daily online spend",
     "mart_shared.campaign_spend_allocated": "Spend allocation by campaign",
@@ -58,9 +67,7 @@ def finished(states: list[str]) -> bool:
     return all(s == "done" for s in states) or any(s in _BAD for s in states)
 
 
-def in_flight(
-    events: pd.DataFrame, runs: pd.DataFrame, campaign_ids: set[str] | None, now: datetime
-) -> frozenset[str]:
+def in_flight(events: pd.DataFrame, runs: pd.DataFrame, campaign_ids: set[str] | None, now: datetime) -> frozenset[str]:
     live = events[events["dag_run_id"].notna()]
     if live.empty:
         return frozenset()
