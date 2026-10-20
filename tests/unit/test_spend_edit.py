@@ -111,7 +111,7 @@ def test_form_shows_hint_for_chosen_day(monkeypatch):
     at = AppTest.from_function(_form).run()
     at.selectbox[0].select("CMP19_05").run()
     text = " ".join(c.value for c in at.caption)
-    assert "Online spend that day is 3,391. Allocated must be between 0 and that amount." in text
+    assert "Online spend that day is 3,390.82. Allocated must be between 0 and that amount." in text
     assert at.button[0].label == "Save change"
 
 
@@ -149,6 +149,36 @@ def test_502_shows_saved_but_not_started(monkeypatch):
     at, _ = _run(monkeypatch, (502, {"detail": {"reason": "airflow down", "event": EVENT}}))
     assert "Change saved, but the refresh did not start: airflow down" in _errors(at)
     assert spend_edit.EVENT_KEY not in at.session_state
+
+
+def test_put_spend_wraps_dropped_connection_and_bad_json(monkeypatch):
+    import http.client
+
+    import pytest
+
+    class Garbage:
+        status = 200
+
+        def read(self):
+            return b"<html>proxy error</html>"
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *exc):
+            return False
+
+    monkeypatch.setenv("API_URL", "http://api:8000")
+    for answer in (http.client.RemoteDisconnected("closed"), ConnectionResetError("reset"), Garbage()):
+
+        def fake(request, timeout, answer=answer):
+            if isinstance(answer, Exception):
+                raise answer
+            return answer
+
+        monkeypatch.setattr(urllib.request, "urlopen", fake)
+        with pytest.raises(SpendServiceUnavailable):
+            put_spend("CMP19_05", date(2019, 11, 12), Decimal("1"), "UG04")
 
 
 def test_unreachable_api_shows_banner(monkeypatch):

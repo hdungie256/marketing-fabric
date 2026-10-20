@@ -30,7 +30,7 @@ def put_spend(campaign_id: str, day: date, value: Decimal, role: str, timeout: f
         except ValueError:
             payload = {"detail": {"reason": e.reason}}
         return e.code, payload
-    except (urllib.error.URLError, TimeoutError) as e:
+    except (OSError, ValueError) as e:  # URLError, timeouts, dropped connections, non-JSON 2xx body
         raise SpendServiceUnavailable(str(getattr(e, "reason", e))) from e
 
 

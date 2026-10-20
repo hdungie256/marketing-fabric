@@ -16,7 +16,7 @@ from app.services.spend_edit import EVENT_KEY, SpendServiceUnavailable, field_er
 from app.shell import session
 from app.shell.components.feedback import banner_error, toast
 from app.shell.data_source import data_mode
-from app.shell.format import fmt_date, fmt_money
+from app.shell.format import DASH, fmt_date
 from app.shell.roles import ROLES
 from fabric_control.glossary import load_terms
 
@@ -25,6 +25,7 @@ _VALUE_GEN = "_spend_edit_value_gen"  # bumped after a save so the value field c
 
 
 def spend_edit_form(days: pd.DataFrame, recon: pd.DataFrame) -> None:
+    """Caller contract: `recon` must cover every date in `days` (the hint and the saved old values read from it)."""
     st.markdown("**Edit daily spend**")
     st.caption("Correct one day's allocated spend for a campaign.")
     banner = st.empty()
@@ -39,8 +40,8 @@ def spend_edit_form(days: pd.DataFrame, recon: pd.DataFrame) -> None:
     gen = st.session_state.setdefault(_VALUE_GEN, 0)
     value = st.number_input("Allocated spend", value=None, step=0.01, format="%.2f", key=f"spend_edit_value_{gen}")
     row = recon[recon["date"].map(fmt_date) == fmt_date(day)]
-    online = row["online_spend"].iloc[0] if not row.empty else None
-    st.caption(f"Online spend that day is {fmt_money(online)}. Allocated must be between 0 and that amount.")
+    online = f"{Decimal(str(row['online_spend'].iloc[0])):,.2f}" if not row.empty else DASH  # cents: the API's bound
+    st.caption(f"Online spend that day is {online}. Allocated must be between 0 and that amount.")
     slots["allocated_online_spend"] = st.empty()
     live = data_mode() == "pg"
     clicked = st.button("Save change", type="primary", disabled=not live)
