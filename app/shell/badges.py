@@ -15,3 +15,11 @@ def badge_stale() -> None:
 
 def badge_synthetic() -> None:
     st.badge("Synthetic", icon=":material/science:", color="gray")
+
+
+def badge_refreshing() -> None:
+    st.badge("Refreshing…", icon=":material/sync:", color="blue")
+
+
+def freshness_badge(freshness: datetime, dataset_id: str, in_flight: frozenset[str]) -> None:
+    badge_refreshing() if dataset_id in in_flight else badge_fresh(freshness)

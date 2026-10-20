@@ -1,7 +1,9 @@
+from app.shell.badges import badge_refreshing, freshness_badge
 from app.shell.chart import chart
 from app.shell.components.empty_state import empty_state
 from app.shell.components.feedback import banner_error, banner_stale, denied_block, toast
 from app.shell.components.filter_bar import Filter, filter_bar
+from app.shell.components.refresh_watch import current_in_flight, watch
 from app.shell.components.skeleton import skeleton
 from app.shell.components.status_chip import status_chip
 from app.shell.data_source import DataSource, current_source
@@ -25,6 +27,10 @@ __all__ = [
     "STATUS_COLORS",
     "UnknownTermError",
     "add_footnote",
+    "badge_refreshing",
+    "current_in_flight",
+    "freshness_badge",
+    "watch",
     "add_stale",
     "banner_error",
     "banner_slot",

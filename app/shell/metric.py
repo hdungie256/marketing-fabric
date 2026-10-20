@@ -3,7 +3,7 @@ from datetime import datetime
 import streamlit as st
 
 import fabric_control
-from app.shell.badges import badge_fresh, badge_stale, badge_synthetic
+from app.shell.badges import badge_fresh, badge_refreshing, badge_stale, badge_synthetic
 from app.shell.components.definition_dialog import definition_dialog
 from app.shell.errors import UnknownTermError
 from app.shell.format import FORMATTERS
@@ -11,7 +11,14 @@ from app.shell.notes import FOOTNOTE_NOTES, NOTE_TEXT
 from app.shell.page import add_footnote, add_stale
 
 
-def metric(term_id: str, value: float | int | None, freshness: datetime, *, kind: str = "count") -> None:
+def metric(
+    term_id: str,
+    value: float | int | None,
+    freshness: datetime,
+    *,
+    kind: str = "count",
+    in_flight: frozenset[str] = frozenset(),
+) -> None:
     if kind not in FORMATTERS:
         raise ValueError(f"kind must be one of {sorted(FORMATTERS)}, got {kind!r}")
     if freshness is None:
@@ -40,6 +47,8 @@ def metric(term_id: str, value: float | int | None, freshness: datetime, *, kind
         with st.container(key=f"kpi-badges-{term_id}", horizontal=True):
             if state["stale"]:
                 badge_stale()
+            elif term.get("dataset_id") in in_flight:
+                badge_refreshing()
             else:
                 badge_fresh(freshness)
             if term.get("synthetic"):
