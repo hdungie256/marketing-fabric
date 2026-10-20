@@ -29,8 +29,8 @@ terms:
     notes: [first_in_observed_history]
   - display_name: RFM Segment
     owner_slice: customer
-    dataset_id: unified/orders
-    column: order_key
+    dataset_id: mart_customer.rfm
+    column: segment
     definition: Quintile-based recency/frequency/monetary segment at as-of 2019-12-31.
     formula: R/F/M quintiles 1-5 over 2019 buyers, first-match segment rule (Champions, Can't Lose, At Risk, Loyal, Potential Loyalist, Recent First Buyers, Needs Attention, Hibernating, Lost).
     rules: [R5, R18]
@@ -38,7 +38,38 @@ terms:
       - Quintiles are relative to the 2019 buyer population, not absolute thresholds.
       - Frequency counts technical orders (order_key), not source transaction IDs.
       - Ties broken by customer_id so reruns are identical.
+      - Rule table lives in governance/mappings/rfm_segments.yml; every buyer gets exactly one segment.
     notes: []
+  - display_name: Recency Score
+    owner_slice: customer
+    dataset_id: mart_customer.rfm
+    column: recency_score
+    definition: Quintile score of days since the last order to 2019-12-31; 5 is most recent.
+    formula: ntile(5) over recency_days ASC with customer_id tie-break, score = 6 - bucket.
+    rules: [R5, R18]
+    limitations:
+      - Relative quintile, not an absolute recency threshold.
+    notes: []
+  - display_name: Frequency Score
+    owner_slice: customer
+    dataset_id: mart_customer.rfm
+    column: frequency_score
+    definition: Quintile score of technical-order count; 5 is most orders.
+    formula: ntile(5) over frequency_orders DESC with customer_id tie-break, score = 6 - bucket.
+    rules: [R1, R18]
+    limitations:
+      - Counts technical orders (order_key); duplicate source transaction IDs stay exceptions.
+    notes: []
+  - display_name: Monetary Score
+    owner_slice: customer
+    dataset_id: mart_customer.rfm
+    column: monetary_score
+    definition: Quintile score of gross value; 5 is highest value.
+    formula: ntile(5) over monetary_value DESC with customer_id tie-break, score = 6 - bucket.
+    rules: [R2, R18]
+    limitations:
+      - Excludes shipping; currency unit not verified.
+    notes: [currency_unverified]
   - display_name: Estimated Unit Cost
     owner_slice: customer
     dataset_id: unified/product_cost

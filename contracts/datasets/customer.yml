@@ -1,4 +1,14 @@
 datasets:
+- dataset_id: mart_customer.rfm
+  om_fqn: serving.serving.mart_customer.rfm
+  openlineage:
+    namespace: s3://lake
+    name: serving.mart_customer.rfm
+  job_id: marts/customer/rfm
+  owner: p3
+  tags: []
+  grain:
+  - customer_id
 - dataset_id: mart_shared.exceptions
   om_fqn: serving.serving.mart_shared.exceptions
   openlineage:
