@@ -9,6 +9,7 @@ import fabric_control
 from app.pages.finance import budget_spend
 from app.pages.finance.budget_spend import by_campaign, edited_window, stack, summarize
 from app.services.spend_edit import EVENT_KEY
+from app.shell import fmt_money
 from fabric_control.glossary import load_terms
 
 FRESH = datetime(2026, 10, 13, 7, 0, tzinfo=UTC)
@@ -185,8 +186,8 @@ def test_reconciliation_says_stopped_when_row_not_refreshed_after_event(monkeypa
     assert row["note"] == "Refresh stopped · see Pipeline Status" and row["allocated"] == "30.00"
 
 
-def test_cents_shows_dash_for_missing():
-    assert [budget_spend._cents(v) for v in (None, pd.NA, float("nan"), Decimal("1234.5"))] == [
+def test_cents_shows_dash_for_missing():  # the reconciliation table formats with fmt_money(places=2)
+    assert [fmt_money(v, places=2) for v in (None, pd.NA, float("nan"), Decimal("1234.5"))] == [
         "—",
         "—",
         "—",

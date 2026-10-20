@@ -14,6 +14,7 @@ from app.shell import (
     empty_state,
     filter_bar,
     fmt_date,
+    fmt_money,
     fmt_time,
     metric,
     session,
@@ -21,7 +22,6 @@ from app.shell import (
     watch,
 )
 from app.shell.components.spend_edit import progress_strip, spend_edit_form
-from app.shell.format import DASH
 
 BUDGET = "mart_finance.budget_daily"
 RECON = "mart_shared.spend_reconciliation"
@@ -104,10 +104,6 @@ def edited_window(recon: pd.DataFrame, day: date, days: int = 7) -> pd.DataFrame
     return recon.iloc[start : start + days]
 
 
-def _cents(value) -> str:
-    return DASH if value is None or pd.isna(value) else f"{Decimal(str(value)):,.2f}"
-
-
 def reconciliation(recon: pd.DataFrame, state: dict, busy: bool) -> None:
     """The edited day and its neighbours: old values until the refresh lands, then old → new.
 
@@ -116,19 +112,21 @@ def reconciliation(recon: pd.DataFrame, state: dict, busy: bool) -> None:
     day = date.fromisoformat(state["event"]["keys"]["date"])
     window = edited_window(recon, day)
     edited = window["date"].map(fmt_date) == fmt_date(day)
-    out = window.assign(**{c: window[c].map(_cents) for c in ("online_spend", *SEGMENTS)}, note="")
+    out = window.assign(
+        **{c: window[c].map(lambda v: fmt_money(v, places=2)) for c in ("online_spend", *SEGMENTS)}, note=""
+    )
     refreshed = pd.Timestamp(window.loc[edited, "_refreshed_at"].max())
     emitted = state["event"].get("emitted_at")
     landed = emitted is not None and not pd.isna(refreshed) and refreshed >= pd.Timestamp(emitted)
     if busy:
-        out.loc[edited, "note"] = f"↻ Saved {_cents(state['new'])}, updating"
+        out.loc[edited, "note"] = f"↻ Saved {fmt_money(state['new'], places=2)}, updating"
     elif not landed:  # failed, gated or timed out: the row still holds the old values
         out.loc[edited, "note"] = "Refresh stopped · see Pipeline Status"
     else:
         out.loc[edited, "note"] = f"Refreshed {fmt_time(refreshed)} · difference 0 · see Change History"
         for column in SEGMENTS:
             if column in state["old"]:
-                out.loc[edited, column] = f"{_cents(state['old'][column])} → " + out.loc[edited, column]
+                out.loc[edited, column] = f"{fmt_money(state['old'][column], places=2)} → " + out.loc[edited, column]
     st.markdown("**Daily reconciliation**")
     table(
         out[["date", "online_spend", *SEGMENTS, "note"]],
