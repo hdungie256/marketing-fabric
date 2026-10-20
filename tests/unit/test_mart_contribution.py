@@ -107,7 +107,9 @@ def lake(monkeypatch, spark):
     monkeypatch.setattr(io, "read_pg", lambda t: tables[t])
     monkeypatch.setattr(io, "source_versions", lambda ids: {})
     monkeypatch.setattr(io, "write_pg_full", lambda t, df, run_id, v: calls["full"].append((t, df.count())))
-    monkeypatch.setattr(io, "upsert_pg", lambda t, df, scope, run_id: calls["upsert"].append((t, df.count())) or (1, 2))
+    monkeypatch.setattr(
+        io, "upsert_pg", lambda t, df, scope, run_id, versions: calls["upsert"].append((t, df.count())) or (1, 2)
+    )
     monkeypatch.setattr(fc.Run, "record_change", lambda self, *args: None)
     monkeypatch.setattr(fc, "emit_lineage", lambda *args: None)
     return calls

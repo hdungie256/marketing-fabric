@@ -79,6 +79,7 @@ def lake(monkeypatch, spark, allocations, days, campaign_ids=("CMP19_01",)):
     monkeypatch.setattr(io, "read_raw", lambda d: tables[d])
     monkeypatch.setattr(io, "read_delta", lambda d, version=None: tables[d])
     monkeypatch.setattr(io, "write_delta", lambda d, df, run_id, replace_where=None: written.update({d: df.collect()}))
+    monkeypatch.setattr(io, "delta_version", lambda d: 7)
     monkeypatch.setattr(fc, "emit_lineage", lambda *args: lineage.append(args))
     return written, lineage
 
@@ -105,7 +106,29 @@ def test_job_gates_before_writing(monkeypatch, spark, allocations, campaign_ids,
     assert written == {}
 
 
-def test_job_rejects_scoped_refresh(monkeypatch, spark):
+def test_scoped_refresh_replaces_only_scope_rows_per_grain(monkeypatch, spark):
+    allocations = [allocation(date(2019, 1, 15), "50.00"), allocation(date(2019, 1, 16), "10.00")]
+    days = [daily("1/15/2019", "80"), daily("1/16/2019", "80")]
+    lake(monkeypatch, spark, allocations, days)
+    raw = {d: io.read_raw(d) for d in job.INPUTS[:2]}
+    current = {
+        "unified/campaign_spend": transforms.campaign_spend(raw["raw/spend/campaign_spend"]),
+        "unified/daily_spend": transforms.daily_spend(raw["raw/spend/daily_spend"]),
+    }
+    read_delta = io.read_delta
+    monkeypatch.setattr(io, "read_delta", lambda d, version=None: current.get(d) or read_delta(d))
+    replaced = {}
+    monkeypatch.setattr(
+        io, "write_delta", lambda d, df, run_id, replace_where=None: replaced.update({d: (df.count(), replace_where)})
+    )
+    job.main({"mode": "scope", "keys": {"campaign_id": ["CMP19_01"], "date": ["2019-01-15"]}})
+    assert replaced == {
+        "unified/campaign_spend": (1, {"mode": "scope", "keys": {"campaign_id": ["CMP19_01"], "date": ["2019-01-15"]}}),
+        "unified/daily_spend": (1, {"mode": "scope", "keys": {"date": ["2019-01-15"]}}),
+    }
+
+
+def test_job_rejects_unknown_scope(monkeypatch, spark):
     lake(monkeypatch, spark, [], [])
-    with pytest.raises(ValueError, match="full refresh only"):
-        job.main({"mode": "scope", "keys": {"date": ["2019-01-15"]}})
+    with pytest.raises(ValueError, match="unknown scope"):
+        job.main({"mode": "partial"})

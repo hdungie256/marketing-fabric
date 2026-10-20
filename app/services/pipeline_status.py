@@ -31,9 +31,19 @@ def connect(role: Role) -> psycopg.Connection:
 VIEWS = ("ops_v.runs", "ops_v.alerts", "ops_v.load_reconciliation", "ops_v.page_timings")
 
 
+def with_emitted_at(runs: pd.DataFrame, events: pd.DataFrame) -> pd.DataFrame:
+    emitted = events.set_index("event_id")["emitted_at"] if not events.empty else pd.Series(dtype=object)
+    return runs.assign(emitted_at=runs["event_id"].map(emitted))
+
+
 def read(conn: Any) -> tuple[pd.DataFrame, ...]:
-    """runs, alerts, load_reconciliation, page_timings."""
-    return tuple(read_view(conn, view) for view in VIEWS)
+    """runs (with the change event's emitted_at), alerts, load_reconciliation, page_timings."""
+    runs, *rest = (read_view(conn, view) for view in VIEWS)
+    try:
+        runs = with_emitted_at(runs, read_view(conn, "ops_v.source_events"))
+    except psycopg.Error:
+        pass
+    return (runs, *rest)
 
 
 def seconds(started: Any, ended: Any, now: datetime) -> float | None:
@@ -66,14 +76,18 @@ def is_active(runs: pd.DataFrame) -> bool:
 
 
 def event_runs(runs: pd.DataFrame, event_id: str, now: datetime | None = None) -> tuple[pd.DataFrame, float | None]:
-    """Runs of one change event in start order, plus elapsed seconds from the first start to the last end (or now)."""
+    """Runs of one change event in start order, plus elapsed seconds from the event's emitted_at (or the first start
+    when unknown) to the last end (or now)."""
     now = now or datetime.now(UTC)
     chosen = runs[runs["event_id"] == event_id].sort_values("started_at")
     if chosen.empty:
         return chosen, None
     still_running = chosen["status"].isin(ACTIVE).any()
     end = None if still_running else chosen["ended_at"].max()
-    return chosen.reset_index(drop=True), seconds(chosen["started_at"].min(), end, now)
+    start = chosen["started_at"].min()
+    if "emitted_at" in chosen and chosen["emitted_at"].notna().any():
+        start = chosen["emitted_at"].dropna().iloc[0]
+    return chosen.reset_index(drop=True), seconds(start, end, now)
 
 
 def fmt_duration(value: float | None) -> str:
@@ -113,9 +127,7 @@ def last_full_refresh_seconds(runs: pd.DataFrame, now: datetime | None = None) -
 
 
 def event_latencies(runs: pd.DataFrame, now: datetime | None = None) -> pd.DataFrame:
-    """Partial refresh latency per change event (FR-26).
-
-    ponytail: measured from the first job start, not the event's emitted_at; switch when Epic 8 records events."""
+    """Partial refresh latency per change event (FR-26, NFR-4): max(ended_at) - emitted_at."""
     events = runs["event_id"].dropna().unique()
     rows = [(event_id, event_runs(runs, event_id, now)[1]) for event_id in events]
     return pd.DataFrame(rows, columns=["event_id", "seconds"])

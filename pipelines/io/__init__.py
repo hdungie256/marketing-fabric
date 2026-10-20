@@ -4,7 +4,7 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from pipelines.io import lineage, ops, pg, raw
-from pipelines.io.scope import Scope, scope_predicate
+from pipelines.io.scope import Scope, narrow, restrict, scope_predicate
 from pipelines.io.spark import get_spark
 from pipelines.io.storage import table_path
 
@@ -16,9 +16,11 @@ __all__ = [
     "append_raw",
     "delta_version",
     "get_spark",
+    "narrow",
     "read_delta",
     "read_pg",
     "read_raw",
+    "restrict",
     "source_versions",
     "upsert_pg",
     "vacuum",
@@ -47,7 +49,8 @@ def source_versions(dataset_ids: list[str]) -> dict[str, int]:
 
     versions = {}
     for raw_id in lineage.raw_ancestors(dataset_ids, writers(lineage.ROOT), lineage.job_inputs):
-        version = read_raw(raw_id).agg(F.max("_source_version")).first()[0]
+        passed = read_delta(raw_id).filter(F.col("_load_id").isin(ops.passed_loads(raw_id)))
+        version = passed.agg(F.max("_source_version")).first()[0]
         if version is None:
             raise ValueError(f"{raw_id} has no passed load")
         versions[raw_id] = int(version)
@@ -126,5 +129,7 @@ def write_pg_full(table: str, df: DataFrame, run_id: str, source_version: dict[s
     pg.write_full(table, df, run_id, source_version)
 
 
-def upsert_pg(table: str, df: DataFrame, scope: Scope, run_id: str) -> tuple[Any, Any]:
-    raise NotImplementedError("upsert_pg")
+def upsert_pg(
+    table: str, df: DataFrame, scope: Scope, run_id: str, source_version: dict[str, int]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    return pg.upsert(table, df, scope, run_id, source_version)

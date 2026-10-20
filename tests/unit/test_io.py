@@ -31,3 +31,19 @@ def test_append_raw_rejects_non_raw_dataset():
 
     with pytest.raises(ValueError, match="not a raw dataset"):
         io.append_raw("unified/orders", None, "r", "src", "snapshot", 1, "1.0.0")
+
+
+def test_restrict_keeps_grain_keys_only():
+    from pipelines.io.scope import restrict
+
+    scope = {"mode": "scope", "keys": {"campaign_id": ["C1"], "date": ["2019-01-15"]}}
+    assert restrict(scope, ["date"]) == {"mode": "scope", "keys": {"date": ["2019-01-15"]}}
+    assert restrict(scope, ["channel"]) == {"mode": "full"}
+    assert restrict({"mode": "full"}, ["date"]) == {"mode": "full"}
+
+
+def test_upsert_rejects_rows_outside_scope():
+    from pipelines.io.pg import outside
+
+    rows = [("C1", "2019-01-15", 1), ("C2", "2019-01-15", 2)]
+    assert outside(rows, ["campaign_id", "date", "v"], {"campaign_id": ["C1"]}) == [rows[1]]

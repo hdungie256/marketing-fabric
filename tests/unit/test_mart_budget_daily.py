@@ -84,7 +84,9 @@ def lake(monkeypatch, spark, spend_rows, order_rows, campaign_ids=("CMP19_01", "
     monkeypatch.setattr(io, "source_versions", lambda ids: {"raw/spend/campaign_spend": 1})
     monkeypatch.setattr(io, "write_pg_full", lambda t, df, run_id, v: calls["full"].append((t, df.count())))
     monkeypatch.setattr(
-        io, "upsert_pg", lambda t, df, scope, run_id: calls["upsert"].append((t, df.count(), scope)) or ("b", "a")
+        io,
+        "upsert_pg",
+        lambda t, df, scope, run_id, versions: calls["upsert"].append((t, df.count(), scope)) or ("b", "a"),
     )
     monkeypatch.setattr(
         fc.Run, "record_change", lambda self, d, before, after: calls["change"].append((d, before, after))

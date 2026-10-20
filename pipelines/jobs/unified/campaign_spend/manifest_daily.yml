@@ -1,0 +1,5 @@
+table: unified/daily_spend
+grain: [date]
+modes: [full, scope]
+scope_map: {date: date}
+metrics: []

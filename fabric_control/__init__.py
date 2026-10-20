@@ -11,9 +11,9 @@ from fabric_control.metadata import (
 )
 from fabric_control.migrations import run_migrations
 from fabric_control.models import DataQualityResult, GateFailed, RuleResult
-from fabric_control.ops import record_timing, trigger
-from fabric_control.policy import PolicyError, can_export, effective_matrix, sync_policies, verify_policies
-from fabric_control.refresh import affected_by, status
+from fabric_control.ops import record_event, record_timing, trigger
+from fabric_control.policy import PolicyError, can_edit, can_export, effective_matrix, sync_policies, verify_policies
+from fabric_control.refresh import affected_by, blocked, refresh_plan, status
 from fabric_control.registry import RegistryError, load_registry
 from fabric_control.run import Run, run
 
@@ -27,6 +27,8 @@ __all__ = [
     "RuleResult",
     "Run",
     "affected_by",
+    "blocked",
+    "can_edit",
     "can_export",
     "catalog",
     "check",
@@ -36,7 +38,9 @@ __all__ = [
     "latest_score",
     "lineage",
     "load_registry",
+    "record_event",
     "record_timing",
+    "refresh_plan",
     "register",
     "register_all",
     "report_data_quality",
