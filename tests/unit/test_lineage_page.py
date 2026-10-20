@@ -112,3 +112,27 @@ def test_lineage_page_lists_catalog_datasets(monkeypatch):
     at = AppTest.from_function(_page_script).run()
     assert not at.exception
     assert set(at.selectbox(key="_filter_lineage_dataset").options) == {"unified/orders", "unified/customers"}
+
+
+def _flow_script():
+    from app.shell.components.lineage_graph import lineage_flow
+
+    def node(i, page):
+        return {"dataset_id": f"ds/{i}", "label": f"Label {i}", "meta": f"meta {i}", "chip": ("info", f"chip {i}"), "page": page}
+
+    lineage_flow(
+        [
+            ("Source", [node(1, None)]),
+            ("Unified", [node(2, None)]),
+            ("Shared marts", [node(3, None), node(4, "targets")]),
+            ("Page marts", [node(5, "targets"), node(6, "budget_spend"), node(7, None), node(8, None)]),
+        ]
+    )
+
+
+def test_lineage_flow_renders_all_nodes_and_page_buttons():
+    at = AppTest.from_function(_flow_script).run()
+    assert not at.exception
+    text = " ".join(m.value for m in at.markdown)
+    assert all(f"Label {i}" in text and f"ds/{i}" in text for i in range(1, 9))
+    assert [b.label for b in at.button] == ["Open Label 4 page", "Open Label 5 page", "Open Label 6 page"]
