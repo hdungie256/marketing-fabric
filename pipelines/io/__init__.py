@@ -49,7 +49,8 @@ def source_versions(dataset_ids: list[str]) -> dict[str, int]:
 
     versions = {}
     for raw_id in lineage.raw_ancestors(dataset_ids, writers(lineage.ROOT), lineage.job_inputs):
-        version = read_raw(raw_id).agg(F.max("_source_version")).first()[0]
+        passed = read_delta(raw_id).filter(F.col("_load_id").isin(ops.passed_loads(raw_id)))
+        version = passed.agg(F.max("_source_version")).first()[0]
         if version is None:
             raise ValueError(f"{raw_id} has no passed load")
         versions[raw_id] = int(version)

@@ -121,8 +121,15 @@ def test_plan_runs_each_job_once_with_merged_scope(lineage):
     jobs = [step["job_id"] for step in plan]
     assert jobs[:3] == ["ingest/spend", "unified/campaign_spend", "marts/shared/campaign_spend"]
     assert len(jobs) == len(set(jobs))
-    steps = {step["job_id"]: step["scope"] for step in plan}
-    assert steps["marts/shared/campaign_spend"] == {"mode": "scope", "keys": {"campaign_id": X, "date": D}}
+    steps = {step["job_id"]: step for step in plan}
+    assert steps["marts/shared/campaign_spend"]["scope"] == {"mode": "scope", "keys": {"campaign_id": X, "date": D}}
+    assert steps["ingest/spend"]["needs"] == []
+    assert steps["marts/finance/budget_daily"]["needs"] == [
+        "ingest/spend",
+        "unified/campaign_spend",
+        "marts/shared/campaign_spend",
+    ]
+    assert "marts/finance/budget_daily" not in steps["marts/finance/contribution"]["needs"]
 
 
 def test_unknown_source_is_rejected(lineage):

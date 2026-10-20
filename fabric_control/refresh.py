@@ -1,4 +1,5 @@
 import functools
+import os
 from typing import Any
 
 from fabric_control.catalog import ancestors, layer, upstream_graph
@@ -68,10 +69,28 @@ def merge(scopes: list[Scope]) -> Scope:
 
 
 def refresh_plan(affected: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    graph = upstream_graph(load_registry())
     jobs: dict[str, list[Scope]] = {}
+    outputs: dict[str, set[str]] = {}
     for item in affected:
         jobs.setdefault(item["job_id"], []).append(item["scope"])
-    return [{"job_id": job_id, "scope": merge(scopes)} for job_id, scopes in jobs.items()]
+        outputs.setdefault(item["job_id"], set()).add(item["dataset_id"])
+    plan = []
+    for job_id, scopes in jobs.items():
+        upstream = set().union(*(ancestors(graph, d) for d in outputs[job_id]))
+        needs = [step["job_id"] for step in plan if outputs[step["job_id"]] & upstream]
+        plan.append({"job_id": job_id, "scope": merge(scopes), "needs": needs})
+    return plan
+
+
+def blocked(job_ids: list[str]) -> list[str]:
+    if not job_ids:
+        return []
+    if mode() == "offline":
+        return stub("blocked", [], job_ids=job_ids)
+    dag_run_id = os.environ["FABRIC_DAG_RUN_ID"]
+    statuses = postgres.run_statuses([f"{dag_run_id}:{job_id}" for job_id in job_ids])
+    return [job_id for job_id in job_ids if statuses.get(f"{dag_run_id}:{job_id}") != "success"]
 
 
 @functools.cache

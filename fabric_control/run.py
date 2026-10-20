@@ -25,7 +25,7 @@ class Run:
         self.job_id = job_id
         self.scope = scope
         self.run_id = f"{dag_run_id}:{job_id}"
-        self.event_id = os.environ.get("FABRIC_EVENT_ID")
+        self.event_id = os.environ.get("FABRIC_EVENT_ID") or None
         self.step: str | None = None
         self.rows_in: int | None = None
         self.rows_out: int | None = None

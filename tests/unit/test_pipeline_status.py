@@ -216,3 +216,10 @@ def test_reload_asks_once_then_triggers(monkeypatch, choice, error, expected):
     assert calls == expected
     if error:
         assert "not deployed" in app.error[0].value
+
+
+def test_event_latency_starts_at_emitted_at():
+    emitted = RUNS[RUNS["event_id"] == "evt1"]["started_at"].min() - pd.Timedelta(seconds=20)
+    events = pd.DataFrame([{"event_id": "evt1", "emitted_at": emitted}])
+    runs = ps.with_emitted_at(RUNS, events)
+    assert ps.event_latencies(runs, NOW).to_dict("records") == [{"event_id": "evt1", "seconds": 200.0}]

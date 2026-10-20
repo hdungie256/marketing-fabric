@@ -116,6 +116,7 @@ services:
       FABRIC_SECRETS_VOLUME: marketing-fabric_om-secrets
       FABRIC_ROOT: /opt/fabric
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__CORE__PARALLELISM: 4
       AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER}
       AIRFLOW_ADMIN_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
       DB_HOST: postgresql

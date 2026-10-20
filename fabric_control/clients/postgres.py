@@ -62,6 +62,12 @@ def end_run(
         )
 
 
+def run_statuses(run_ids: list[str]) -> dict[str, str]:
+    with connect() as conn:
+        rows = conn.execute("SELECT run_id, status FROM ops.runs WHERE run_id = ANY(%s)", (run_ids,)).fetchall()
+    return dict(rows)
+
+
 def insert_metric_changes(run_id: str, event_id: str | None, dataset_id: str, changes: list[tuple]) -> None:
     rows = [(run_id, event_id, dataset_id, json.dumps(key), term_id, was, now) for key, term_id, was, now in changes]
     with connect() as conn, conn.cursor() as cursor:
