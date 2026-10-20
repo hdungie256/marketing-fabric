@@ -204,7 +204,7 @@ Lands: BR12, BR11 (UG03 aggregate only), BR02.
 
 Mock: [mockups/key-budget-spend.html](mockups/key-budget-spend.html) (spend edit form); [mockups/key-change-history.html](mockups/key-change-history.html) (climax).
 
-Hà reconciling daily spend spots one day entered wrongly for one campaign.
+Hà, reconciling daily spend, has a corrected invoice for one campaign-day (CMP19_05, 2019-11-12).
 
 1. Lands on **Budget & Spend**: *Campaign Budget* shown separately from spend; *Allocated Spend* + *Unallocated Spend* = online spend per day (difference 0).
 2. Has a corrected invoice on CMP19_05 2019-11-12; opens the spend edit form (campaign, date, value) and enters the corrected allocated spend.
