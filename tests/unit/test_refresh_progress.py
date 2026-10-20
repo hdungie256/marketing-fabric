@@ -60,7 +60,10 @@ def test_event_without_progress_times_out():
 
 
 def test_retry_order_does_not_matter():
-    rows = [("marts/shared/campaign_spend", "e1", "failed", T0), ("marts/shared/campaign_spend", "e1", "success", T0 + timedelta(seconds=30))]
+    rows = [
+        ("marts/shared/campaign_spend", "e1", "failed", T0),
+        ("marts/shared/campaign_spend", "e1", "success", T0 + timedelta(seconds=30)),
+    ]
     for order in (rows, rows[::-1]):
         r = pd.DataFrame(order, columns=["job_id", "event_id", "status", "started_at"])
         assert rp.statuses(rp.steps(EVENT), r, "e1", T0, T0)[2] == "done"
@@ -75,19 +78,41 @@ def test_unknown_status_is_running():
 def _events():
     return pd.DataFrame(
         [
-            {"event_id": "old", "emitted_at": T0, "keys": {"campaign_id": ["CMP26_01"]}, "dag_run_id": "d1", "source": "spend"},
-            {"event_id": "new", "emitted_at": T0 + timedelta(minutes=5), "keys": '{"campaign_id": ["CMP26_01"]}', "dag_run_id": "d2", "source": "spend"},
+            {
+                "event_id": "old",
+                "emitted_at": T0,
+                "keys": {"campaign_id": ["CMP26_01"]},
+                "dag_run_id": "d1",
+                "source": "spend",
+            },
+            {
+                "event_id": "new",
+                "emitted_at": T0 + timedelta(minutes=5),
+                "keys": '{"campaign_id": ["CMP26_01"]}',
+                "dag_run_id": "d2",
+                "source": "spend",
+            },
         ]
     )
 
 
 def test_in_flight_uses_latest_event_only():
-    r = runs(("unified/campaign_spend", "old", "running"), ("unified/campaign_spend", "new", "success"),
-             ("marts/shared/campaign_spend", "new", "running"))
+    r = runs(
+        ("unified/campaign_spend", "old", "running"),
+        ("unified/campaign_spend", "new", "success"),
+        ("marts/shared/campaign_spend", "new", "running"),
+    )
     got = rp.in_flight(_events(), r, None, T0 + timedelta(minutes=6))
-    assert got == frozenset({"mart_shared.campaign_spend_allocated", "mart_shared.spend_reconciliation",
-                             "mart_campaign.target_achievement", "mart_finance.budget_daily",
-                             "mart_finance.contribution", "mart_finance.contribution_sku"})
+    assert got == frozenset(
+        {
+            "mart_shared.campaign_spend_allocated",
+            "mart_shared.spend_reconciliation",
+            "mart_campaign.target_achievement",
+            "mart_finance.budget_daily",
+            "mart_finance.contribution",
+            "mart_finance.contribution_sku",
+        }
+    )
 
 
 def test_in_flight_ignores_event_without_dag_run():

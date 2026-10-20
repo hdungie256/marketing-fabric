@@ -21,10 +21,12 @@ PUBLIC_API = {
     "UnknownTermError",
     "add_footnote",
     "add_stale",
+    "badge_refreshing",
     "banner_error",
     "banner_slot",
     "banner_stale",
     "chart",
+    "current_in_flight",
     "current_source",
     "denied_block",
     "empty_state",
@@ -36,12 +38,14 @@ PUBLIC_API = {
     "fmt_ratio",
     "fmt_time",
     "footnotes",
+    "freshness_badge",
     "metric",
     "run",
     "skeleton",
     "status_chip",
     "table",
     "toast",
+    "watch",
 }
 
 
