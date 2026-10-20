@@ -1,4 +1,4 @@
-from app.pages.campaign.placeholder import placeholder
+from app.pages.changes import change_history
 from app.shell import PageSpec
 
 PAGES = [
@@ -6,7 +6,7 @@ PAGES = [
         key="change_history",
         title="Change History",
         group="Operations",
-        render=placeholder("8.6"),
+        render=change_history.render,
         roles=frozenset({"UG01", "UG03", "UG04", "UG06"}),
         icon=":material/history:",
     ),
