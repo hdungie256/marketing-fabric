@@ -21,6 +21,7 @@ from app.shell import (
     watch,
 )
 from app.shell.components.spend_edit import progress_strip, spend_edit_form
+from app.shell.format import DASH
 
 BUDGET = "mart_finance.budget_daily"
 RECON = "mart_shared.spend_reconciliation"
@@ -104,10 +105,10 @@ def edited_window(recon: pd.DataFrame, day: date, days: int = 7) -> pd.DataFrame
 
 
 def _cents(value) -> str:
-    return f"{Decimal(str(value)):,.2f}"
+    return DASH if value is None or pd.isna(value) else f"{Decimal(str(value)):,.2f}"
 
 
-def reconciliation(recon: pd.DataFrame, state: dict, in_flight: frozenset[str]) -> None:
+def reconciliation(recon: pd.DataFrame, state: dict, busy: bool) -> None:
     """The edited day and its neighbours: old values until the refresh lands, then old → new.
 
     st.dataframe cannot strike text through, so "old → new" stands in for the spec's struck-through old value.
@@ -116,12 +117,15 @@ def reconciliation(recon: pd.DataFrame, state: dict, in_flight: frozenset[str]) 
     window = edited_window(recon, day)
     edited = window["date"].map(fmt_date) == fmt_date(day)
     out = window.assign(**{c: window[c].map(_cents) for c in ("online_spend", *SEGMENTS)}, note="")
-    if RECON in in_flight:
+    refreshed = pd.Timestamp(window.loc[edited, "_refreshed_at"].max())
+    emitted = state["event"].get("emitted_at")
+    landed = emitted is not None and not pd.isna(refreshed) and refreshed >= pd.Timestamp(emitted)
+    if busy:
         out.loc[edited, "note"] = f"↻ Saved {_cents(state['new'])}, updating"
+    elif not landed:  # failed, gated or timed out: the row still holds the old values
+        out.loc[edited, "note"] = "Refresh stopped · see Pipeline Status"
     else:
-        out.loc[edited, "note"] = (
-            f"Refreshed {fmt_time(window.loc[edited, '_refreshed_at'].max())} · difference 0 · see Change History"
-        )
+        out.loc[edited, "note"] = f"Refreshed {fmt_time(refreshed)} · difference 0 · see Change History"
         for column in SEGMENTS:
             if column in state["old"]:
                 out.loc[edited, column] = f"{_cents(state['old'][column])} → " + out.loc[edited, column]
@@ -163,7 +167,9 @@ def render() -> None:
         spend_edit_form(days, recon)
         progress_strip()
     if EVENT_KEY in st.session_state:
-        reconciliation(all_recon, st.session_state[EVENT_KEY], shown)
+        # date-grain: busy for any campaign selection, so ask without the campaign filter
+        busy = RECON in (shown if campaigns is None else current_in_flight(None))
+        reconciliation(all_recon, st.session_state[EVENT_KEY], busy)
     spend_stack_bar(recon)
     st.markdown("**By campaign**")
     table(
