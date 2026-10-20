@@ -12,6 +12,7 @@ from app.shell.format import FORMATTERS
 LOCK = "🔒"
 DENIED_TEXT = f"{LOCK} not permitted for role"
 DENIED_SUFFIX = "__denied"
+ACCENT_TINT = "#E8EEFE"  # DESIGN.md colors.accent-tint
 
 
 def masked_columns(role: str, dataset_id: str) -> frozenset[str]:
@@ -92,10 +93,16 @@ def table(
     campaign_col: str | None = None,
     formats: dict[str, str] | None = None,
     info_terms: dict[str, str] | None = None,
+    highlight: Callable[[pd.Series], bool] | None = None,
 ) -> None:
     masked = _cached_masked_columns(session.role(), dataset_id) if dataset_id else frozenset()
     out, formatters, config = prepare_table(df, masked, campaign_col, formats)
-    st.dataframe(out.style.format(formatters), column_config=config, hide_index=True, width="stretch")
+    styler = out.style.format(formatters)
+    if highlight:
+        styler = styler.apply(
+            lambda row: [f"background-color: {ACCENT_TINT}" if highlight(row) else ""] * len(row), axis=1
+        )
+    st.dataframe(styler, column_config=config, hide_index=True, width="stretch")
     for column, term_id in (info_terms or {}).items():
         if column in out.columns and st.button(f"ⓘ {column}", key=f"table-info-{column}"):
             definition_dialog(term_id)

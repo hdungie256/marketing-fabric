@@ -128,3 +128,12 @@ def test_masked_column_with_pandas_na_stays_missing_and_unprefixed():
     assert values[0] == "🔒 C****42"
     assert pd.isna(values[1])
     assert values[2] == DENIED_TEXT
+
+
+def test_highlight_tints_matching_rows(monkeypatch):
+    table_mod = importlib.import_module("app.shell.table")
+
+    seen = {}
+    monkeypatch.setattr(table_mod.st, "dataframe", lambda styler, **kw: seen.setdefault("html", styler.to_html()))
+    table_mod.table(pd.DataFrame({"day": ["a", "b"]}), highlight=lambda row: row["day"] == "b")
+    assert seen["html"].count("background-color: #E8EEFE") == 1
