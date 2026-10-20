@@ -27,5 +27,6 @@ read:
   ops.dq_results: [UG01, UG02, UG03, UG04, UG05, UG06]
   ops.page_timings: [UG06]
   ops.source_events: [UG01, UG03, UG04, UG06]
+  ops.metric_change_log: [UG01, UG03, UG04, UG06]
 edit:
   raw/spend/campaign_spend: [UG04]

@@ -30,9 +30,17 @@ class Run:
         self.rows_in: int | None = None
         self.rows_out: int | None = None
         self.delta_version: int | None = None
+        self.delta_version_before: int | None = None
 
-    def record_change(self, dataset_id: str, before: Any, after: Any) -> None:
-        stub("record_change", run_id=self.run_id, dataset_id=dataset_id)
+    def record_change(self, dataset_id: str, before: list[dict[str, Any]], after: list[dict[str, Any]]) -> int:
+        if mode() == "offline":
+            return stub("record_change", 0, run_id=self.run_id, dataset_id=dataset_id)
+        from fabric_control.changes import metric_changes
+
+        changes = metric_changes(dataset_id, before, after)
+        postgres.insert_metric_changes(self.run_id, self.event_id, dataset_id, changes)
+        log.info("run %s: %s metric values changed in %s", self.run_id, len(changes), dataset_id)
+        return len(changes)
 
     def warn(self, message: str) -> None:
         if mode() == "offline":
@@ -41,7 +49,15 @@ class Run:
         postgres.add_alert(self.run_id, self.job_id, "warning", message)
 
     def finish(self, status: str, failing_step: str | None = None) -> None:
-        postgres.end_run(self.run_id, status, self.rows_in, self.rows_out, failing_step, self.delta_version)
+        postgres.end_run(
+            self.run_id,
+            status,
+            self.rows_in,
+            self.rows_out,
+            failing_step,
+            self.delta_version,
+            self.delta_version_before,
+        )
 
 
 @contextmanager

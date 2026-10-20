@@ -17,7 +17,8 @@ def start_run(run_id: str, job_id: str, event_id: str | None, scope: dict[str, A
             VALUES (%s, %s, %s, %s, 'running', now())
             ON CONFLICT (run_id) DO UPDATE SET
                 status = 'running', started_at = now(), ended_at = NULL, rows_in = NULL,
-                rows_out = NULL, failing_step = NULL, delta_version = NULL
+                rows_out = NULL, failing_step = NULL, delta_version = NULL,
+                delta_version_before = NULL
             """,
             (run_id, job_id, event_id, json.dumps(scope)),
         )
@@ -48,15 +49,29 @@ def end_run(
     rows_out: int | None,
     failing_step: str | None,
     delta_version: int | None,
+    delta_version_before: int | None = None,
 ) -> None:
     with connect() as conn:
         conn.execute(
             """
             UPDATE ops.runs SET status = %s, ended_at = now(), rows_in = %s, rows_out = %s,
-                failing_step = %s, delta_version = %s
+                failing_step = %s, delta_version = %s, delta_version_before = %s
             WHERE run_id = %s
             """,
-            (status, rows_in, rows_out, failing_step, delta_version, run_id),
+            (status, rows_in, rows_out, failing_step, delta_version, delta_version_before, run_id),
+        )
+
+
+def insert_metric_changes(run_id: str, event_id: str | None, dataset_id: str, changes: list[tuple]) -> None:
+    rows = [(run_id, event_id, dataset_id, json.dumps(key), term_id, was, now) for key, term_id, was, now in changes]
+    with connect() as conn, conn.cursor() as cursor:
+        cursor.executemany(
+            """
+            INSERT INTO ops.metric_change_log
+                (run_id, event_id, dataset_id, grain_key, term_id, old_value, new_value)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            rows,
         )
 
 

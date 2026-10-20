@@ -22,7 +22,7 @@ def test_contract_manifest_and_migration_agree(dataset_id):
     names = [name for name, _ in columns(contract)]
     assert names[-3:] == METADATA and "provenance" in names
     data = yaml.safe_load((MART_DIR / manifest).read_text())
-    assert (data["table"], data["grain"], data["modes"]) == (dataset_id, contract["grain"], ["full"])
+    assert (data["table"], data["grain"], data["modes"]) == (dataset_id, contract["grain"], ["full", "scope"])
     assert set(data["metrics"]) <= set(names)
     sql = (MIGRATIONS / f"{migration_id}.sql").read_text()
     assert sql.startswith("-- depends: 000_create_schemas")
@@ -111,7 +111,29 @@ def test_job_gates_allocation_on_day_without_daily_spend(monkeypatch, spark):
     assert written == {}
 
 
-def test_job_rejects_scoped_refresh(monkeypatch, spark):
-    lake(monkeypatch, spark, [], [])
-    with pytest.raises(ValueError, match="full refresh only"):
-        job.main({"mode": "scope", "keys": {"date": ["2019-01-15"]}})
+def test_scoped_refresh_upserts_each_mart_on_its_grain(monkeypatch, spark):
+    allocations = [("CMP19_01", D1, "30.00"), ("CMP19_02", D1, "20.00"), ("CMP19_01", D2, "5.00")]
+    lake(monkeypatch, spark, allocations, [(D1, "100.00"), (D2, "8.00")])
+    tables = {d: io.read_delta(d) for d in job.INPUTS}
+    current = {
+        "mart_shared.campaign_spend_allocated": transforms.allocated(tables["unified/campaign_spend"]),
+        "mart_shared.spend_reconciliation": transforms.reconciliation(
+            tables["unified/daily_spend"], tables["unified/campaign_spend"]
+        ),
+    }
+    monkeypatch.setattr(io, "read_pg", lambda t: current[t])
+    upserts, changes = {}, []
+    monkeypatch.setattr(
+        io,
+        "upsert_pg",
+        lambda t, df, scope, run_id, versions: upserts.update({t: (df.collect(), scope, versions)}) or ([], []),
+    )
+    monkeypatch.setattr(fc.Run, "record_change", lambda self, d, before, after: changes.append(d))
+    job.main({"mode": "scope", "keys": {"campaign_id": ["CMP19_01"], "date": [str(D1)]}})
+    allocated, allocated_scope, versions = upserts["mart_shared.campaign_spend_allocated"]
+    assert [(r.campaign_id, r.date) for r in allocated] == [("CMP19_01", D1)]
+    assert allocated_scope == {"mode": "scope", "keys": {"campaign_id": ["CMP19_01"], "date": [str(D1)]}}
+    recon, recon_scope, _ = upserts["mart_shared.spend_reconciliation"]
+    assert [(r.date, r.allocated, r.unallocated) for r in recon] == [(D1, Decimal("50.00"), Decimal("50.00"))]
+    assert recon_scope == {"mode": "scope", "keys": {"date": [str(D1)]}}
+    assert versions == VERSIONS and changes == job.OUTPUTS

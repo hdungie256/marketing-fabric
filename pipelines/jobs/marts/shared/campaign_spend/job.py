@@ -29,22 +29,28 @@ def reconciliation_rules(recon, daily) -> list[RuleResult]:
 
 
 def main(scope: dict) -> None:
-    if scope.get("mode") != "full":
-        raise ValueError(f"{JOB_ID} supports full refresh only, got {scope}")
+    if scope.get("mode") not in ("full", "scope"):
+        raise ValueError(f"{JOB_ID}: unknown scope {scope}")
     with fc.run(JOB_ID, scope) as run:
         spend, daily = (io.read_delta(d) for d in INPUTS)
         allocated = transforms.allocated(spend).cache()
         recon = transforms.reconciliation(daily, spend).cache()
         extra = {OUTPUTS[0]: allocated_rules(allocated, spend, recon), OUTPUTS[1]: reconciliation_rules(recon, daily)}
         outputs = dict(zip(OUTPUTS, (allocated, recon), strict=True))
+        scopes = {d: io.restrict(scope, df.columns) for d, df in outputs.items()}
+        outputs = {d: io.narrow(df, scopes[d]) for d, df in outputs.items()}
         for dataset_id, df in outputs.items():
-            result = fc.check(dataset_id, df, scope)
+            result = fc.check(dataset_id, df, scopes[dataset_id])
             result.rules += extra[dataset_id]
             fc.report_data_quality(result)
             fc.gate(result)
         versions = io.source_versions(INPUTS)
         for dataset_id, df in outputs.items():
-            io.write_pg_full(dataset_id, df, run.run_id, versions)
+            if scopes[dataset_id]["mode"] == "full":
+                io.write_pg_full(dataset_id, df, run.run_id, versions)
+            else:
+                before, after = io.upsert_pg(dataset_id, df, scopes[dataset_id], run.run_id, versions)
+                run.record_change(dataset_id, before, after)
         fc.emit_lineage(JOB_ID, INPUTS, OUTPUTS)
 
 

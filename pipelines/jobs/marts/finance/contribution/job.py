@@ -47,8 +47,9 @@ def main(scope: dict) -> None:
             for dataset_id, df in outputs.items():
                 io.write_pg_full(dataset_id, df, run.run_id, versions)
         else:
+            versions = io.source_versions(INPUTS)
             for dataset_id, df in outputs.items():
-                before, after = io.upsert_pg(dataset_id, df, scope, run.run_id)
+                before, after = io.upsert_pg(dataset_id, df, scope, run.run_id, versions)
                 run.record_change(dataset_id, before, after)
         fc.emit_lineage(JOB_ID, INPUTS, OUTPUTS)
 

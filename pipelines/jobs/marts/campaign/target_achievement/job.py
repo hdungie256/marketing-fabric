@@ -47,7 +47,7 @@ def main(scope: dict) -> None:
         if scope["mode"] == "full":
             io.write_pg_full(OUTPUTS[0], df, run.run_id, io.source_versions(INPUTS))
         else:
-            before, after = io.upsert_pg(OUTPUTS[0], df, scope, run.run_id)
+            before, after = io.upsert_pg(OUTPUTS[0], df, scope, run.run_id, io.source_versions(INPUTS))
             run.record_change(OUTPUTS[0], before, after)
         fc.emit_lineage(JOB_ID, INPUTS, OUTPUTS)
 

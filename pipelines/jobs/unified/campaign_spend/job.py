@@ -22,20 +22,24 @@ def spend_rules(spend, daily, campaigns) -> list[RuleResult]:
 
 
 def main(scope: dict) -> None:
-    if scope.get("mode") != "full":
-        raise ValueError(f"{JOB_ID} supports full refresh only, got {scope}")
+    if scope.get("mode") not in ("full", "scope"):
+        raise ValueError(f"{JOB_ID}: unknown scope {scope}")
     with fc.run(JOB_ID, scope) as run:
         spend = transforms.campaign_spend(io.read_raw(INPUTS[0])).cache()
         daily = transforms.daily_spend(io.read_raw(INPUTS[1])).cache()
         extra = {OUTPUTS[0]: spend_rules(spend, daily, io.read_delta(INPUTS[2])), OUTPUTS[1]: []}
         outputs = dict(zip(OUTPUTS, (spend, daily), strict=True))
+        scopes = {d: io.restrict(scope, df.columns) for d, df in outputs.items()}
+        outputs = {d: io.narrow(df, scopes[d]) for d, df in outputs.items()}
         for dataset_id, df in outputs.items():
-            result = fc.check(dataset_id, df, scope)
+            result = fc.check(dataset_id, df, scopes[dataset_id])
             result.rules += extra[dataset_id]
             fc.report_data_quality(result)
             fc.gate(result)
+        run.delta_version_before = io.delta_version(OUTPUTS[0])
         for dataset_id, df in outputs.items():
-            io.write_delta(dataset_id, df, run.run_id)
+            io.write_delta(dataset_id, df, run.run_id, replace_where=scopes[dataset_id])
+        run.delta_version = io.delta_version(OUTPUTS[0])
         fc.emit_lineage(JOB_ID, INPUTS, OUTPUTS)
 
 

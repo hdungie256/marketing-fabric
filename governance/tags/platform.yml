@@ -16,6 +16,7 @@ columns:
     rows_out: Sensitivity.internal
     failing_step: Sensitivity.internal
     delta_version: Sensitivity.internal
+    delta_version_before: Sensitivity.internal
   ops.alerts:
     alert_id: Sensitivity.internal
     run_id: Sensitivity.internal
@@ -66,3 +67,13 @@ columns:
     keys: Sensitivity.internal
     source_version: Sensitivity.internal
     dag_run_id: Sensitivity.internal
+  ops.metric_change_log:
+    change_id: Sensitivity.internal
+    run_id: Sensitivity.internal
+    event_id: Sensitivity.internal
+    dataset_id: Sensitivity.internal
+    grain_key: Sensitivity.internal
+    term_id: Sensitivity.internal
+    old_value: Sensitivity.internal
+    new_value: Sensitivity.internal
+    recorded_at: Sensitivity.internal

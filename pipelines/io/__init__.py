@@ -4,7 +4,7 @@ import os
 from typing import TYPE_CHECKING, Any
 
 from pipelines.io import lineage, ops, pg, raw
-from pipelines.io.scope import Scope, scope_predicate
+from pipelines.io.scope import Scope, narrow, restrict, scope_predicate
 from pipelines.io.spark import get_spark
 from pipelines.io.storage import table_path
 
@@ -16,9 +16,11 @@ __all__ = [
     "append_raw",
     "delta_version",
     "get_spark",
+    "narrow",
     "read_delta",
     "read_pg",
     "read_raw",
+    "restrict",
     "source_versions",
     "upsert_pg",
     "vacuum",
@@ -126,5 +128,7 @@ def write_pg_full(table: str, df: DataFrame, run_id: str, source_version: dict[s
     pg.write_full(table, df, run_id, source_version)
 
 
-def upsert_pg(table: str, df: DataFrame, scope: Scope, run_id: str) -> tuple[Any, Any]:
-    raise NotImplementedError("upsert_pg")
+def upsert_pg(
+    table: str, df: DataFrame, scope: Scope, run_id: str, source_version: dict[str, int]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    return pg.upsert(table, df, scope, run_id, source_version)
