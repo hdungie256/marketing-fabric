@@ -1,10 +1,26 @@
+from datetime import date
 from decimal import Decimal
 
 import altair as alt
 import pandas as pd
 import streamlit as st
 
-from app.shell import SERIES_NEUTRAL, Filter, current_source, empty_state, filter_bar, metric, table
+from app.services.spend_edit import EVENT_KEY
+from app.shell import (
+    SERIES_NEUTRAL,
+    Filter,
+    current_in_flight,
+    current_source,
+    empty_state,
+    filter_bar,
+    fmt_date,
+    fmt_time,
+    metric,
+    session,
+    table,
+    watch,
+)
+from app.shell.components.spend_edit import progress_strip, spend_edit_form
 
 BUDGET = "mart_finance.budget_daily"
 RECON = "mart_shared.spend_reconciliation"
@@ -78,9 +94,49 @@ def spend_stack_bar(recon: pd.DataFrame) -> None:
     st.altair_chart(chart, use_container_width=True)
 
 
+def edited_window(recon: pd.DataFrame, day: date, days: int = 7) -> pd.DataFrame:
+    """The `days` rows around `day`, shifted inward at the edges of the data so the window stays full."""
+    recon = recon.sort_values("date").reset_index(drop=True)
+    hits = recon.index[recon["date"].map(fmt_date) == fmt_date(day)]
+    at = hits[0] if len(hits) else 0
+    start = max(0, min(at - days // 2, len(recon) - days))
+    return recon.iloc[start : start + days]
+
+
+def _cents(value) -> str:
+    return f"{Decimal(str(value)):,.2f}"
+
+
+def reconciliation(recon: pd.DataFrame, state: dict, in_flight: frozenset[str]) -> None:
+    """The edited day and its neighbours: old values until the refresh lands, then old → new.
+
+    st.dataframe cannot strike text through, so "old → new" stands in for the spec's struck-through old value.
+    """
+    day = date.fromisoformat(state["event"]["keys"]["date"])
+    window = edited_window(recon, day)
+    edited = window["date"].map(fmt_date) == fmt_date(day)
+    out = window.assign(**{c: window[c].map(_cents) for c in ("online_spend", *SEGMENTS)}, note="")
+    if RECON in in_flight:
+        out.loc[edited, "note"] = f"↻ Saved {_cents(state['new'])}, updating"
+    else:
+        out.loc[edited, "note"] = (
+            f"Refreshed {fmt_time(window.loc[edited, '_refreshed_at'].max())} · difference 0 · see Change History"
+        )
+        for column in SEGMENTS:
+            if column in state["old"]:
+                out.loc[edited, column] = f"{_cents(state['old'][column])} → " + out.loc[edited, column]
+    st.markdown("**Daily reconciliation**")
+    table(
+        out[["date", "online_spend", *SEGMENTS, "note"]],
+        dataset_id=RECON,
+        highlight=lambda row: fmt_date(row["date"]) == fmt_date(day),
+    )
+
+
 def render() -> None:
     source = current_source()
     days, recon = source.read(BUDGET), source.read(RECON)
+    all_recon = recon
     if days.empty:
         empty_state("No campaign spend yet.", "Budget & Spend fills after the finance marts refresh.")
         return
@@ -93,12 +149,21 @@ def render() -> None:
     if chosen != ALL:
         days = days[days["campaign_id"] == chosen]
         recon = recon[recon["date"].isin(days["date"])]
+    campaigns = None if chosen == ALL else {chosen}
+    shown = current_in_flight(campaigns)
     fresh = max(days["_refreshed_at"].max(), recon["_refreshed_at"].max())
     values = summarize(days, recon)
     kinds = ["money", "money", "money", "ratio", "money"]
     for column, (term_id, value), kind in zip(st.columns(len(values)), values.items(), kinds, strict=True):
         with column:
-            metric(term_id, value, fresh, kind=kind)
+            metric(term_id, value, fresh, kind=kind, in_flight=shown)
+    if shown:
+        watch(campaigns, shown)
+    if session.role() == "UG04":
+        spend_edit_form(days, recon)
+        progress_strip()
+    if EVENT_KEY in st.session_state:
+        reconciliation(all_recon, st.session_state[EVENT_KEY], shown)
     spend_stack_bar(recon)
     st.markdown("**By campaign**")
     table(

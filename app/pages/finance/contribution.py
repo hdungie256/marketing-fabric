@@ -1,6 +1,6 @@
 import streamlit as st
 
-from app.shell import current_source, empty_state, metric, table
+from app.shell import current_in_flight, current_source, empty_state, metric, table, watch
 
 CAMPAIGNS = "mart_finance.contribution"
 SKUS = "mart_finance.contribution_sku"
@@ -17,11 +17,16 @@ def render() -> None:
         empty_state("No contribution yet.", "Contribution fills after the finance marts refresh.")
         return
     fresh = max(campaigns["_refreshed_at"].max(), skus["_refreshed_at"].max())
+    shown = current_in_flight(None)
     left, right = st.columns(2)
     with left:
-        metric("estimated_contribution", campaigns["estimated_contribution"].sum(), fresh, kind="money")
+        metric(
+            "estimated_contribution", campaigns["estimated_contribution"].sum(), fresh, kind="money", in_flight=shown
+        )
     with right:
-        metric("reference_cost_of_goods", campaigns["reference_cogs"].sum(), fresh, kind="money")
+        metric("reference_cost_of_goods", campaigns["reference_cogs"].sum(), fresh, kind="money", in_flight=shown)
+    if shown:
+        watch(None, shown)
 
     st.markdown("**Estimated contribution by campaign**")
     table(
