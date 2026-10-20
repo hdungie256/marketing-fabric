@@ -226,6 +226,7 @@ services:
       AIRFLOW_USER: ${AIRFLOW_ADMIN_USER}
       AIRFLOW_PASSWORD: ${AIRFLOW_ADMIN_PASSWORD}
       SPARK_DRIVER_MEMORY: 2g
+      FINANCE_CONTROLLER_DB_PASSWORD: ${FINANCE_CONTROLLER_DB_PASSWORD}
     volumes:
       - ..:/srv:ro
       - om-secrets:/run/om
