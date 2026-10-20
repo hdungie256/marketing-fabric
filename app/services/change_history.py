@@ -11,6 +11,7 @@ import pandas as pd
 import fabric_control
 from app.services.pipeline_status import event_runs, with_emitted_at
 from app.services.refresh_progress import label
+from app.shell.format import fmt_time
 from fabric_control.glossary import load_terms
 
 # (dataset short name, column) -> meaning; rows of one meaning, campaign and date are one changed value.
@@ -78,6 +79,7 @@ def _same(a: tuple, b: tuple) -> bool:
 
 
 def changed_values(log: pd.DataFrame, event: dict, terms: dict) -> pd.DataFrame:
+    event = _event(event)
     order = {a["dataset_id"]: i for i, a in enumerate(fabric_control.affected_by(event))}
     groups: list[dict[str, Any]] = []
     for row in _for_event(log, event).to_dict("records"):
@@ -175,10 +177,11 @@ def _column(dataset_id: str) -> str:
 
 def _refreshed(run: dict | None) -> str:
     ended = run and run.get("ended_at")
-    return "Not refreshed yet" if ended is None or pd.isna(ended) else f"Refreshed {ended:%H:%M}"
+    return "Not refreshed yet" if ended is None or pd.isna(ended) else f"Refreshed {fmt_time(ended)}"
 
 
 def flow(event: dict, runs: pd.DataFrame, log: pd.DataFrame) -> list[tuple[str, list[dict]]]:
+    event = _event(event)
     chosen, _ = event_runs(runs, event["event_id"])
     by_job = {r["job_id"]: r for r in chosen.to_dict("records")}  # start order: latest run per job wins
     counts = _for_event(log, event)["dataset_id"].value_counts().to_dict()
@@ -195,7 +198,13 @@ def flow(event: dict, runs: pd.DataFrame, log: pd.DataFrame) -> list[tuple[str, 
         if column == "Source":
             version = int(event["source_version"])
             meta, chip = f"Source version {version - 1} → {version}", ("info", "Edited")
-        elif column == "Unified" and first and run and pd.notna(run.get("delta_version")):
+        elif (
+            column == "Unified"
+            and first
+            and run
+            and pd.notna(run.get("delta_version"))
+            and pd.notna(run.get("delta_version_before"))
+        ):
             meta = f"Delta version {int(run['delta_version_before'])} → {int(run['delta_version'])}"
         page = PAGE_OF.get(_short(dataset_id)) if column == "Page marts" else None
         columns[column].append(
@@ -205,5 +214,6 @@ def flow(event: dict, runs: pd.DataFrame, log: pd.DataFrame) -> list[tuple[str, 
 
 
 def not_downstream(event: dict) -> list[str]:
+    event = _event(event)
     affected = {a["dataset_id"] for a in fabric_control.affected_by(event)}
     return sorted(label(d) for d in fabric_control.load_registry() if d.startswith("mart_") and d not in affected)

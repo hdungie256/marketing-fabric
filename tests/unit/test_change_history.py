@@ -122,7 +122,13 @@ def test_kept_skips_unreadable_datasets():
     frames = {"mart_finance.contribution": None, "mart_shared.campaign_spend_allocated": _frame([T0 - timedelta(1)])}
     metrics = {"mart_finance.contribution": ["campaign_cost"], "mart_shared.campaign_spend_allocated": ["allocated"]}
     assert ch.kept(frames, metrics, T0) == (1, T0 - timedelta(1))
+    assert isinstance(ch.kept(frames, metrics, T0)[1], datetime)  # the page formats it with fmt_time
     assert ch.kept({"x": None}, {"x": ["a"]}, T0) == (0, None)
+
+
+@pytest.fixture(autouse=True)
+def _tz(monkeypatch):
+    monkeypatch.setenv("APP_TZ", "Asia/Ho_Chi_Minh")  # UTC+7: times must be shown in APP_TZ, not UTC
 
 
 def test_flow_columns_and_chips():
@@ -133,13 +139,13 @@ def test_flow_columns_and_chips():
     assert nodes["raw/spend/campaign_spend"]["meta"] == "Source version 7 → 8"
     assert nodes["raw/spend/campaign_spend"]["chip"] == ("info", "Edited")
     assert nodes["unified/campaign_spend"]["meta"] == "Delta version 41 → 42"
-    assert nodes["unified/daily_spend"]["meta"] == "Refreshed 10:42"
+    assert nodes["unified/daily_spend"]["meta"] == "Refreshed 17:42"
     assert nodes["unified/daily_spend"]["chip"] == ("neutral", "Recomputed, no tracked change")
     assert nodes["mart_shared.spend_reconciliation"]["label"] == "Daily spend reconciliation"
     assert nodes["mart_shared.spend_reconciliation"]["chip"] == ("info", "2 changed")
-    assert nodes["mart_shared.spend_reconciliation"]["meta"] == "Refreshed 10:42"
+    assert nodes["mart_shared.spend_reconciliation"]["meta"] == "Refreshed 17:42"
     assert nodes["mart_shared.spend_reconciliation"]["page"] is None
-    assert nodes["mart_finance.contribution"]["meta"] == "Refreshed 10:43"
+    assert nodes["mart_finance.contribution"]["meta"] == "Refreshed 17:43"
     assert nodes["mart_finance.contribution"]["page"] == "contribution"
     assert nodes["mart_finance.contribution_sku"]["chip"] == ("neutral", "Recomputed, no tracked change")
 
@@ -172,3 +178,17 @@ def test_event_table_change_text():
         72,
     )
     assert ch.event_table(events, runs(), log()[0:0]).iloc[0]["change"] == "Allocated spend for 2019-11-12 changed"
+
+
+def test_flow_without_version_before_falls_back_to_refreshed():
+    r = runs()
+    r.loc[r["job_id"] == "unified/campaign_spend", "delta_version_before"] = None
+    nodes = {n["dataset_id"]: n for _, col in ch.flow(EVENT, r, log()) for n in col}
+    assert nodes["unified/campaign_spend"]["meta"] == "Refreshed 17:42"
+
+
+def test_functions_accept_json_string_keys():
+    event = {**EVENT, "keys": '{"campaign_id": "CMP19_05", "date": "2019-11-12"}'}
+    assert len(ch.changed_values(log(), event, load_terms())) == 4
+    assert len(dict(ch.flow(event, runs(), log()))["Page marts"]) == 4
+    assert ch.not_downstream(event) == ch.not_downstream(EVENT)
