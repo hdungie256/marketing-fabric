@@ -71,8 +71,8 @@ def test_spend_edit_refreshes_only_scope_and_logs_changes():
     )
     assert current["allocated"] == ORIGINAL
     before = snapshot(marts)
-    event = edit(EDITED)
     try:
+        event = edit(EDITED)
         [latency] = query(
             "SELECT extract(epoch FROM max(r.ended_at) - e.emitted_at) AS s FROM ops.runs r "
             "JOIN ops.source_events e USING (event_id) WHERE event_id = %s GROUP BY e.emitted_at",
@@ -82,6 +82,7 @@ def test_spend_edit_refreshes_only_scope_and_logs_changes():
 
         after = snapshot(marts)
         moved = {key for key, at in after.items() if before.get(key) != at}
+        assert moved
         scopes = {a["dataset_id"]: a["scope"] for a in affected_by(event)}
         assert {table for table, _ in moved} <= set(scopes)
         for table, values in moved:
