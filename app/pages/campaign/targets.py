@@ -123,7 +123,10 @@ def render() -> None:
     st.caption(SUBTITLE)
     badge_synthetic()
     shown = current_in_flight(None)
-    freshness_badge(raw["_refreshed_at"].max(), svc.DATASET, shown)
+    if stale:
+        badge_stale()
+    else:
+        freshness_badge(raw["_refreshed_at"].max(), svc.DATASET, shown)
     if shown:
         watch(None, shown)
     if st.toggle("Table view", key="targets_table_view"):
