@@ -207,11 +207,11 @@ Mock: [mockups/key-budget-spend.html](mockups/key-budget-spend.html) (spend edit
 Hà reconciling daily spend spots one day entered wrongly for one campaign.
 
 1. Lands on **Budget & Spend**: *Campaign Budget* shown separately from spend; *Allocated Spend* + *Unallocated Spend* = online spend per day (difference 0).
-2. Finds the wrong day; opens the spend edit form (campaign, date, value).
+2. Has a corrected invoice on CMP19_05 2019-11-12; opens the spend edit form (campaign, date, value) and enters the corrected allocated spend.
 3. Enters an invalid value → mock API 4xx; reason appears inline under the field; values kept.
-4. Corrects and clicks "Save change" → toast "Change saved · partial refresh started"; {components.progress-strip} appears below the form: "Refreshing N datasets · m:ss", steps queued → running → done. The affected metric cards switch to {components.badge-refreshing} "Refreshing…" (previous value kept) — not Stale (AD-19).
+4. Corrects and clicks "Save change" → toast "Change saved · partial refresh started"; {components.progress-strip} appears below the form: "Refreshing N datasets for {campaign}, {date}" plus an m:ss timer, one step per affected dataset (business label, dataset id below), steps queued → running → done. The affected metric cards switch to {components.badge-refreshing} "Refreshing…" (previous value kept) — not Stale (AD-19).
 5. Strip completes → "N metrics changed — see Change History"; presenter switches to UG06 for full **Pipeline Status** detail (steps queued → running → success, elapsed timer vs 2-min target).
-6. **Climax:** **Change History** shows old → new and delta for that campaign's metrics only, with "N metrics changed · M unchanged kept refresh time HH:MM"; back on Budget & Spend / Contribution / Targets, only that campaign's badges flip from {components.badge-refreshing} to {components.badge-fresh} with a new refresh time.
+6. **Climax:** **Change History** shows a summary line, a lineage flow of the refreshed datasets, and a table of old → new and delta for that campaign's metrics only, with "N metrics changed · M unchanged kept refresh time HH:MM"; back on Budget & Spend / Contribution / Targets, only that campaign's badges flip from {components.badge-refreshing} to {components.badge-fresh} with a new refresh time.
 7. **Failure path:** an invalid spend value triggers the inline 4xx in step 3 before save ever starts; if the partial-refresh run itself fails after save, Pipeline Status shows a failed status-chip and cause, and the alert-indicator increments.
 
 Lands: BR16 (< 2 min, only BR10/BR11/BR12 metrics of that campaign change, before/after visible), BR10.
