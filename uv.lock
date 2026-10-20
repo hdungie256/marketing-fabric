@@ -504,6 +504,7 @@ dependencies = [
 
 [package.dev-dependencies]
 api = [
+    { name = "boto3" },
     { name = "fastapi" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pyyaml" },
@@ -511,6 +512,7 @@ api = [
 ]
 app = [
     { name = "psycopg", extra = ["binary"] },
+    { name = "pytest" },
     { name = "pyyaml" },
     { name = "streamlit" },
     { name = "tzdata" },
@@ -544,6 +546,7 @@ requires-dist = [{ name = "pyyaml" }]
 
 [package.metadata.requires-dev]
 api = [
+    { name = "boto3" },
     { name = "fastapi", specifier = "==0.141.1" },
     { name = "psycopg", extras = ["binary"], specifier = "==3.3.6" },
     { name = "pyyaml" },
@@ -551,6 +554,7 @@ api = [
 ]
 app = [
     { name = "psycopg", extras = ["binary"], specifier = "==3.3.6" },
+    { name = "pytest" },
     { name = "pyyaml" },
     { name = "streamlit", specifier = "==1.64.0" },
     { name = "tzdata" },
