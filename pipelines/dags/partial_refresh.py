@@ -1,11 +1,10 @@
 from airflow.sdk import dag
-from fabric.job_task import job_task, step_tasks
+from fabric.job_task import job_task
 
 
 @dag(schedule=None, catchup=False, max_active_runs=1, is_paused_upon_creation=False, tags=["platform"])
 def partial_refresh():
-    plan = job_task("platform/affected", args=["--event", "{{ dag_run.conf | tojson }}"])
-    step_tasks(plan.output)
+    job_task("platform/partial_refresh", args=["--event", "{{ dag_run.conf | tojson }}"])
 
 
 partial_refresh()

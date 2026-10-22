@@ -34,3 +34,11 @@ def get_spark(app_name: str = "fabric") -> SparkSession:
     for key, value in s3_conf().items():
         builder = builder.config(key, value)
     return builder.getOrCreate()
+
+
+def clear_cache() -> None:
+    from pyspark.sql import SparkSession
+
+    session = SparkSession.getActiveSession()
+    if session is not None:
+        session.catalog.clearCache()
