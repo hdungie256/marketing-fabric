@@ -17,3 +17,5 @@ derby.log
 docs/superpowers/
 CLAUDE.md
 .claude/
+
+benchmark/data/
