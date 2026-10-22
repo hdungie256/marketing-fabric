@@ -7,11 +7,10 @@ from decimal import Decimal
 import psycopg
 from psycopg.rows import dict_row
 
-from app.services import pipeline_status
-from app.shell.roles import ROLES
 from fabric_control import affected_by
 from fabric_control.clients import airflow
 from fabric_control.manifests import load_manifests
+from fabric_control.policy import load_policy
 from fabric_control.registry import load_registry
 
 CAMPAIGN, DAY = "CMP19_05", "2019-11-12"
@@ -93,7 +92,9 @@ def test_spend_edit_refreshes_only_scope_and_logs_changes():
             for column, allowed in scope["keys"].items():
                 assert row[column] in {str(v) for v in allowed}, (table, row)
 
-        with pipeline_status.connect(ROLES["UG04"]) as conn:
+        # Read as UG04 through the policy view; no app import, so the test runs in the fabric-jobs image.
+        with psycopg.connect(os.environ["SERVING_DB_DSN"]) as conn, conn.transaction(force_rollback=True):
+            conn.execute(f"SET LOCAL ROLE {load_policy().roles['UG04']}")
             logged = conn.execute(
                 "SELECT dataset_id, old_value, new_value FROM ops_v.metric_change_log WHERE event_id = %s",
                 (event["event_id"],),
