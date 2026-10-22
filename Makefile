@@ -2,7 +2,7 @@ COMPOSE := docker compose -f compose/docker-compose.yml
 JOBS := $(COMPOSE) run --rm fabric-jobs
 DEV := $(COMPOSE) --profile tools run --rm --build dev
 
-.PHONY: up up-dev up-benchmark down bootstrap seed test test-jobs test-e2e test-e2e-full test-e2e-app format lint migrate break-dq fix-dq reset demo-ready
+.PHONY: up up-dev up-benchmark down bootstrap seed test test-jobs test-e2e test-e2e-full test-e2e-app format lint migrate break-dq fix-dq break-source fix-source reset demo-ready
 
 compose/.env:
 	cp compose/.env.example $@
@@ -54,6 +54,12 @@ break-dq:
 
 fix-dq:
 	$(JOBS) python -c "from fabric_control.data_quality import break_dq; break_dq('$(DATASET)', on=False)"
+
+break-source:
+	$(JOBS) python -m sources.faults break $(SRC)
+
+fix-source:
+	$(JOBS) python -m sources.faults fix $(SRC)
 
 reset:
 	$(COMPOSE) --profile core --profile dev --profile benchmark down -v

@@ -20,6 +20,7 @@ from pipelines.jobs.ingest.reconciliation import (
     reconcile,
     schema_drift,
 )
+from sources.faults import active_fault
 
 if TYPE_CHECKING:
     from pyspark.sql import DataFrame
@@ -73,6 +74,10 @@ def run_ingest(job_id: str, source: str, extracts: dict[str, Callable[[], Extrac
     baselines = load_baselines()
     checks = []
     with fc.run(job_id, {"mode": "full"}) as run:
+        run.step = f"connect {source}"
+        cause = active_fault(source)
+        if cause:
+            raise ConnectionError(f"{source}: {cause}")
         for dataset_id, extract in extracts.items():
             run.step = f"extract {dataset_id}"
             data = extract()
