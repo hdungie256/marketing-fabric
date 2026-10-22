@@ -16,8 +16,20 @@ CATEGORY_MAP = {
     m["raw"]: m["canonical"]
     for m in yaml.safe_load((ROOT / "governance" / "mappings" / "category.yml").read_text())["mappings"]
 }
-RFM_COLUMNS = ["customer_id", "recency_days", "recency_score", "frequency_orders", "frequency_score", "monetary_value",
-               "monetary_score", "segment", "categories", "gender", "location", "tenure_months"]  # fmt: skip
+RFM_COLUMNS = [
+    "customer_id",
+    "recency_days",
+    "recency_score",
+    "frequency_orders",
+    "frequency_score",
+    "monetary_value",
+    "monetary_score",
+    "segment",
+    "categories",
+    "gender",
+    "location",
+    "tenure_months",
+]
 ORDER_COLUMNS = [
     "order_key",
     "customer_id",
@@ -36,5 +48,15 @@ def peak_bytes() -> int | None:
 
 
 def report(engine: str, data: Path, started: float, **extra) -> None:
-    print("RESULT " + json.dumps({"engine": engine, "data": data.name, "job_s": round(time.perf_counter() - started, 2),
-                                  "peak_bytes": peak_bytes(), **extra}))  # fmt: skip
+    print(
+        "RESULT "
+        + json.dumps(
+            {
+                "engine": engine,
+                "data": data.name,
+                "job_s": round(time.perf_counter() - started, 2),
+                "peak_bytes": peak_bytes(),
+                **extra,
+            }
+        )
+    )

@@ -54,23 +54,23 @@ def statements(data: Path, out: Path) -> list[str]:
             "customer_id BIGINT, transaction_id BIGINT, transaction_date_iso DATE, product_category STRING, "
             "quantity INT, avg_price DECIMAL(18,2), delivery_charges DECIMAL(18,2), provenance STRING",
             data / "lines.csv",
-        ),  # fmt: skip
+        ),
         table(
             "customers", "customer_id BIGINT, gender STRING, location STRING, tenure_months INT", data / "customers.csv"
-        ),  # fmt: skip
+        ),
         table(
             "orders_out",
             "order_key STRING, customer_id BIGINT, transaction_id BIGINT, order_date DATE, "
             "gross_value DECIMAL(38,2), shipping_fee DECIMAL(18,2), line_count INT",
             out / "orders",
-        ),  # fmt: skip
+        ),
         table(
             "rfm_out",
             "customer_id BIGINT, recency_days INT, recency_score INT, frequency_orders INT, "
             "frequency_score INT, monetary_value DECIMAL(38,2), monetary_score INT, segment STRING, "
             "categories STRING, gender STRING, location STRING, tenure_months INT",
             out / "rfm",
-        ),  # fmt: skip
+        ),
         """CREATE TEMPORARY VIEW orders AS
            SELECT CAST(customer_id AS STRING) || '|' || CAST(transaction_id AS STRING) AS order_key,
                   customer_id, transaction_id, MIN(transaction_date_iso) AS order_date,

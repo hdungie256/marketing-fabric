@@ -30,8 +30,18 @@ def test_category_case_maps_synonyms_only():
 def test_copies_shift_ids_so_order_keys_stay_unique(tmp_path, monkeypatch):
     from benchmark.processing import data
 
-    sales = (["CustomerID", "Transaction_ID", "Transaction_Date_ISO", "Product_Category", "Quantity", "Avg_Price",
-              "Delivery_Charges"], [(17850, 16679, "2019-01-01", "Nest-USA", 1, 153.71, 6.5)])  # fmt: skip
+    sales = (
+        [
+            "CustomerID",
+            "Transaction_ID",
+            "Transaction_Date_ISO",
+            "Product_Category",
+            "Quantity",
+            "Avg_Price",
+            "Delivery_Charges",
+        ],
+        [(17850, 16679, "2019-01-01", "Nest-USA", 1, 153.71, 6.5)],
+    )
     crm = (["CustomerID", "Gender", "Location", "Tenure_Months"], [(17850, "M", "Chicago", 12)])
     monkeypatch.setattr(data, "rows", lambda path: sales if path == data.SALES else crm)
     data.build(tmp_path, 3)

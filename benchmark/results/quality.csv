@@ -1,0 +1,13 @@
+tool,scale,mode,rows,median_validate_s,median_wall_s,median_peak_mib,failed_rules,same_verdict_as_other_tool
+gx,1,clean,26631,10.65,22.31,1509,,True
+soda,1,clean,26631,3.96,12.43,1043,,True
+gx,1,broken,26633,10.98,24.28,1614,gross_value_not_null;order_key_unique,True
+soda,1,broken,26633,20.13,30.0,1606,gross_value_not_null;order_key_unique,True
+gx,10,clean,266310,16.92,27.97,1673,,True
+soda,10,clean,266310,5.22,17.46,1510,,True
+gx,10,broken,266312,10.97,22.29,1711,gross_value_not_null;order_key_unique,True
+soda,10,broken,266312,18.1,29.32,1656,gross_value_not_null;order_key_unique,True
+gx,100,clean,2663100,16.05,47.42,2617,,True
+soda,100,clean,2663100,6.41,29.25,2679,,True
+gx,100,broken,2663102,12.7,39.77,2940,gross_value_not_null;order_key_unique,True
+soda,100,broken,2663102,34.61,57.17,3051,gross_value_not_null;order_key_unique,True

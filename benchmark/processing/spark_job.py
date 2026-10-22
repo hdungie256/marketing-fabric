@@ -11,8 +11,10 @@ from pathlib import Path
 
 from benchmark.processing.common import AS_OF, ORDER_COLUMNS, PARALLELISM, RFM_COLUMNS, SEGMENTS, report
 
-LINES = ("customer_id BIGINT, transaction_id BIGINT, transaction_date_iso DATE, product_category STRING, quantity INT, "
-         "avg_price DECIMAL(18,2), delivery_charges DECIMAL(18,2), provenance STRING")  # fmt: skip
+LINES = (
+    "customer_id BIGINT, transaction_id BIGINT, transaction_date_iso DATE, product_category STRING, quantity INT, "
+    "avg_price DECIMAL(18,2), delivery_charges DECIMAL(18,2), provenance STRING"
+)
 CUSTOMERS = "customer_id BIGINT, gender STRING, location STRING, tenure_months INT"
 
 

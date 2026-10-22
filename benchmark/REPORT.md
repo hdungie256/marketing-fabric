@@ -75,3 +75,112 @@ docker run --rm -v "$PWD:/srv:ro" -v "$PWD/benchmark/data:/bench" -w /srv -e PYT
   marketing-fabric/fabric-jobs:latest python -m benchmark.processing.data /bench 1 10 100
 python3 benchmark/processing/run.py 1 10 100   # writes benchmark/results/processing*.csv
 ```
+
+## Layer alternatives (Story 9.2)
+
+Every run below uses the harness in `benchmark/measure.py`: a fresh container per run, `--cpus=2 --memory=4g` for the
+job, peak memory from cgroup `memory.peak`. Same laptop as Story 9.1.
+
+| Layer | In use | Alternative measured | Choice |
+|---|---|---|---|
+| Storage | SeaweedFS 4.47 | MinIO (pinned last community build), local FS | Keep SeaweedFS |
+| Catalog | OpenMetadata 2.0.2 | Unity Catalog OSS 0.6.0 | Keep OpenMetadata |
+| Quality | GX Core 1.23.2 | Soda Core 3.5.6 (`soda-core-spark-df`) | Keep GX |
+| Serving | Streamlit 1.64.0 | React (estimate, no prototype) | Keep Streamlit |
+
+### Storage: SeaweedFS vs MinIO vs local FS
+
+Workload (`benchmark/storage/storage_job.py`): the ×10 sales lines (529,240 rows) through Delta Lake as the platform
+uses it: full write, scan with aggregate, `replaceWhere` of one month, 10 small appends (raw ingest pattern), time
+travel to version 0. Each run starts a fresh storage server with the core stack's 1g limit. Median of 3 runs.
+
+| Backend | Server start (s) | Server peak (MiB) | Write | Scan | replaceWhere | 10 appends | Time travel | Total (s) |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| SeaweedFS | 3.54 | 190 | 5.28 | 3.87 | 2.37 | 3.67 | 0.77 | 17.11 |
+| MinIO | 0.56 | 179 | 3.12 | 3.36 | 3.10 | 3.51 | 1.11 | 14.98 |
+| Local FS | — | — | 3.86 | 3.66 | 2.29 | 3.38 | 0.89 | 15.81 |
+
+All three end with the same 539,240 rows. MinIO finishes the workload about 12% faster than SeaweedFS and starts in
+under a second; memory is the same. **Keep SeaweedFS anyway:** the architecture records the MinIO image as the *last
+community build* (no further community releases or fixes), and storage is reached only through the S3 API, so
+switching later is a configuration change (`S3_ENDPOINT`), not a code change. Local FS is not an option for the shared
+lake; it is listed as the floor.
+
+### Catalog: OpenMetadata vs Unity Catalog OSS
+
+Workload (`benchmark/catalog/catalog_job.py`): register the platform's 26 lake tables with columns from `contracts/`,
+record job lineage (28 edges from the job graph), then run 10 queries. OpenMetadata uses the platform's own
+`register_all()` and `emit_lineage()`; Unity Catalog uses its REST API. One run each; OpenMetadata startup is a restart
+with migrations already applied.
+
+| | OpenMetadata 2.0.2 | Unity Catalog OSS 0.6.0 |
+|---|---:|---:|
+| Containers | server + Elasticsearch (+ shared Postgres) | one server, embedded H2 |
+| Start to healthy (s) | 57.0 | 3.6 |
+| Peak memory (MiB) | 2,746 | 541 |
+| Register 26 tables (s) | 1.98 | 0.34 |
+| Lineage, 28 edges (s) | 4.24 | not supported |
+| 10 queries (s) | 0.98 (full-text search) | 0.20 (list tables) |
+| Query "orders" | 6 hits | 1 (name match only) |
+| Glossary, classification tags, DQ test cases | yes | no |
+
+Unity Catalog is about 5× lighter in memory and starts 16× faster, but it has no lineage, glossary, tags or quality
+results, which BR13 (catalog and glossary), BR14 (quality and tags) and BR16 (lineage-driven refresh) need. Choosing it
+would mean building those in `fabric_control`. **Keep OpenMetadata**; its cost is memory (2.7 GB of the 12 GB budget).
+Its image is 1.2 GB and Elasticsearch's 1.6 GB; Unity Catalog's image is 5.8 GB on disk despite the small footprint.
+
+### Quality: GX vs Soda Core
+
+Workload (`benchmark/quality/quality_job.py`): the rules in `unified/orders`' `data_quality/orders.yml` on the same
+cached Spark frame of unified orders, clean and with an injected duplicate `order_key` and NULL `gross_value`. GX runs
+through the platform's `fabric_control.data_quality.validate()`; Soda runs SodaCL generated from the same file by
+`benchmark/quality/sodacl.py`. Time covers validation only. Median of 3 runs.
+
+| Scale | Orders | Clean: GX / Soda (s) | Broken: GX / Soda (s) | Same verdict |
+|---|---:|---:|---:|---|
+| ×1 | 26,631 | 10.65 / 3.96 | 10.98 / 20.13 | yes |
+| ×10 | 266,310 | 16.92 / 5.22 | 10.97 / 18.10 | yes |
+| ×100 | 2,663,100 | 16.05 / 6.41 | 12.70 / 34.61 | yes |
+
+Both tools fail exactly `order_key_unique` and `gross_value_not_null` on broken data and pass clean data. Soda is
+2.5–3.2× faster when data is clean and 1.6–2.7× slower when rules fail, which suggests it collects failing-row samples
+(not measured separately). Peak memory is dominated by Spark and is similar (1.0–3.1 GiB).
+
+The translator covers all 99 rules in the repository's `data_quality/*.yml` files (5 expectation types); only the 3
+`orders` rules were executed against both tools, so equal verdicts for the other 96 are not verified. **Keep GX:** it
+is already wired into `check()`, scoring, `ops.dq_results` and the OpenMetadata test-case push (AD-7), and its speed
+difference is seconds per dataset. Soda remains a drop-in candidate if validation time on clean data matters.
+
+### Serving: Streamlit vs React
+
+Measured for Streamlit (`benchmark/serving/serving_job.py`): Budget & Spend rendered 20 times through
+`streamlit.testing` with demo-sized data (5 campaigns × 27 spend days, 365 reconciliation days), and the time for
+`streamlit run app/main.py` to answer `/_stcore/health`.
+
+| Measure | Value |
+|---|---:|
+| Render p50 / p95 | 91 ms / 568 ms |
+| First (cold) render | 590 ms |
+| Server start | 0.54 s |
+| Peak memory (renders and server) | 176 MiB |
+
+All are under the 3 s page target (NFR-4); this is server-side render time and excludes network and browser.
+
+**React: documented estimate, not measured.** The app is about 3,100 lines of Python across the shell and 16 pages.
+A React front end would need the same pages and shell components rewritten in TypeScript, plus an HTTP API for every
+read: today the pages query Postgres views directly with the viewer's own role login (AD-8), while `api/` only exposes
+`sources` and `spend`. Keeping column policy in Postgres would require that API to open connections per role. The
+estimate is several weeks of work for a 4-person team against a 4-week project, for no requirement Streamlit misses.
+**Keep Streamlit.**
+
+### Reproduce
+
+```bash
+docker compose -f compose/docker-compose.yml --profile benchmark build minio
+docker build -t marketing-fabric/quality-bench:latest benchmark/quality
+python3 benchmark/storage/run.py                 # results/storage*.csv
+python3 benchmark/quality/run.py 1 10 100        # results/quality*.csv
+python3 benchmark/catalog/run.py                 # results/catalog.csv (needs compose/.env)
+python3 -c "import sys; sys.path.insert(0, '.'); from pathlib import Path; from benchmark.measure import run; \
+  print(run('marketing-fabric/dev:latest', ['python', '-m', 'benchmark.serving.serving_job'], Path('benchmark/data').resolve()))"
+```
