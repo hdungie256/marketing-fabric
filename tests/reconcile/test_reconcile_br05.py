@@ -25,7 +25,9 @@ def expected_buyers() -> set[int]:
 
 def test_segment_totals_equal_buyers_and_frequency_reconciles():
     want = expected_buyers()
-    got = as_role("crm_marketing", f"SELECT customer_id, segment, frequency_orders FROM {VIEW}")
+    # customer_id is a tagged identifier, so the policy view returns it as text even for the role that may see it.
+    rows = as_role("crm_marketing", f"SELECT customer_id, segment, frequency_orders FROM {VIEW}")
+    got = [(int(c), segment, f) for c, segment, f in rows]
     assert {r[0] for r in got} == want
     orders = io.read_delta("unified/orders")
     freq = {r.customer_id: r.n for r in orders.groupBy("customer_id").count().withColumnRenamed("count", "n").collect()}

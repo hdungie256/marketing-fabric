@@ -24,6 +24,6 @@ def test_win_back_predicate_is_exact():
         "crm_marketing",
         f"SELECT count(*) FROM {VIEW} WHERE NOT ((frequency_score = 5 OR monetary_score = 5)"
         " AND recency_score = 1) AND customer_id = ANY(%s)",
-        [tuple(r[0] for r in listed)],
+        [[r[0] for r in listed]],  # a list adapts to a Postgres array; customer_id is text in policy views
     )
     assert leaked == [(0,)]
