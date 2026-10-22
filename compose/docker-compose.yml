@@ -298,6 +298,15 @@ services:
       - ../benchmark/data:/bench
     command: ["python", "-m", "benchmark.processing.flink_job", "/bench/x1", "/bench/out/flink/x1"]
 
+  warehouse:
+    profiles: [benchmark]
+    image: postgres:16.4-alpine
+    mem_limit: 1g
+    environment:
+      POSTGRES_PASSWORD: bench
+      POSTGRES_DB: warehouse_baseline
+    ports: ["15432:5432"]
+
 volumes:
   pg-data:
   es-data:

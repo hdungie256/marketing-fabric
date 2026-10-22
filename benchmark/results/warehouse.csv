@@ -1,0 +1,7 @@
+scenario,run,wall_s,batch_s,load_s,transform_s,checks_passed,checks_total,failed_checks
+full_batch,1,3.48,2.25,2.2,0.05,7,7,
+full_batch,2,3.23,2.34,2.25,0.09,7,7,
+full_batch,3,2.73,2.03,1.97,0.06,7,7,
+br16_spend_edit,1,2.56,1.85,1.8,0.05,7,7,
+br16_spend_edit,2,2.38,1.77,1.72,0.05,7,7,
+br16_spend_edit,3,2.68,2.04,1.98,0.05,7,7,
