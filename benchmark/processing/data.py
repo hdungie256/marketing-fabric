@@ -16,8 +16,16 @@ ROOT = Path(__file__).resolve().parents[2]
 SALES = ROOT / "sources" / "data" / "01_Sales_Operational.xlsx"
 CRM = ROOT / "sources" / "data" / "02_CRM_Customers.xlsx"
 OFFSET = 10_000_000
-LINE_COLUMNS = ["customer_id", "transaction_id", "transaction_date_iso", "product_category", "quantity", "avg_price",
-                "delivery_charges", "provenance"]  # fmt: skip
+LINE_COLUMNS = [
+    "customer_id",
+    "transaction_id",
+    "transaction_date_iso",
+    "product_category",
+    "quantity",
+    "avg_price",
+    "delivery_charges",
+    "provenance",
+]
 CUSTOMER_COLUMNS = ["customer_id", "gender", "location", "tenure_months"]
 
 
@@ -37,9 +45,18 @@ def build(out: Path, scale: int) -> None:
         w = csv.writer(f)
         for k in range(scale):
             for r in sales:
-                w.writerow([r[i["CustomerID"]] + k * OFFSET, r[i["Transaction_ID"]] + k * OFFSET,
-                            str(r[i["Transaction_Date_ISO"]])[:10], r[i["Product_Category"]], r[i["Quantity"]],
-                            f"{r[i['Avg_Price']]:.2f}", f"{r[i['Delivery_Charges']]:.2f}", "original"])  # fmt: skip
+                w.writerow(
+                    [
+                        r[i["CustomerID"]] + k * OFFSET,
+                        r[i["Transaction_ID"]] + k * OFFSET,
+                        str(r[i["Transaction_Date_ISO"]])[:10],
+                        r[i["Product_Category"]],
+                        r[i["Quantity"]],
+                        f"{r[i['Avg_Price']]:.2f}",
+                        f"{r[i['Delivery_Charges']]:.2f}",
+                        "original",
+                    ]
+                )
     with (out / "customers.csv").open("w", newline="") as f:
         w = csv.writer(f)
         for k in range(scale):

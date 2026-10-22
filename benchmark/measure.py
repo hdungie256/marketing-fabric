@@ -16,9 +16,27 @@ CPUS = "2"
 MEMORY = "4g"
 
 
-def run(image: str, command: list[str], data: Path, cpus: str = CPUS, memory: str = MEMORY) -> dict:
-    docker = ["docker", "run", "--rm", f"--cpus={cpus}", f"--memory={memory}", "-v", f"{ROOT}:/srv:ro",
-              "-v", f"{data}:/bench", "-w", "/srv", "-e", "PYTHONPATH=/srv", image, *command]  # fmt: skip
+def run(
+    image: str, command: list[str], data: Path, cpus: str = CPUS, memory: str = MEMORY, extra: list[str] | None = None
+) -> dict:
+    docker = [
+        "docker",
+        "run",
+        "--rm",
+        f"--cpus={cpus}",
+        f"--memory={memory}",
+        "-v",
+        f"{ROOT}:/srv:ro",
+        "-v",
+        f"{data}:/bench",
+        "-w",
+        "/srv",
+        "-e",
+        "PYTHONPATH=/srv",
+        *(extra or []),
+        image,
+        *command,
+    ]
     started = time.perf_counter()
     done = subprocess.run(docker, capture_output=True, text=True)
     wall = round(time.perf_counter() - started, 2)

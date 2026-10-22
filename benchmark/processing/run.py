@@ -55,7 +55,7 @@ def main(scales: list[int]) -> None:
                 "benchmark.processing.compare",
                 f"/bench/out/spark/x{scale}",
                 f"/bench/out/flink/x{scale}",
-            ],  # fmt: skip
+            ],
             capture_output=True,
             text=True,
         )
@@ -81,16 +81,37 @@ def main(scales: list[int]) -> None:
         w.writerows(runs)
     with (RESULTS / "processing.csv").open("w", newline="") as f:
         w = csv.writer(f)
-        w.writerow(["engine", "scale", "lines_in", "median_wall_s", "median_job_s", "median_peak_mib", "cpus",
-                    "mem_limit", "engine_memory", "outputs_equal"])  # fmt: skip
+        w.writerow(
+            [
+                "engine",
+                "scale",
+                "lines_in",
+                "median_wall_s",
+                "median_job_s",
+                "median_peak_mib",
+                "cpus",
+                "mem_limit",
+                "engine_memory",
+                "outputs_equal",
+            ]
+        )
         for scale in scales:
             for engine in IMAGES:
                 rs = [r for r in runs if r["engine"] == engine and r["scale"] == scale]
-                w.writerow([engine, scale, rs[0]["lines_in"], statistics.median(r["wall_s"] for r in rs),
-                            statistics.median(r["job_s"] for r in rs),
-                            round(statistics.median(r["peak_bytes"] for r in rs) / 2**20),
-                            rs[0]["cpus"], rs[0]["mem_limit"], ENGINE_MEMORY[engine],
-                            rs[0]["outputs_equal"]])  # fmt: skip
+                w.writerow(
+                    [
+                        engine,
+                        scale,
+                        rs[0]["lines_in"],
+                        statistics.median(r["wall_s"] for r in rs),
+                        statistics.median(r["job_s"] for r in rs),
+                        round(statistics.median(r["peak_bytes"] for r in rs) / 2**20),
+                        rs[0]["cpus"],
+                        rs[0]["mem_limit"],
+                        ENGINE_MEMORY[engine],
+                        rs[0]["outputs_equal"],
+                    ]
+                )
 
 
 if __name__ == "__main__":

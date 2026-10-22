@@ -1,0 +1,2 @@
+tool,page,renders,p50_ms,p95_ms,first_ms,server_start_s,peak_mib,cpus,mem_limit
+streamlit 1.64.0,budget_spend,20,91,568,590,0.54,176,2,4g
