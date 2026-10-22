@@ -74,10 +74,14 @@ def append_raw(
     return load_id
 
 
-def delta_version(dataset_id: str) -> int:
+def delta_version(dataset_id: str) -> int | None:
+    """Latest Delta version, or None before the table's first write (fresh lake, `make reset`)."""
     from delta.tables import DeltaTable
 
-    return DeltaTable.forPath(get_spark(), table_path(dataset_id)).history(1).collect()[0].version
+    spark, path = get_spark(), table_path(dataset_id)
+    if not DeltaTable.isDeltaTable(spark, path):
+        return None
+    return DeltaTable.forPath(spark, path).history(1).collect()[0].version
 
 
 def read_delta(dataset_id: str, version: int | None = None) -> DataFrame:

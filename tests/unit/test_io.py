@@ -47,3 +47,14 @@ def test_upsert_rejects_rows_outside_scope():
 
     rows = [("C1", "2019-01-15", 1), ("C2", "2019-01-15", 2)]
     assert outside(rows, ["campaign_id", "date", "v"], {"campaign_id": ["C1"]}) == [rows[1]]
+
+
+def test_delta_version_is_none_before_first_write(monkeypatch):
+    pytest.importorskip("delta")
+    from delta.tables import DeltaTable
+
+    import pipelines.io as io_module
+
+    monkeypatch.setattr(io_module, "get_spark", lambda: object())
+    monkeypatch.setattr(DeltaTable, "isDeltaTable", staticmethod(lambda spark, path: False))
+    assert io_module.delta_version("unified/campaign_spend") is None
