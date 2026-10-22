@@ -1,0 +1,7 @@
+engine,scale,lines_in,median_wall_s,median_job_s,median_peak_mib,cpus,mem_limit,engine_memory,outputs_equal
+spark,1,52924,5.63,3.89,788,2,4g,driver 2g,True
+flink,1,52924,5.59,3.63,864,2,4g,minicluster default,True
+spark,10,529240,9.17,7.39,981,2,4g,driver 2g,True
+flink,10,529240,8.74,6.47,1348,2,4g,minicluster default,True
+spark,100,5292400,22.7,19.28,2924,2,4g,driver 2g,True
+flink,100,5292400,25.2,22.41,2386,2,4g,minicluster default,True

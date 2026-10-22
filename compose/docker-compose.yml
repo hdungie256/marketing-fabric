@@ -283,6 +283,21 @@ services:
       timeout: 5s
       retries: 10
 
+  flink-bench:
+    profiles: [benchmark]
+    build:
+      context: ../benchmark/flink
+    image: marketing-fabric/flink-bench:2.2.1
+    cpus: 2
+    mem_limit: 4g
+    working_dir: /srv
+    environment:
+      PYTHONPATH: /srv
+    volumes:
+      - ..:/srv:ro
+      - ../benchmark/data:/bench
+    command: ["python", "-m", "benchmark.processing.flink_job", "/bench/x1", "/bench/out/flink/x1"]
+
 volumes:
   pg-data:
   es-data:
