@@ -43,25 +43,32 @@ def test_repo_campaign_mart_ancestors():
     ]
 
 
-def raw_frame(spark, *versions):
-    return spark.createDataFrame([(v,) for v in versions], "_source_version BIGINT")
+def raw_frame(spark, *loads):
+    """Rows of (load_id, source_version); source_versions() keeps only loads that passed reconciliation."""
+    return spark.createDataFrame(list(loads), "_load_id STRING, _source_version BIGINT")
 
 
-def test_source_versions_takes_max_per_raw(monkeypatch, spark):
+def lake(monkeypatch, tables, passed):
     from pipelines import io
 
-    tables = {"raw/campaign/attribution": raw_frame(spark, 1, 3), "raw/campaign/campaigns": raw_frame(spark, 2)}
-    monkeypatch.setattr(io, "read_raw", lambda d: tables[d])
+    monkeypatch.setattr(io, "read_delta", lambda d, version=None: tables[d])
+    monkeypatch.setattr(io.ops, "passed_loads", lambda d: passed[d])
     monkeypatch.setattr(io.lineage, "raw_ancestors", lambda ids, w, i: sorted(tables))
+    return io
+
+
+def test_source_versions_takes_max_of_passed_loads_per_raw(monkeypatch, spark):
+    tables = {
+        "raw/campaign/attribution": raw_frame(spark, ("a1", 1), ("a3", 3), ("a9", 9)),
+        "raw/campaign/campaigns": raw_frame(spark, ("c2", 2)),
+    }
+    io = lake(monkeypatch, tables, {"raw/campaign/attribution": ["a1", "a3"], "raw/campaign/campaigns": ["c2"]})
     result = io.source_versions(["unified/attribution"])
-    assert result == {"raw/campaign/attribution": 3, "raw/campaign/campaigns": 2}
+    assert result == {"raw/campaign/attribution": 3, "raw/campaign/campaigns": 2}  # a9 failed reconciliation
     assert list(result) == sorted(result)
 
 
 def test_source_versions_rejects_raw_without_passed_load(monkeypatch, spark):
-    from pipelines import io
-
-    monkeypatch.setattr(io, "read_raw", lambda d: spark.createDataFrame([], "_source_version BIGINT"))
-    monkeypatch.setattr(io.lineage, "raw_ancestors", lambda ids, w, i: ["raw/crm/customers"])
+    io = lake(monkeypatch, {"raw/crm/customers": raw_frame(spark, ("x1", 4))}, {"raw/crm/customers": []})
     with pytest.raises(ValueError, match="raw/crm/customers"):
         io.source_versions(["unified/customers"])
