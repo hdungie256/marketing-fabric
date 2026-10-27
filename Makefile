@@ -65,5 +65,9 @@ reset:
 	$(COMPOSE) --profile core --profile dev --profile benchmark down -v
 	$(MAKE) up
 
+# BR tests first: they leave a partial refresh timing on record and restore every fault they set.
 demo-ready:
-	@echo "demo-ready: not implemented" && exit 1
+	$(MAKE) test
+	$(MAKE) test-e2e
+	$(MAKE) test-e2e-app
+	$(COMPOSE) exec streamlit python -m app.services.demo_ready

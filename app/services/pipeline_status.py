@@ -115,13 +115,28 @@ def dag_run_id(run_id: str) -> str:
     return run_id.rsplit(":", 1)[0]
 
 
-def last_full_refresh_seconds(runs: pd.DataFrame, now: datetime | None = None) -> float | None:
-    """Wall time of the latest full_refresh: first job start to last job end of the newest DAG run with no event."""
+def last_full_refresh(runs: pd.DataFrame) -> pd.DataFrame:
+    """Jobs of the newest full_refresh: the newest DAG run with no event that ingested more than one source. A
+    reload_source run ingests one source and a job run outside Airflow is one job, so neither counts."""
+    # ponytail: a full refresh counts once its second ingest job has started; until then the previous one shows.
     full = runs[runs["event_id"].isna()]
-    if full.empty:
-        return None
     full = full.assign(dag_run=full["run_id"].map(dag_run_id))
-    latest = full[full["dag_run"] == full.sort_values("started_at")["dag_run"].iloc[-1]]
+    covering = [
+        dag_run
+        for dag_run, jobs in full.groupby("dag_run")["job_id"]
+        if jobs[jobs.str.startswith("ingest/")].nunique() > 1
+    ]
+    full = full[full["dag_run"].isin(covering)]
+    if full.empty:
+        return full
+    return full[full["dag_run"] == full.sort_values("started_at")["dag_run"].iloc[-1]]
+
+
+def last_full_refresh_seconds(runs: pd.DataFrame, now: datetime | None = None) -> float | None:
+    """Wall time of the latest full_refresh: first job start to last job end."""
+    latest = last_full_refresh(runs)
+    if latest.empty:
+        return None
     active = latest["status"].isin(ACTIVE).any()
     return seconds(latest["started_at"].min(), None if active else latest["ended_at"].max(), now or datetime.now(UTC))
 
