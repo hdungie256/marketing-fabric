@@ -138,9 +138,21 @@ def test_full_refresh_wall_time_uses_newest_dag_run():
     full = runs(
         ("old:ingest/sales", "ingest/sales", None, "success", at(-60), at(-59), 1, 1, None),
         ("new:ingest/sales", "ingest/sales", None, "success", at(-20), at(-19), 1, 1, None),
+        ("new:ingest/crm", "ingest/crm", None, "success", at(-20), at(-19), 1, 1, None),
         ("new:marts/x", "marts/x", None, "success", at(-18), at(-8), 1, 1, None),
     )
     assert ps.last_full_refresh_seconds(full, NOW) == 720
+
+
+def test_full_refresh_ignores_reload_source_and_single_job_runs():
+    full = runs(
+        ("full:ingest/sales", "ingest/sales", None, "success", at(-60), at(-55), 1, 1, None),
+        ("full:ingest/spend", "ingest/spend", None, "success", at(-60), at(-50), 1, 1, None),
+        ("reload:ingest/spend", "ingest/spend", None, "success", at(-20), at(-19), 1, 1, None),
+        ("reload:marts/x", "marts/x", None, "success", at(-19), at(-18), 1, 1, None),
+        ("manual__20261027T030149927067:marts/x", "marts/x", None, "success", at(-2), at(-1), 1, 1, None),
+    )
+    assert ps.last_full_refresh_seconds(full, NOW) == 600
 
 
 def test_event_latency_and_page_percentiles():
