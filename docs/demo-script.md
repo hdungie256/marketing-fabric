@@ -51,11 +51,12 @@ Fill in from the last `make test-e2e` run (`make test-e2e-app` for BR01's page t
 | BR13 | `tests/e2e/test_br13.py` | — | pass | 2026-10-27 |
 | BR14 | `tests/e2e/test_br14_access.py` | `tests/reconcile/test_br14_exceptions.py` | pass | 2026-10-27 |
 | BR15 | `tests/e2e/test_br15.py` | — | pass | 2026-10-27 |
-| BR16 | `tests/e2e/test_br16.py` | — | **fail**: partial refresh 2:13 > 2:00; the scope and change-log asserts after it did not run | 2026-10-27 |
+| BR16 | `tests/e2e/test_br16.py` | — | pass (partial refresh 1:43 after `SPARK_SHUFFLE_PARTITIONS`; 2:13 before) | 2026-10-27 |
 
-- SM1, 14/14 BRs pass: ☐ **13/14**, BR16 fails on the 2-minute target
+- SM1, 14/14 BRs pass: ☑ 14/14 (BR16 re-run alone after the Spark fix)
 - SM2, `make test` and `make test-e2e` all green: ☐ `make test` 714 passed; `make test-e2e` 69 passed, 2 failed
-  (`test_br16.py`, `test_partial_refresh.py`, both on the 2-minute target); `make test-e2e-app` 1 passed
+  (`test_br16.py`, `test_partial_refresh.py`, both on the 2-minute target); both pass when re-run after the Spark
+  fix; `make test-e2e-app` 1 passed. A full `make test-e2e` run after the fix is still to do.
 - SM3, every reconcile test passes: ☑ 8/8
 
 ### SM4: the 7 fabric capabilities
@@ -67,7 +68,7 @@ Fill in from the last `make test-e2e` run (`make test-e2e-app` for BR01's page t
 | Data quality | 7 | BR03, BR05, BR14 | ☑ |
 | Access control and policy | 5, 6, 7 | BR08, BR11, BR14 | ☑ |
 | Multi-source | 3 | BR09, BR10 | ☑ |
-| Action-triggering metadata | 4 | BR16 | ☐ BR16 fails |
+| Action-triggering metadata | 4 | BR16 | ☑ |
 | Operational monitoring | 8 | BR15 | ☑ |
 
 ### SM5: builds on 16GB
@@ -81,11 +82,14 @@ Copied from `make demo-ready`.
 
 | Measure | Target | Measured | Pass |
 |---|---|---|---|
-| End-to-end (full) refresh | < 10 min | 17:31 | **fail** |
-| Partial refresh after a source change (max over change events) | < 2 min | 2:24 max, 2:03 min, 8 events | **fail** |
+| End-to-end (full) refresh | < 10 min | 15:53 (16:46–17:31 before the Spark fix) | **fail** |
+| Partial refresh after a source change (max over change events) | < 2 min | 1:42–1:45, 3 events (2:03–2:24 before) | pass |
 | Analytics page response (p95, slowest page) | < 3 s | 1.9 s (campaign_overview, 16 samples) | pass |
 
-Measured on 2026-10-27, WSL2 laptop, 15 GiB RAM. Partial refresh per step for the slowest event: `ingest/spend` 33 s,
+Measured on 2026-10-27, WSL2 laptop, 15 GiB RAM. The Spark fix is `spark.sql.shuffle.partitions` 4 instead of the
+default 200 (`pipelines/io/spark.py`); it halved the quality-rule time. What is left is mostly I/O: re-reading raw
+tables in `source_versions` (~18 s per partial refresh), Delta writes to S3 (~15 s) and ~166 OpenMetadata calls
+(~10 s). The full refresh repeats these for 30 jobs. Partial refresh per step for the slowest event before the fix: `ingest/spend` 33 s,
 `unified/campaign_spend` 46 s, `marts/shared/campaign_spend` 12 s, `marts/campaign/target_achievement` 16 s,
 `marts/finance/budget_daily` 12 s, `marts/finance/contribution` 24 s; the steps run one after another. Pages not
 opened yet have no timing.

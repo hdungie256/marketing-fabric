@@ -27,6 +27,9 @@ def get_spark(app_name: str = "fabric") -> SparkSession:
         SparkSession.builder.appName(app_name)
         .master(os.environ.get("SPARK_MASTER", "local[*]"))
         .config("spark.driver.memory", os.environ.get("SPARK_DRIVER_MEMORY", "2g"))
+        # Demo tables are small: Spark's default 200 shuffle partitions made each quality rule and merge run
+        # hundreds of near-empty tasks (NFR-4). ponytail: raise SPARK_SHUFFLE_PARTITIONS for data far above ×1.
+        .config("spark.sql.shuffle.partitions", os.environ.get("SPARK_SHUFFLE_PARTITIONS", "4"))
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension")
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
         .config("spark.sql.session.timeZone", "UTC")

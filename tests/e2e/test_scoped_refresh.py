@@ -1,6 +1,7 @@
 import importlib
 import json
 import os
+import uuid
 
 import psycopg
 from psycopg import sql
@@ -38,6 +39,15 @@ def in_scope(key, table, scope):
 
 def run_job(job_id, scope):
     importlib.import_module(f"pipelines.jobs.{job_id.replace('/', '.')}.job").main(scope)
+
+
+def forget_event(event_id):
+    """Drop the ops rows of a test-only event so Pipeline Status shows no partial refresh that never happened."""
+    runs = "SELECT run_id FROM ops.runs WHERE event_id = %s"
+    with psycopg.connect(os.environ["SERVING_DB_DSN"]) as conn:
+        for table in ("ops.alerts", "ops.load_reconciliation", "ops.metric_change_log"):
+            conn.execute(f"DELETE FROM {table} WHERE run_id IN ({runs})", (event_id,))
+        conn.execute(f"DELETE FROM ops.runs WHERE run_id IN ({runs})", (event_id,))
 
 
 def plan():
@@ -88,17 +98,19 @@ def test_upsert_returns_before_after_and_logs_metric_changes(monkeypatch):
     from pyspark.sql import functions as F
 
     bumped = original.withColumn("allocated", (F.col("allocated") + 1).cast("decimal(18,2)"))
-    monkeypatch.setenv("FABRIC_EVENT_ID", "e2e-upsert")
+    event_id = f"e2e-upsert-{uuid.uuid4().hex[:8]}"
+    monkeypatch.setenv("FABRIC_EVENT_ID", event_id)
     try:
         with fc.run("marts/finance/budget_daily", scope) as run:
             before, after = io.upsert_pg(table, bumped, scope, run.run_id, {})
             assert run.record_change(table, before, after) == 1
         [change] = query("SELECT * FROM ops.metric_change_log WHERE run_id = %s", (run.run_id,))
-        assert change["event_id"] == "e2e-upsert" and change["dataset_id"] == table
+        assert change["event_id"] == event_id and change["dataset_id"] == table
         assert change["grain_key"] == {"campaign_id": "CMP19_03", "date": "2019-05-20"}
         assert change["new_value"] - change["old_value"] == 1
         assert json.loads(json.dumps(change["grain_key"])) == change["grain_key"]
     finally:
         run_job("marts/finance/budget_daily", scope)
+        forget_event(event_id)
     [row] = io.narrow(io.read_pg(table), scope).select("allocated").collect()
     assert row.allocated == original.first().allocated
