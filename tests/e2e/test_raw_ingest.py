@@ -28,6 +28,17 @@ def setup(registry):
         {DATASET: f"lake_e2e.default.lake.{DATASET.rsplit('/', 1)[1]}"},
         {DATASET: [("order_id", "int"), ("status", "string")]},
     )
+    yield
+    cleanup_runs()
+
+
+def cleanup_runs():
+    """Remove this file's fixture runs so their failed and gated runs leave no open alert in the app (UX-DR42)."""
+    runs = "SELECT run_id FROM ops.runs WHERE job_id LIKE 'ingest/\\_e2e%'"
+    with psycopg.connect(os.environ["SERVING_DB_DSN"]) as conn:
+        for table in ("ops.alerts", "ops.load_reconciliation", "ops.metric_change_log"):
+            conn.execute(f"DELETE FROM {table} WHERE run_id IN ({runs})")
+        conn.execute(f"DELETE FROM ops.runs WHERE run_id IN ({runs})")
 
 
 def load(rows, version, baseline, schema=SCHEMA):
