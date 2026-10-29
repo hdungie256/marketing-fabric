@@ -1,3 +1,5 @@
+from urllib.parse import urlparse
+
 import streamlit as st
 
 from app.shell import login, session, sidebar
@@ -10,6 +12,11 @@ from app.shell.theme import inject_css
 def run() -> None:
     inject_css()
     if not session.logged_in():
+        # Only the first run sees the requested URL (no page is registered before sign-in, so Streamlit then
+        # rewrites it to the main page); the redirect below opens that page after sign-in if the role may.
+        requested = urlparse(st.context.url or "").path.rstrip("/").rpartition("/")[2]
+        if requested:
+            session.request_redirect(requested, st.query_params.to_dict())
         login.render()
         return
     pages = load_pages()
