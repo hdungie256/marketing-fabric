@@ -40,7 +40,12 @@ def metric(
         with label:
             st.markdown(term["display_name"])
         with info:
-            if st.button("ⓘ", key=f"metric-info-{term_id}", help=f"About {term['display_name']}"):
+            if st.button(
+                f"Definition of {term['display_name']}",  # the accessible name; components.css shows only the icon
+                key=f"kpi-info-{term_id}",  # not metric-*: components.css styles every st-key-metric-* as a card
+                help=f"About {term['display_name']}",
+                icon=":material/info:",
+            ):
                 definition_dialog(term_id)
         with st.container(key=f"kpi-value-{term_id}"):
             st.markdown(FORMATTERS[kind](value))

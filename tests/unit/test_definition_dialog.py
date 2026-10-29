@@ -71,7 +71,7 @@ def _table_script():
 def test_metric_info_button_opens_definition_dialog(stubs):
     at = AppTest.from_function(_metric_script).run()
     assert not at.exception
-    at.button(key="metric-info-attributed_value_per_spend_ratio").click().run()
+    at.button(key="kpi-info-attributed_value_per_spend_ratio").click().run()
     assert not at.exception
     assert sorted(t.label for t in at.tabs) == ["Definition", "Lineage", "Quality"]
     text = " ".join(m.value for m in at.markdown)
@@ -137,6 +137,6 @@ def test_overview_cards_each_open_the_dialog(monkeypatch):
     at = AppTest.from_function(_overview_script).run()
     assert not at.exception
     for term_id in terms:
-        at.button(key=f"metric-info-{term_id}").click().run()
+        at.button(key=f"kpi-info-{term_id}").click().run()
         assert not at.exception
         assert sorted(t.label for t in at.tabs) == ["Definition", "Lineage", "Quality"]
