@@ -95,10 +95,10 @@ def dots_and_verdicts(at):
     """(layer spec, rows) of the ruler's dot layer and of its verdict text layer, as the page sent them."""
     chart = at.get("vega_lite_chart")[0].proto
     data = {d.name: pa.ipc.open_stream(d.data.data).read_pandas() for d in chart.datasets}
-    layers = [(layer, data[layer["data"]["name"]]) for layer in json.loads(chart.spec)["layer"]]
-    dots = next(lr for lr in layers if lr[0]["mark"]["type"] == "circle")
-    verdicts = next(lr for lr in layers if lr[0]["encoding"].get("text", {}).get("field") == "verdict")
-    return dots, verdicts
+    layers = json.loads(chart.spec)["layer"]
+    dots = next(layer for layer in layers if layer["mark"]["type"] == "circle")
+    verdicts = next(layer for layer in layers if layer["encoding"].get("text", {}).get("field") == "verdict")
+    return (dots, data[dots["data"]["name"]]), (verdicts, data[verdicts["data"]["name"]])
 
 
 def test_ruler_rows_and_verdicts():

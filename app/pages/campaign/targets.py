@@ -21,9 +21,10 @@ SUBTITLE = "How far each campaign got toward its own goal."
 FOOTNOTE = "Stop below 70%, Continue from 100%. Goals were set after the fact for this demo."
 CHIPS = {"continue": ("success", "Continue"), "adjust": ("warning", "Adjust"), "stop": ("danger", "Stop")}
 # DESIGN.md danger-tint / warning-tint / success-tint
-BANDS = [(0, 0.7, "#FBE7E6"), (0.7, 1.0, "#FCEEDC"), (1.0, svc.RULER_MAX, "#E5F3E9")]
+BANDS = [(0, 0.7, "#FBE7E6", "Stop"), (0.7, 1.0, "#FCEEDC", "Adjust"), (1.0, svc.RULER_MAX, "#E5F3E9", "Continue")]
 ROW_H = 64
 TEXT = "#1A1F29"
+MUTED = "#5B6472"
 
 
 def ruler(df: pd.DataFrame, stale: bool) -> alt.LayerChart:
@@ -43,14 +44,15 @@ def ruler(df: pd.DataFrame, stale: bool) -> alt.LayerChart:
         scale=scale,
         axis=alt.Axis(orient="top", values=[0, 0.7, 1.0, svc.RULER_MAX], format=".0%", grid=False, domain=False),
     )
-    bands = (
-        alt.Chart(pd.DataFrame(BANDS, columns=["lo", "hi", "color"]))
-        .mark_rect()
-        .encode(x=alt.X("lo:Q", scale=scale), x2="hi:Q", color=alt.Color("color:N", scale=None))
+    band = alt.Chart(pd.DataFrame(BANDS, columns=["lo", "hi", "color", "name"]))
+    bands = band.mark_rect().encode(x=alt.X("lo:Q", scale=scale), x2="hi:Q", color=alt.Color("color:N", scale=None))
+    # under the ruler at each band's threshold, left-aligned so the names do not overlap on a narrow ruler
+    band_names = band.mark_text(align="left", baseline="top", dx=4, dy=8, fontSize=14, color=MUTED).encode(
+        x=alt.X("lo:Q", scale=scale), y=alt.value("height"), text="name:N"
     )
     lines = (
         alt.Chart(pd.DataFrame({"v": [0.7, 1.0]}))
-        .mark_rule(strokeDash=[4, 4], color="#5B6472")
+        .mark_rule(strokeDash=[4, 4], color=MUTED)
         .encode(x=alt.X("v:Q", scale=scale))
     )
     points = alt.Chart(d).mark_circle(size=220, opacity=1, color=TEXT).encode(x=x, y=y, tooltip=["detail"])
@@ -61,7 +63,9 @@ def ruler(df: pd.DataFrame, stale: bool) -> alt.LayerChart:
         .mark_text(align="left", dx=12, fontSize=14, fontWeight="bold")
         .encode(x=alt.value("width"), y=y, text="verdict:N", color=alt.Color("verdict_color:N", scale=None))
     )
-    return (bands + lines + points + labels + verdicts).properties(height=alt.Step(ROW_H), width="container")
+    return (bands + band_names + lines + points + labels + verdicts).properties(
+        height=alt.Step(ROW_H), width="container"
+    )
 
 
 def table_view(df: pd.DataFrame) -> None:
