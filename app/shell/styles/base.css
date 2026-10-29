@@ -1,7 +1,7 @@
 /* Story 1.11 — layout, sidebar, navigation, skeleton */
 html, body, [data-testid="stAppViewContainer"] { font-size: 16px; }
 p, li, label { font-size: 16px; }
-[data-testid="stCaptionContainer"], small { font-size: 14px; }
+[data-testid="stCaptionContainer"], small { font-size: 14px; color: #5B6472; opacity: 1; }
 h1 { font-size: 28px !important; font-weight: 700 !important; }
 h2, h3 { font-size: 19px !important; font-weight: 700 !important; }
 

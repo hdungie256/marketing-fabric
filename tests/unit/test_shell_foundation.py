@@ -91,6 +91,23 @@ def test_css_joins_every_styles_file_in_name_order(tmp_path, monkeypatch):
     assert theme.css() == "a{}\nb{}"
 
 
+def _luminance(hex_color: str) -> float:
+    """WCAG 2.x relative luminance."""
+    channels = [int(hex_color[i : i + 2], 16) / 255 for i in (1, 3, 5)]
+    r, g, b = (c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4 for c in channels)
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def test_captions_use_the_muted_token_at_aa_contrast():
+    rule = next(line for line in theme.css().splitlines() if line.startswith('[data-testid="stCaptionContainer"]'))
+    muted = theme.STATUS_COLORS["muted"]
+    assert f"color: {muted};" in rule  # Streamlit's default faded caption is 4.36:1 on white, below AA
+    # Streamlit renders captions at opacity 0.6, which would blend the muted color down to 2.57:1 on white
+    assert "opacity: 1;" in rule
+    for background in ("#FFFFFF", "#F6F7F9"):  # DESIGN.md surface (cards) and canvas (page)
+        assert (_luminance(background) + 0.05) / (_luminance(muted) + 0.05) >= 4.5
+
+
 def _footnote_script():
     import streamlit as st
 
