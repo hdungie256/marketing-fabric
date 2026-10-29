@@ -4,11 +4,14 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import date
 from typing import Any
 
 import pandas as pd
+import yaml
 
 from app.shell import DataSource
+from fabric_control.config import contracts_dir
 
 DATASET = "mart_customer.rfm"
 SEGMENTS_TABLE = "app.segments"
@@ -34,6 +37,11 @@ def load(source: DataSource) -> pd.DataFrame:
     df = source.read(DATASET)
     money = [c for c in MONEY if c in df.columns]
     return df.astype({c: "float64" for c in money})
+
+
+def as_of_date() -> date:
+    """The date recency is scored at (R5), from the constant the RFM job reads."""
+    return yaml.safe_load((contracts_dir() / "constants.yml").read_text())["AS_OF_DATE"]
 
 
 def buyer_count(df: pd.DataFrame) -> int:

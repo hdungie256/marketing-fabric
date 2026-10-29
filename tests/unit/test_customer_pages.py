@@ -77,6 +77,12 @@ def test_win_back_lists_only_lapsed_high_value():
     assert at.dataframe[0].value["customer_id"].tolist() == [4]
 
 
+def test_win_back_states_count_rule_and_as_of_date():
+    at = AppTest.from_function(_winback_script).run()
+    assert not at.exception
+    assert "**1 of 4 buyers** · (F = 5 or M = 5) and R = 1 (R18) · as of 2019-12-31" in [m.value for m in at.markdown]
+
+
 def test_win_back_empty_filter_shows_exact_message():
     at = AppTest.from_function(_winback_script).run()
     at.selectbox(key="_filter_win_back_category").set_value("Apparel").run()
