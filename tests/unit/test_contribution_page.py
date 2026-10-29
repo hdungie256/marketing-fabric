@@ -7,6 +7,7 @@ from streamlit.testing.v1 import AppTest
 
 import fabric_control
 from app.pages.finance import contribution
+from app.shell import STATUS_COLORS
 from app.shell.table import DENIED_TEXT
 from fabric_control.glossary import load_terms
 
@@ -69,6 +70,38 @@ def test_sku_cost_visible_to_finance_and_denied_for_manager(monkeypatch, role, d
     assert "Estimated Contribution" in text and "33" in text
     assert "1 SKUs have no reference cost" in text
     assert len(at.dataframe) == 3
+
+
+def test_contribution_bars_are_sorted_around_a_zero_rule_with_a_loss_color(monkeypatch):
+    terms = load_terms()
+    monkeypatch.setattr(fabric_control, "term", lambda term_id: terms.get(term_id))
+    loss = campaigns().assign(
+        campaign_id="CMP19_04", campaign_name="Office", estimated_contribution=Decimal("-10283.85")
+    )
+    spec = contribution.contribution_bars(pd.concat([loss, campaigns()])).to_dict()
+    bars, zero, gains, losses = spec["layer"]
+    assert bars["encoding"]["y"]["sort"] == ["Spring · CMP19_01", "Office · CMP19_04"]
+    scale = bars["encoding"]["color"]["scale"]
+    assert dict(zip(scale["domain"], scale["range"], strict=True))["Negative"] == STATUS_COLORS["danger"]
+    assert zero["mark"]["type"] == "rule" and spec["datasets"][zero["data"]["name"]] == [{"value": 0}]
+    rows = spec["datasets"][bars["data"]["name"]]
+    assert {r["label"]: r["sign"] for r in rows} == {"33": "Positive", "-10,284": "Negative"}
+    assert [(layer["mark"]["align"], layer["transform"]) for layer in (gains, losses)] == [
+        ("left", [{"filter": "datum.value >= 0"}]),
+        ("right", [{"filter": "datum.value < 0"}]),
+    ]
+
+
+def test_page_charts_contribution_and_hides_provenance(monkeypatch):
+    ROLE["value"] = "UG04"
+    terms = load_terms()
+    monkeypatch.setattr(fabric_control, "term", lambda term_id: terms.get(term_id))
+    monkeypatch.setattr(fabric_control, "effective_matrix", lambda: [])
+    monkeypatch.setattr(contribution, "current_source", lambda: Source())
+    at = AppTest.from_function(_script).run()
+    assert not at.exception, at.exception
+    assert len(at.get("vega_lite_chart")) == 1
+    assert "provenance" not in at.dataframe[0].value.columns
 
 
 def test_contribution_metrics_show_refreshing(monkeypatch):
