@@ -36,7 +36,9 @@ def ruler(df: pd.DataFrame, stale: bool) -> alt.LayerChart:
         verdict_color=[STATUS_COLORS[CHIPS[r][0]] for r in df["recommendation"]],
     )
     order = list(d["label"])
-    y = alt.Y("label:N", sort=order, title=None, axis=alt.Axis(grid=False, domain=False, ticks=False, labelLimit=240))
+    # Vega draws a label on one line unless it is an array of lines
+    axis = alt.Axis(grid=False, domain=False, ticks=False, labelLimit=240, labelExpr="split(datum.label, '\\n')")
+    y = alt.Y("label:N", sort=order, title=None, axis=axis)
     scale = alt.Scale(domain=[0, svc.RULER_MAX], nice=False)
     x = alt.X(
         "at:Q",
