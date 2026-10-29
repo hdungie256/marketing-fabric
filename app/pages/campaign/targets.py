@@ -5,7 +5,6 @@ import streamlit as st
 import fabric_control
 from app.services import target_achievement as svc
 from app.shell import (
-    CAMPAIGN_COLORS,
     STATUS_COLORS,
     add_footnote,
     add_stale,
@@ -54,12 +53,7 @@ def ruler(df: pd.DataFrame, stale: bool) -> alt.LayerChart:
         .mark_rule(strokeDash=[4, 4], color="#5B6472")
         .encode(x=alt.X("v:Q", scale=scale))
     )
-    colors = alt.Scale(domain=list(d["campaign_id"]), range=[CAMPAIGN_COLORS[c] for c in d["campaign_id"]])
-    points = (
-        alt.Chart(d)
-        .mark_circle(size=220, opacity=1)
-        .encode(x=x, y=y, color=alt.Color("campaign_id:N", scale=colors, legend=None), tooltip=["detail"])
-    )
+    points = alt.Chart(d).mark_circle(size=220, opacity=1, color=TEXT).encode(x=x, y=y, tooltip=["detail"])
     labels = alt.Chart(d).mark_text(dy=-16, color=TEXT, fontWeight="bold").encode(x=x, y=y, text="pct:N")
     # same rows and y encoding as the dots, just past the ruler's right edge, so a verdict cannot drift off its row
     verdicts = (
