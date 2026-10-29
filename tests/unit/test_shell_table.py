@@ -1,5 +1,6 @@
 import importlib
 import math
+from decimal import Decimal
 
 import pandas as pd
 import pytest
@@ -55,6 +56,16 @@ def test_numeric_columns_are_formatted_and_right_aligned():
     assert "name" not in formatters
     assert config["orders"]["alignment"] == "right"
     assert config["orders"]["type_config"]["type"] == "number"
+
+
+def test_decimal_columns_are_formatted_like_floats():
+    # psycopg reads NUMERIC as Decimal, which pandas keeps in object columns
+    df = pd.DataFrame({"value": [Decimal("28953.95"), None], "ratio": [Decimal("1.2178"), Decimal("3")]})
+    out, formatters, config = prepare_table(df, formats={"ratio": "ratio"})
+    assert [formatters["value"](v) for v in out["value"]] == ["28,954", "—"]
+    assert formatters["ratio"](out["ratio"].iloc[0]) == "1.22×"
+    assert config["value"]["type_config"]["type"] == "number"
+    assert config["ratio"]["type_config"]["type"] == "number"
 
 
 def test_formatter_passes_strings_through():

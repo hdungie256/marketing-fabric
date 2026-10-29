@@ -51,6 +51,8 @@ def prepare_table(
     for column in out.columns:
         if not _visible(column) or column in masked_cols:
             continue
+        if pd.api.types.infer_dtype(out[column], skipna=True) == "decimal":  # psycopg reads NUMERIC as Decimal
+            out[column] = out[column].astype(float)
         if formats and column in formats:
             kinds[column] = formats[column]
         elif pd.api.types.is_integer_dtype(out[column]):
