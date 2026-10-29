@@ -76,6 +76,23 @@ def test_formatter_passes_strings_through():
     assert config["sku_cost"]["alignment"] == "right"
 
 
+def test_denied_columns_keep_the_spec_wording_and_fit_it():
+    assert DENIED_TEXT == "🔒 not permitted for role"  # EXPERIENCE.md Voice and Tone, DESIGN.md badge-denied
+    df = pd.DataFrame(
+        {
+            "sku_cost": [10.0, 20.0],
+            "sku_cost__denied": [True, False],
+            "customer_id": ["C****42", DENIED_TEXT],  # PG permission error: the same text, no flag
+            "orders": [1, 2],
+        }
+    )
+    _, _, config = prepare_table(df, masked_cols=frozenset({"customer_id"}))
+    assert config["sku_cost"]["width"] == "medium"
+    assert config["sku_cost"]["alignment"] == "right"
+    assert config["customer_id"]["width"] == "medium"
+    assert config["orders"].get("width") is None
+
+
 def test_unknown_format_is_rejected():
     with pytest.raises(ValueError, match="orders: unknown format 'currency'"):
         prepare_table(pd.DataFrame({"orders": [1]}), formats={"orders": "currency"})
