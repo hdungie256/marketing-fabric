@@ -1,12 +1,14 @@
-import re
+import json
 from datetime import UTC, datetime
 
 import pandas as pd
+import pyarrow as pa
 import pytest
 from streamlit.testing.v1 import AppTest
 
 import fabric_control
 from app.pages.campaign import targets
+from app.shell import STATUS_COLORS
 
 AT = datetime(2026, 10, 19, 7, 5, tzinfo=UTC)
 NAMES = {
@@ -19,6 +21,13 @@ NAMES = {
 STALE_DATASET = "mart_shared.campaign_spend_allocated"
 SUBTITLE = "How far each campaign got toward its own goal."
 FOOTNOTE = "Stop below 70%, Continue from 100%. Goals were set after the fact for this demo."
+VERDICTS = {
+    "Summer Drinkware": "Adjust",
+    "Back-to-work Office": "Adjust",
+    "Spring Nest": "Adjust",
+    "Holiday Nest": "Continue",
+    "New-year Apparel": "Continue",
+}
 
 
 def frame():
@@ -82,17 +91,32 @@ def text(at):
     return [*(m.value for m in at.markdown), *(c.value for c in at.caption), *(t.value for t in at.title)]
 
 
-def chips(at):
-    return re.findall(r"-badge\[:material/\w+: (Continue|Adjust|Stop)\]", " ".join(m.value for m in at.markdown))
+def dots_and_verdicts(at):
+    """(layer spec, rows) of the ruler's dot layer and of its verdict text layer, as the page sent them."""
+    chart = at.get("vega_lite_chart")[0].proto
+    data = {d.name: pa.ipc.open_stream(d.data.data).read_pandas() for d in chart.datasets}
+    layers = [(layer, data[layer["data"]["name"]]) for layer in json.loads(chart.spec)["layer"]]
+    dots = next(lr for lr in layers if lr[0]["mark"]["type"] == "circle")
+    verdicts = next(lr for lr in layers if lr[0]["encoding"].get("text", {}).get("field") == "verdict")
+    return dots, verdicts
 
 
-def test_ruler_rows_and_chips():
+def test_ruler_rows_and_verdicts():
     at = AppTest.from_function(_script).run()
     assert not at.exception
     assert not at.error
     shown = text(at)
     assert "Targets" in shown and SUBTITLE in shown and FOOTNOTE in shown
-    assert chips(at) == ["Adjust", "Adjust", "Adjust", "Continue", "Continue"]
+    (dots, _), (verdicts, rows) = dots_and_verdicts(at)
+    # same rows and same y as the dots, so each verdict is drawn on its own campaign's row
+    assert verdicts["data"] == dots["data"] and verdicts["encoding"]["y"] == dots["encoding"]["y"]
+    assert dict(zip(rows["campaign_name"], rows["verdict"], strict=True)) == VERDICTS
+    # literal status colors: a color scale would be shared with the other layers and pick up their hues
+    assert verdicts["encoding"]["color"]["scale"] is None
+    assert dict(zip(rows["verdict"], rows["verdict_color"], strict=True)) == {
+        "Adjust": STATUS_COLORS["warning"],
+        "Continue": STATUS_COLORS["success"],
+    }
     assert any("Synthetic" in t for t in shown)
 
 
@@ -109,8 +133,11 @@ def test_stale_keeps_recommendation(monkeypatch):
     at = AppTest.from_function(_script).run()
     assert not at.exception
     assert any(STALE_DATASET in w.value for w in at.warning)
-    assert len(chips(at)) == 5
-    assert sum("Using previous version" in m.value for m in at.markdown) == 6  # 5 chips + the page badge
+    _, (_, rows) = dots_and_verdicts(at)
+    stale = {name: f"{verdict} · stale" for name, verdict in VERDICTS.items()}
+    assert dict(zip(rows["campaign_name"], rows["verdict"], strict=True)) == stale
+    # only the page badge; each row says "stale" inside the chart instead
+    assert sum("Using previous version" in m.value for m in at.markdown) == 1
     assert not any("Refreshed" in m.value for m in at.markdown)
 
 

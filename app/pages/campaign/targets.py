@@ -6,13 +6,13 @@ import fabric_control
 from app.services import target_achievement as svc
 from app.shell import (
     CAMPAIGN_COLORS,
+    STATUS_COLORS,
     add_footnote,
     add_stale,
     current_in_flight,
     current_source,
     fmt_pct,
     freshness_badge,
-    status_chip,
     table,
     watch,
 )
@@ -24,15 +24,16 @@ CHIPS = {"continue": ("success", "Continue"), "adjust": ("warning", "Adjust"), "
 # DESIGN.md danger-tint / warning-tint / success-tint
 BANDS = [(0, 0.7, "#FBE7E6"), (0.7, 1.0, "#FCEEDC"), (1.0, svc.RULER_MAX, "#E5F3E9")]
 ROW_H = 64
-AXIS_H = 32
 TEXT = "#1A1F29"
 
 
-def ruler(df: pd.DataFrame) -> alt.LayerChart:
+def ruler(df: pd.DataFrame, stale: bool) -> alt.LayerChart:
     d = df.assign(
         label=df["campaign_name"] + "\n" + df["goal"],
         at=df["achievement"].clip(upper=svc.RULER_MAX),
         pct=[fmt_pct(a) for a in df["achievement"]],
+        verdict=[CHIPS[r][1] + (" · stale" if stale else "") for r in df["recommendation"]],
+        verdict_color=[STATUS_COLORS[CHIPS[r][0]] for r in df["recommendation"]],
     )
     order = list(d["label"])
     y = alt.Y("label:N", sort=order, title=None, axis=alt.Axis(grid=False, domain=False, ticks=False, labelLimit=240))
@@ -60,17 +61,13 @@ def ruler(df: pd.DataFrame) -> alt.LayerChart:
         .encode(x=x, y=y, color=alt.Color("campaign_id:N", scale=colors, legend=None), tooltip=["detail"])
     )
     labels = alt.Chart(d).mark_text(dy=-16, color=TEXT, fontWeight="bold").encode(x=x, y=y, text="pct:N")
-    return (bands + lines + points + labels).properties(height=alt.Step(ROW_H), width="container")
-
-
-def chip_column(df: pd.DataFrame, stale: bool) -> None:
-    st.container(height=AXIS_H, border=False)
-    for recommendation in df["recommendation"]:
-        with st.container(height=ROW_H, border=False, vertical_alignment="center"):
-            variant, text = CHIPS[recommendation]
-            status_chip(variant, text)
-            if stale:
-                badge_stale()
+    # same rows and y encoding as the dots, just past the ruler's right edge, so a verdict cannot drift off its row
+    verdicts = (
+        alt.Chart(d)
+        .mark_text(align="left", dx=12, fontSize=14, fontWeight="bold")
+        .encode(x=alt.value("width"), y=y, text="verdict:N", color=alt.Color("verdict_color:N", scale=None))
+    )
+    return (bands + lines + points + labels + verdicts).properties(height=alt.Step(ROW_H), width="container")
 
 
 def table_view(df: pd.DataFrame) -> None:
@@ -132,9 +129,5 @@ def render() -> None:
     if st.toggle("Table view", key="targets_table_view"):
         table_view(df)
     else:
-        chart_col, chip_col = st.columns([5, 1])
-        with chart_col:
-            st.altair_chart(ruler(df), use_container_width=True)
-        with chip_col:
-            chip_column(df, stale)
+        st.altair_chart(ruler(df, stale), use_container_width=True)
     add_footnote(FOOTNOTE)
