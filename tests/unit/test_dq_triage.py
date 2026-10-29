@@ -137,3 +137,23 @@ def test_triage_respects_class_filter(monkeypatch):
     at.button(key="data_quality-seen").click().run()
     assert not at.exception
     assert any("Marked 1 as seen" in t.value for t in at.toast)
+
+
+def test_class_filter_shows_no_statuses_of_other_classes(monkeypatch):
+    statuses = pd.DataFrame(
+        [("e1", "seen"), ("e2", "accepted"), ("gone", "accepted")], columns=["exception_id", "status"]
+    )
+    views = {
+        "ops_v.dq_results": dq_frame(),
+        "mart_shared_v.exceptions": exc_frame(),
+        "app_v.exception_status": statuses,
+    }
+    monkeypatch.setattr(triage, "connect_reader", lambda: FakeConn())
+    monkeypatch.setattr(triage, "read_view", lambda conn, view: views[view])
+    at = AppTest.from_function(_page_script).run()
+    shown = at.dataframe[0].value
+    assert dict(zip(shown["exception_id"], shown["status"], strict=True)) == {"e2": "accepted", "gone": triage.RESOLVED}
+    at.selectbox(key="_filter_data_quality_class").set_value("shared_transaction_id").run()
+    assert not at.exception
+    shown = at.dataframe[0].value
+    assert dict(zip(shown["exception_id"], shown["status"], strict=True)) == {"e1": "seen", "gone": triage.RESOLVED}
