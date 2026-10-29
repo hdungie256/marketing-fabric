@@ -1,3 +1,4 @@
+import re
 from datetime import UTC, datetime, timedelta
 
 import pandas as pd
@@ -228,6 +229,38 @@ def test_reload_asks_once_then_triggers(monkeypatch, choice, error, expected):
     assert calls == expected
     if error:
         assert "not deployed" in app.error[0].value
+
+
+def test_reload_defaults_to_the_latest_failed_source(monkeypatch):
+    app = run_page(monkeypatch, (RUNS, ALERTS, RECON, TIMINGS))
+    assert app.selectbox(key="reload-source").value == "spend"
+    assert app.button(key="reload-start").label == "Reload source"
+
+
+def test_broken_steps_come_first_and_old_runs_show_their_date(monkeypatch):
+    app = run_page(monkeypatch, (RUNS, ALERTS, RECON, TIMINGS))
+    jobs = [m.value for m in app.markdown if m.value.startswith("`")]
+    assert jobs[:2] == ["`ingest/spend`", "`unified/campaign_spend`"]
+    assert any(re.fullmatch(r"[A-Z][a-z]{2} \d\d \d\d:\d\d", m.value) for m in app.markdown)
+
+
+def test_confirm_reload_keeps_polling_until_the_run_starts(monkeypatch):
+    import fabric_control
+
+    monkeypatch.setattr(fabric_control, "trigger", lambda dag_id, conf: "run-7")
+    app = run_page(monkeypatch, (RUNS, ALERTS, RECON, TIMINGS))
+    app.button(key="reload-start").click().run()
+    app.button(key="reload-confirm").click().run()
+    assert not app.exception, app.exception
+    assert "Reload of spend sent to Airflow (run run-7)" in app.info[0].value
+    assert any("Auto-refreshes every 5s" in c.value for c in app.caption)
+
+
+def test_failed_filter_says_when_nothing_is_broken(monkeypatch):
+    healthy = RUNS[~RUNS["status"].isin(page.BROKEN)]
+    app = run_page(monkeypatch, (healthy, ALERTS, RECON, TIMINGS), status="failed")
+    assert not app.exception, app.exception
+    assert any("No failed or gated runs now." in m.value for m in app.markdown)
 
 
 def test_event_latency_starts_at_emitted_at():
