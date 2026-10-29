@@ -3,7 +3,7 @@
 import streamlit as st
 
 from app.services import customers as svc
-from app.shell import Filter, current_source, empty_state, filter_bar, table
+from app.shell import Filter, current_source, empty_state, filter_bar, session, table
 
 KEY = "win_back"
 PREFILL_KEY = "audience_prefill"
@@ -24,5 +24,7 @@ def render() -> None:
         info_terms={"segment": "rfm_segment"},
     )
     if st.button("Build audience from this list", key=f"{KEY}-to-builder"):
-        st.session_state[PREFILL_KEY] = svc.criteria(category=values["category"], min_orders=1)
-        st.toast("Audience Builder prefilled with the Win-back criteria")
+        st.session_state[PREFILL_KEY] = svc.criteria(category=values["category"], win_back=True)
+        session.request_toast("Audience Builder prefilled with the Win-back criteria")
+        session.request_redirect("audience_builder")
+        st.rerun()

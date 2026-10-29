@@ -44,6 +44,8 @@ def connect_writer() -> psycopg.Connection:
 def render() -> None:
     df = svc.load(current_source())
     prefill = st.session_state.pop(PREFILL_KEY, None) or {}
+    if prefill:
+        session_.filters(KEY).clear()  # a Win-back prefill wins over the filters kept from an earlier visit
     cats = svc.category_options(df)
     values = filter_bar(
         KEY,
@@ -55,7 +57,12 @@ def render() -> None:
     min_orders = st.number_input(
         "Minimum past orders", min_value=0, value=prefill.get("min_orders", 0), key=f"{KEY}-min"
     )
-    crit = svc.criteria(segment=values["segment"], category=values["category"], min_orders=int(min_orders))
+    win_back = st.checkbox(
+        f"Lapsed high-value only: {svc.WIN_BACK_RULE}", value=prefill.get("win_back", False), key=f"{KEY}-win-back"
+    )
+    crit = svc.criteria(
+        segment=values["segment"], category=values["category"], min_orders=int(min_orders), win_back=win_back
+    )
     rows = svc.match(df, **crit)
     st.markdown(f"**{len(rows)} customers match**")
     if rows.empty:

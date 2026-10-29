@@ -84,8 +84,16 @@ def test_win_back_empty_filter_shows_exact_message():
     assert "No lapsed high-value customers for this filter." in " ".join(m.value for m in at.markdown)
 
 
-def test_win_back_button_prefills_audience_builder():
+def test_win_back_button_opens_audience_builder_prefilled():
     at = AppTest.from_function(_winback_script).run()
+    at.selectbox(key="_filter_win_back_category").set_value("Fun").run()
     at.button(key="win_back-to-builder").click().run()
     assert not at.exception
-    assert any("prefilled" in t.value for t in at.toast)
+    assert at.session_state["audience_prefill"] == {
+        "segment": "All",
+        "category": "Fun",
+        "min_orders": 0,
+        "win_back": True,
+    }
+    assert at.session_state["_shell_redirect"] == "audience_builder"
+    assert at.session_state["_shell_toast"] == "Audience Builder prefilled with the Win-back criteria"
