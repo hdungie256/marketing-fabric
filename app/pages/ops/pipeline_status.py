@@ -153,9 +153,13 @@ def section(was_active: bool) -> None:
     latest = ps.latest_runs(runs, alerts)
     latest = latest.sort_values("status", key=lambda s: ~s.isin(BROKEN), kind="stable")  # broken steps first
     broken = latest[latest["status"].isin(BROKEN)]
+    # Claim the slot every run (full or fragment-only), then fill it only when something is broken: a
+    # fragment-only rerun may write to an outside container only if this fragment already wrote to it
+    # during the last full run, so writing conditionally on bare banner_slot() crashes the first time a
+    # failure appears on a 5s tick instead of at Confirm (StreamlitInvalidLayoutContextError).
+    banner = banner_slot().empty()
     if not broken.empty:
-        with banner_slot():
-            st.warning(f"{len(broken)} step(s) failed or gated. Dependent pages keep their previous values.")
+        banner.warning(f"{len(broken)} step(s) failed or gated. Dependent pages keep their previous values.")
     st.subheader("Sources & steps")
     waiting = reload_waiting()
     if waiting:
