@@ -51,6 +51,8 @@ def prepare_table(
     for column in out.columns:
         if not _visible(column) or column in masked_cols:
             continue
+        if pd.api.types.infer_dtype(out[column], skipna=True) == "decimal":  # psycopg reads NUMERIC as Decimal
+            out[column] = out[column].astype(float)
         if formats and column in formats:
             kinds[column] = formats[column]
         elif pd.api.types.is_integer_dtype(out[column]):
@@ -77,11 +79,15 @@ def prepare_table(
     out = out[[c for c in out.columns if _visible(c)]]
 
     formatters = {c: _formatter(FORMATTERS[k]) for c, k in kinds.items() if c in out.columns}
+    # the auto width cuts the spec wording to "not permitted for rol…"; "medium" (200px) fits all of it
+    denied_cols = {c for c in out.columns if out[c].isin([DENIED_TEXT]).any()}
     config = {
         c: st.column_config.NumberColumn(alignment="right")
         if pd.api.types.is_numeric_dtype(out[c])
-        else st.column_config.TextColumn(alignment="right")
-        for c in formatters
+        else st.column_config.TextColumn(
+            alignment="right" if c in formatters else None, width="medium" if c in denied_cols else None
+        )
+        for c in formatters.keys() | denied_cols
     }
     return out, formatters, config
 

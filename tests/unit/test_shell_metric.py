@@ -62,6 +62,14 @@ def test_metric_renders_label_value_and_badges(monkeypatch):
     assert ":gray-badge[:material/science: Synthetic]" in markdown(at)
 
 
+def test_info_button_is_a_named_icon_outside_the_card_selector():
+    at = AppTest.from_function(_metric_script, args=([("attributed_orders", 1290, "count")],)).run()
+    [button] = at.button
+    assert button.label == "Definition of Attributed Orders"  # accessible name; the CSS hides it visually
+    assert button.proto.icon == ":material/info:"
+    assert button.key == "kpi-info-attributed_orders"  # components.css styles every st-key-metric-* as a card
+
+
 def test_non_synthetic_term_has_no_synthetic_badge():
     at = AppTest.from_function(_metric_script, args=([("campaign_budget", 5000.0, "money")],)).run()
     assert not any("Synthetic" in m for m in markdown(at))

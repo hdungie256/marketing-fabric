@@ -1,6 +1,8 @@
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
+import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 import fabric_control
@@ -73,6 +75,32 @@ def test_login_lands_on_role_home(app):
     assert "CO5173 · Academic demo" in [c.value for c in at.sidebar.caption]
     assert "Signed in as UG01 · nav filtered to this role" in [c.value for c in at.sidebar.caption]
     assert at.timings == ["campaign_overview"]
+
+
+def event_page():
+    import streamlit as st
+
+    st.text(f"event_id={st.query_params.get('event_id')}")
+
+
+def test_login_opens_the_requested_page_with_its_query_params(app, monkeypatch):
+    # AppTest has no browser URL, so stand in for st.context.url as a browser reports it
+    context = SimpleNamespace(url="http://localhost:8501/change_history")
+    monkeypatch.setattr(st, "context", context)
+    monkeypatch.setattr(runner, "load_pages", lambda: full_registry({"change_history": event_page}))
+    app.query_params["event_id"] = "e2"
+    app.run()
+    context.url = "http://localhost:8501/"  # Streamlit rewrites the URL: no page is registered before sign-in
+    at = login(app, "UG01", "pw1")
+    assert at.title[0].value == "Change History"
+    assert "event_id=e2" in [t.value for t in at.text]
+    assert at.timings == ["change_history"]  # straight there: the home page never rendered
+
+
+def test_login_lands_on_home_when_the_role_cannot_open_the_requested_page(app, monkeypatch):
+    monkeypatch.setattr(st, "context", SimpleNamespace(url="http://localhost:8501/pipeline_status"))
+    at = login(app, "UG01", "pw1")
+    assert at.title[0].value == "Campaign Overview"
 
 
 def test_nav_shows_only_permitted_pages_in_group_order(app):
