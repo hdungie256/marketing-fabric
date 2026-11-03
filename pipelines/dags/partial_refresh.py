@@ -4,7 +4,12 @@ from fabric.job_task import job_task
 
 @dag(schedule=None, catchup=False, max_active_runs=1, is_paused_upon_creation=False, tags=["platform"])
 def partial_refresh():
-    job_task("platform/partial_refresh", args=["--event", "{{ dag_run.conf | tojson }}"])
+    job_task(
+        "platform/partial_refresh",
+        args=["--event", "{{ dag_run.conf | tojson }}"],
+        priority_weight=1000,
+        weight_rule="absolute",
+    )
 
 
 partial_refresh()

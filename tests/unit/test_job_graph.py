@@ -1,3 +1,4 @@
+import ast
 from pathlib import Path
 
 import pytest
@@ -61,3 +62,12 @@ def test_repo_graph_has_every_ingest_job():
     ingest = {f"ingest/{s}" for s in ("sales", "crm", "erp", "campaign", "promotion", "spend", "tax")}
     assert ingest <= set(graph)
     assert all(not graph[job] for job in ingest)
+
+
+def test_partial_refresh_outranks_every_full_refresh_task():
+    tree = ast.parse((ROOT / "pipelines" / "dags" / "partial_refresh.py").read_text())
+    [call] = [n for n in ast.walk(tree) if isinstance(n, ast.Call) and getattr(n.func, "id", None) == "job_task"]
+    options = {k.arg: ast.literal_eval(k.value) for k in call.keywords}
+    assert options["weight_rule"] == "absolute"
+    # under the default downstream rule a full_refresh task weighs at most its task count: jobs + 3 trailing tasks
+    assert options["priority_weight"] > len(job_graph(ROOT)) + 3
