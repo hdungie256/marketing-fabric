@@ -1,7 +1,9 @@
+import re
 from datetime import UTC, datetime, timedelta
 
 import pandas as pd
 import pytest
+import streamlit.testing.v1.local_script_runner as lsr
 from streamlit.testing.v1 import AppTest
 
 from app.pages.ops import pipeline_status as page
@@ -228,6 +230,66 @@ def test_reload_asks_once_then_triggers(monkeypatch, choice, error, expected):
     assert calls == expected
     if error:
         assert "not deployed" in app.error[0].value
+
+
+def test_reload_defaults_to_the_latest_failed_source(monkeypatch):
+    app = run_page(monkeypatch, (RUNS, ALERTS, RECON, TIMINGS))
+    assert app.selectbox(key="reload-source").value == "spend"
+    assert app.button(key="reload-start").label == "Reload source"
+
+
+def test_broken_steps_come_first_and_old_runs_show_their_date(monkeypatch):
+    app = run_page(monkeypatch, (RUNS, ALERTS, RECON, TIMINGS))
+    jobs = [m.value for m in app.markdown if m.value.startswith("`")]
+    assert jobs[:2] == ["`ingest/spend`", "`unified/campaign_spend`"]
+    assert any(re.fullmatch(r"[A-Z][a-z]{2} \d\d \d\d:\d\d", m.value) for m in app.markdown)
+
+
+def test_confirm_reload_keeps_polling_until_the_run_starts(monkeypatch):
+    import fabric_control
+
+    monkeypatch.setattr(fabric_control, "trigger", lambda dag_id, conf: "run-7")
+    app = run_page(monkeypatch, (RUNS, ALERTS, RECON, TIMINGS))
+    app.button(key="reload-start").click().run()
+    app.button(key="reload-confirm").click().run()
+    assert not app.exception, app.exception
+    assert "Reload of spend sent to Airflow (run run-7)" in app.info[0].value
+    assert any("Auto-refreshes every 5s" in c.value for c in app.caption)
+
+
+def test_failed_filter_says_when_nothing_is_broken(monkeypatch):
+    healthy = RUNS[~RUNS["status"].isin(page.BROKEN)]
+    app = run_page(monkeypatch, (healthy, ALERTS, RECON, TIMINGS), status="failed")
+    assert not app.exception, app.exception
+    assert any("No failed or gated runs now." in m.value for m in app.markdown)
+
+
+def _fragment_tick(app, monkeypatch):
+    """Rerun as a fragment-only auto-rerun (the real run_every 5s timer), not a full script run.
+
+    AppTest.run() always issues a full-script RerunData; a fragment-only rerun needs fragment_id_queue
+    and is_auto_rerun set, which AppTest does not expose. Patching the RerunData constructor
+    LocalScriptRunner.run() calls is the smallest way to get a real one (pins Streamlit 1.64 internals).
+    """
+    fragments = list(app._fragment_storage._fragments)
+    orig = lsr.RerunData
+    monkeypatch.setattr(
+        lsr, "RerunData", lambda *a, **kw: orig(*a, **{**kw, "fragment_id_queue": fragments, "is_auto_rerun": True})
+    )
+    app.run()
+
+
+def test_banner_survives_a_failure_that_first_appears_on_an_auto_refresh_tick(monkeypatch):
+    """A fragment may only write to an outside container (banner_slot) if it wrote there on the last full
+    run too, so claiming the slot only when something is broken crashes the first time a failure appears
+    on a 5s tick instead of at page load (StreamlitInvalidLayoutContextError)."""
+    healthy = RUNS[~RUNS["status"].isin(page.BROKEN)]
+    app = run_page(monkeypatch, (healthy, ALERTS, RECON, TIMINGS))
+    assert not app.exception, app.exception
+    monkeypatch.setattr(page, "load", lambda: (RUNS, ALERTS, RECON, TIMINGS))
+    _fragment_tick(app, monkeypatch)
+    assert not app.exception, app.exception
+    assert "2 step(s) failed or gated" in app.warning[0].value
 
 
 def test_event_latency_starts_at_emitted_at():
