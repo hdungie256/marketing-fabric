@@ -36,14 +36,15 @@ def metric(
         add_stale(state["datasets"])
 
     with st.container(key=f"metric-{'stale-' if state['stale'] else ''}{term_id}"):
-        with st.container(key=f"kpi-label-{term_id}", horizontal=True, vertical_alignment="center", gap="small"):
-            st.markdown(term["display_name"], width="stretch")
+        label, info = st.columns([6, 1])
+        with label:
+            st.markdown(term["display_name"])
+        with info:
             if st.button(
-                ":material/info:",
-                key=f"metric-info-{term_id}",
+                f"Definition of {term['display_name']}",  # the accessible name; components.css shows only the icon
+                key=f"kpi-info-{term_id}",  # not metric-*: components.css styles every st-key-metric-* as a card
                 help=f"About {term['display_name']}",
-                type="tertiary",
-                width="content",
+                icon=":material/info:",
             ):
                 definition_dialog(term_id)
         with st.container(key=f"kpi-value-{term_id}"):

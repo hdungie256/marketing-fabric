@@ -22,3 +22,10 @@ buttonRadius = "8px"
 
 [theme.sidebar]
 backgroundColor = "#FBFBFC"
+
+[client]
+# No Deploy button or developer menu; the app sets no menu items, so the ⋮ menu is hidden too
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

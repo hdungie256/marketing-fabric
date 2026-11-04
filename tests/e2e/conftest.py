@@ -1,9 +1,33 @@
 import os
 
+import psycopg
 import pytest
 import yaml
 
 collect_ignore_glob = [] if os.environ.get("FABRIC_E2E") == "1" else ["test_*.py"]
+
+E2E_RUNS = "SELECT run_id FROM ops.runs WHERE job_id LIKE 'e2e/%' OR job_id LIKE 'ingest/\\_e2e%'"
+PURGE_E2E = [
+    f"DELETE FROM ops.alerts WHERE run_id IN ({E2E_RUNS})",
+    f"DELETE FROM ops.load_reconciliation WHERE run_id IN ({E2E_RUNS})",
+    f"DELETE FROM ops.metric_change_log WHERE run_id IN ({E2E_RUNS})",
+    f"DELETE FROM ops.dq_results WHERE run_id IN ({E2E_RUNS}) OR dataset_id LIKE 'raw/\\_e2e/%'",
+    f"DELETE FROM ops.runs WHERE run_id IN ({E2E_RUNS})",
+]
+
+
+def purge_e2e() -> None:
+    with psycopg.connect(os.environ["SERVING_DB_DSN"]) as conn:
+        for statement in PURGE_E2E:
+            conn.execute(statement)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def e2e_ops_rows():
+    """Drop the ops rows of e2e-only jobs and datasets so no screen shows them after a test session (UX-DR42)."""
+    purge_e2e()
+    yield
+    purge_e2e()
 
 
 @pytest.fixture(autouse=True)

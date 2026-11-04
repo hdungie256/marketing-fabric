@@ -40,7 +40,9 @@ def render_exceptions() -> None:
         empty_state("No exceptions detected.")
         return
     values = filter_bar(KEY, [Filter("class", "Class", sorted(exceptions["class"].unique()))])
-    framed = triage.with_status(exceptions[exceptions["class"] == values["class"]], statuses)
+    # Join the whole mart so only ids gone from it are "resolved at source" (AD-7); those have no class left.
+    framed = triage.with_status(exceptions, statuses)
+    framed = framed[framed["class"].eq(values["class"]) | framed["status"].eq(triage.RESOLVED)]
     counts = framed["status"].value_counts()
     chips = st.columns(len(counts))
     for column, (status, count) in zip(chips, counts.items(), strict=True):

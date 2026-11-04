@@ -13,6 +13,7 @@ def frame():
         [
             (1, 5, 5, 6, 5, 600.0, 5, "Champions", "Apparel"),
             (3, 300, 1, 1, 1, 10.0, 1, "Lost", "Nest"),
+            (4, 200, 1, 4, 5, 500.0, 5, "Can't Lose", "Fun"),
         ],
         columns=[
             "customer_id",
@@ -91,7 +92,7 @@ def _script():
 def test_live_count_updates_and_zero_match_shows_hint():
     at = AppTest.from_function(_script).run()
     assert not at.exception
-    assert "**2 customers match**" in [m.value for m in at.markdown]
+    assert "**3 customers match**" in [m.value for m in at.markdown]
     at.selectbox(key="_filter_audience_builder_segment").set_value("Lost").run()
     at.selectbox(key="_filter_audience_builder_category").set_value("Apparel").run()
     assert not at.exception
@@ -165,10 +166,10 @@ def test_fixture_mode_disables_save_with_reason():
 
 def test_min_orders_is_a_filter_kept_for_the_session():
     at = AppTest.from_function(_script).run()
-    at.number_input(key="_filter_audience_builder_min_orders").set_value(2).run()
+    at.number_input(key="_filter_audience_builder_min_orders").set_value(5).run()
     assert not at.exception
     assert "**1 customers match**" in [m.value for m in at.markdown]
-    assert at.session_state["_shell_filters"]["audience_builder"]["min_orders"] == 2
+    assert at.session_state["_shell_filters"]["audience_builder"]["min_orders"] == 5
 
 
 def test_customer_list_hides_profile_columns(monkeypatch):
@@ -180,3 +181,22 @@ def test_customer_list_hides_profile_columns(monkeypatch):
     at = AppTest.from_function(_script).run()
     assert not at.exception
     assert not set(svc.DETAIL_HIDDEN) & set(at.dataframe[0].value.columns)
+
+
+def test_win_back_prefill_beats_stale_filters_and_is_what_gets_saved(monkeypatch):
+    monkeypatch.setenv("APP_DATA_MODE", "pg")
+    saved = {}
+    monkeypatch.setattr(svc, "save_audience", lambda conn, name, crit, count, by: saved.update(crit=crit, count=count))
+    at = AppTest.from_function(_script)
+    at.session_state["_shell_filters"] = {"audience_builder": {"segment": "Lost", "category": "Nest"}}  # earlier visit
+    at.session_state["audience_prefill"] = {"segment": "All", "category": "All", "min_orders": 0, "win_back": True}
+    at.run()
+    assert not at.exception
+    assert at.selectbox(key="_filter_audience_builder_segment").value == "All"
+    assert at.selectbox(key="_filter_audience_builder_category").value == "All"
+    assert at.checkbox(key="audience_builder-win-back").value is True
+    assert "**1 customers match**" in [m.value for m in at.markdown]
+    at.text_input(key="audience_builder-name").input("Win-back").run()
+    at.button(key="FormSubmitter:audience_builder-save-Save audience").click().run()
+    assert not at.exception
+    assert saved == {"crit": {"segment": "All", "category": "All", "min_orders": 0, "win_back": True}, "count": 1}

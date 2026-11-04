@@ -4,15 +4,19 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import date
 from typing import Any
 
 import pandas as pd
+import yaml
 
 from app.shell import DataSource
+from fabric_control.config import contracts_dir
 
 DATASET = "mart_customer.rfm"
 SEGMENTS_TABLE = "app.segments"
 ALL = "All"
+WIN_BACK_RULE = "(F = 5 or M = 5) and R = 1"
 
 SEGMENT_ORDER = [
     "Champions",
@@ -38,6 +42,11 @@ def load(source: DataSource) -> pd.DataFrame:
     return df.astype({c: "float64" for c in money})
 
 
+def as_of_date() -> date:
+    """The date recency is scored at (R5), from the constant the RFM job reads."""
+    return yaml.safe_load((contracts_dir() / "constants.yml").read_text())["AS_OF_DATE"]
+
+
 def buyer_count(df: pd.DataFrame) -> int:
     return int(df["customer_id"].nunique())
 
@@ -61,9 +70,13 @@ def segment_summary(df: pd.DataFrame) -> pd.DataFrame:
     return counts.sort_values("segment").reset_index(drop=True)[["segment", "customers", "share"]]
 
 
-def match(df: pd.DataFrame, segment: str = ALL, category: str = ALL, min_orders: int = 0) -> pd.DataFrame:
-    """Audience criteria: segment × purchased category × purchase history (min technical orders)."""
+def match(
+    df: pd.DataFrame, segment: str = ALL, category: str = ALL, min_orders: int = 0, win_back: bool = False
+) -> pd.DataFrame:
+    """Audience criteria: segment × purchased category × purchase history (min technical orders) × win-back rule."""
     out = df
+    if win_back:
+        out = out[((out["frequency_score"] == 5) | (out["monetary_score"] == 5)) & (out["recency_score"] == 1)]
     if segment != ALL:
         out = out[out["segment"] == segment]
     if category != ALL:
@@ -81,14 +94,11 @@ def detail(rows: pd.DataFrame) -> pd.DataFrame:
 
 def win_back(df: pd.DataFrame, category: str = ALL) -> pd.DataFrame:
     """Lapsed high-value buyers: (F = 5 or M = 5) and R = 1 (FR-33a)."""
-    out = df[((df["frequency_score"] == 5) | (df["monetary_score"] == 5)) & (df["recency_score"] == 1)]
-    if category != ALL:
-        out = out[out["categories"].map(lambda raw: has_category(raw, category))]
-    return out.sort_values("customer_id").reset_index(drop=True)
+    return match(df, category=category, win_back=True)
 
 
-def criteria(segment: str = ALL, category: str = ALL, min_orders: int = 0) -> dict[str, Any]:
-    return {"segment": segment, "category": category, "min_orders": min_orders}
+def criteria(segment: str = ALL, category: str = ALL, min_orders: int = 0, win_back: bool = False) -> dict[str, Any]:
+    return {"segment": segment, "category": category, "min_orders": min_orders, "win_back": win_back}
 
 
 def new_audience_id() -> str:

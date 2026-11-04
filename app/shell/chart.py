@@ -94,10 +94,11 @@ def chart(
     kind: str = "bar",
     horizontal: bool = False,
     table_dataset_id: str | None = None,
+    table_formats: dict[str, str] | None = None,
 ) -> None:
     st.markdown(f"**{title}**")
     if st.toggle("Table view", key=f"{key}_table_view"):
-        table(df, dataset_id=table_dataset_id)
+        table(df, dataset_id=table_dataset_id, formats=table_formats)
         return
     st.altair_chart(
         build_chart(df, x=x, y=y, x_title=x_title, y_title=y_title, series=series, kind=kind, horizontal=horizontal),

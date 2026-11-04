@@ -1,5 +1,6 @@
 import importlib
 import math
+from decimal import Decimal
 
 import pandas as pd
 import pytest
@@ -57,12 +58,39 @@ def test_numeric_columns_are_formatted_and_right_aligned():
     assert config["orders"]["type_config"]["type"] == "number"
 
 
+def test_decimal_columns_are_formatted_like_floats():
+    # psycopg reads NUMERIC as Decimal, which pandas keeps in object columns
+    df = pd.DataFrame({"value": [Decimal("28953.95"), None], "ratio": [Decimal("1.2178"), Decimal("3")]})
+    out, formatters, config = prepare_table(df, formats={"ratio": "ratio"})
+    assert [formatters["value"](v) for v in out["value"]] == ["28,954", "—"]
+    assert formatters["ratio"](out["ratio"].iloc[0]) == "1.22×"
+    assert config["value"]["type_config"]["type"] == "number"
+    assert config["ratio"]["type_config"]["type"] == "number"
+
+
 def test_formatter_passes_strings_through():
     df = pd.DataFrame({"sku_cost": [10.0, 20.0], "sku_cost__denied": [True, False]})
     _, formatters, config = prepare_table(df)
     assert formatters["sku_cost"](DENIED_TEXT) == DENIED_TEXT
     assert config["sku_cost"]["type_config"]["type"] == "text"
     assert config["sku_cost"]["alignment"] == "right"
+
+
+def test_denied_columns_keep_the_spec_wording_and_fit_it():
+    assert DENIED_TEXT == "🔒 not permitted for role"  # EXPERIENCE.md Voice and Tone, DESIGN.md badge-denied
+    df = pd.DataFrame(
+        {
+            "sku_cost": [10.0, 20.0],
+            "sku_cost__denied": [True, False],
+            "customer_id": ["C****42", DENIED_TEXT],  # PG permission error: the same text, no flag
+            "orders": [1, 2],
+        }
+    )
+    _, _, config = prepare_table(df, masked_cols=frozenset({"customer_id"}))
+    assert config["sku_cost"]["width"] == "medium"
+    assert config["sku_cost"]["alignment"] == "right"
+    assert config["customer_id"]["width"] == "medium"
+    assert config["orders"].get("width") is None
 
 
 def test_unknown_format_is_rejected():

@@ -22,6 +22,7 @@ from app.shell import (
     watch,
 )
 from app.shell.components.spend_edit import progress_strip, spend_edit_form
+from pipelines.jobs.marts.campaign.campaign_overview.transforms import periods
 
 BUDGET = "mart_finance.budget_daily"
 RECON = "mart_shared.spend_reconciliation"
@@ -30,6 +31,10 @@ ACCENT = "#2F5BEA"  # DESIGN.md colors.accent
 SURFACE = "#FFFFFF"  # DESIGN.md colors.surface: the 2px gap between segments
 SEGMENTS = {"allocated": "Allocated", "unallocated": "Unallocated"}
 LABELLED_DAYS = 31
+CARDS = [  # DESIGN.md caps a KPI row at 4 cards: spend first, then efficiency
+    [("campaign_budget", "money"), ("allocated_spend", "money"), ("unallocated_spend", "money")],
+    [("attributed_value_per_spend_ratio", "ratio"), ("cost_per_attributed_order", "money")],
+]
 
 
 def ratio(numerator, denominator):
@@ -85,11 +90,12 @@ def spend_stack_bar(recon: pd.DataFrame) -> None:
         y=alt.Y("spend:Q", title="Online spend", stack="zero"),
         order=alt.Order("segment:N"),
     )
-    bars = base.mark_bar(stroke=SURFACE, strokeWidth=2).encode(
+    few = recon["date"].nunique() <= LABELLED_DAYS  # the 2px segment gap and the labels would hide narrow bars
+    bars = base.mark_bar(stroke=SURFACE, strokeWidth=2 if few else 0).encode(
         color=color, tooltip=["date:T", "segment:N", alt.Tooltip("spend:Q", format=",.2f")]
     )
     chart = bars
-    if recon["date"].nunique() <= LABELLED_DAYS:
+    if few:
         labels = base.mark_text(dy=10, color=SURFACE, fontSize=10).encode(text=alt.Text("spend:Q", format=",.0f"))
         chart = bars + labels
     st.altair_chart(chart, use_container_width=True)
@@ -142,28 +148,43 @@ def render() -> None:
     if days.empty:
         empty_state("No campaign spend yet.", "Budget & Spend fills after the finance marts refresh.")
         return
+    spans = {pid: (label, start, end) for pid, label, start, end in periods({d.year for d in days["date"]})}
     names = dict(zip(days["campaign_id"], days["campaign_name"], strict=False))
     options = [ALL, *sorted(names)]
     chosen = filter_bar(
         "budget_spend",
-        [Filter("campaign", "Campaign", options, ALL, lambda c: c if c == ALL else f"{names[c]} · {c}")],
-    )["campaign"]
-    if chosen != ALL:
-        days = days[days["campaign_id"] == chosen]
+        [
+            Filter("period", "Period", list(spans), format_func=lambda p: spans[p][0]),
+            Filter("campaign", "Campaign", options, ALL, lambda c: c if c == ALL else f"{names[c]} · {c}"),
+        ],
+    )
+    _, start, end = spans[chosen["period"]]
+    days, recon = days[days["date"].between(start, end)], recon[recon["date"].between(start, end)]
+    campaign = chosen["campaign"]
+    if campaign != ALL:
+        days = days[days["campaign_id"] == campaign]
         recon = recon[recon["date"].isin(days["date"])]
-    campaigns = None if chosen == ALL else {chosen}
+    if days.empty:
+        if campaign == ALL:
+            empty_state("No campaign spend in this period.")
+        else:
+            empty_state(f"No campaign spend for {campaign} in this period.", "Clear the Campaign filter to see all.")
+        return
+    campaigns = None if campaign == ALL else {campaign}
     shown = current_in_flight(campaigns)
     fresh = max(days["_refreshed_at"].max(), recon["_refreshed_at"].max())
     values = summarize(days, recon)
-    kinds = ["money", "money", "money", "ratio", "money"]
-    for column, (term_id, value), kind in zip(st.columns(len(values)), values.items(), kinds, strict=True):
-        with column:
-            metric(term_id, value, fresh, kind=kind, in_flight=shown)
+    for row in CARDS:
+        for column, (term_id, kind) in zip(st.columns(3), row, strict=False):
+            with column:
+                metric(term_id, values[term_id], fresh, kind=kind, in_flight=shown)
+    if campaigns:
+        st.caption(
+            f"Allocated Spend covers {names[campaign]} only. Unallocated Spend and the daily chart cover all campaigns"
+            " on the same days: online spend is reconciled per day, not per campaign."
+        )
     if shown:
         watch(campaigns, shown)
-    if session.role() == "UG04":
-        spend_edit_form(days, recon)
-        progress_strip()
     if EVENT_KEY in st.session_state:
         # date-grain: busy for any campaign selection, so ask without the campaign filter
         busy = RECON in (shown if campaigns is None else current_in_flight(None))
@@ -175,3 +196,6 @@ def render() -> None:
         dataset_id=BUDGET,
         formats={"value_per_spend": "ratio", "cost_per_order": "money", "attributed_orders": "count"},
     )
+    if session.role() == "UG04":
+        spend_edit_form(days, recon)
+        progress_strip()

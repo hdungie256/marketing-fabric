@@ -47,8 +47,10 @@ def render() -> None:
     df = svc.load(current_source())
     prefill = st.session_state.pop(PREFILL_KEY, None) or {}
     if prefill:
-        # Win-back criteria replace whatever this page last remembered
-        session_.filters(KEY).update(prefill)
+        # a Win-back prefill wins over the filters kept from an earlier visit
+        filters = session_.filters(KEY)
+        filters.clear()
+        filters.update(prefill)
     cats = svc.category_options(df)
     values = filter_bar(
         KEY,
@@ -58,7 +60,12 @@ def render() -> None:
             Filter("min_orders", "Minimum past orders", (), 0, kind="number"),
         ],
     )
-    crit = svc.criteria(segment=values["segment"], category=values["category"], min_orders=values["min_orders"])
+    win_back = st.checkbox(
+        f"Lapsed high-value only: {svc.WIN_BACK_RULE}", value=prefill.get("win_back", False), key=f"{KEY}-win-back"
+    )
+    crit = svc.criteria(
+        segment=values["segment"], category=values["category"], min_orders=values["min_orders"], win_back=win_back
+    )
     rows = svc.match(df, **crit)
     st.markdown(f"**{len(rows)} customers match**")
     if rows.empty:

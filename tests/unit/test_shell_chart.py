@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+from streamlit import dataframe_util
 from streamlit.testing.v1 import AppTest
 
 from app.shell.chart import SERIES_COLORS, build_chart
@@ -87,6 +88,23 @@ def test_table_view_toggle_renders_dataframe():
     at.toggle(key="t_table_view").set_value(True).run()
     assert not at.exception
     assert len(at.dataframe) == 1
+
+
+def _share_chart_script():
+    import pandas as pd
+
+    from app.shell.chart import chart
+
+    df = pd.DataFrame({"segment": ["Champions"], "customers": [299], "share": [299 / 1468]})
+    chart(df, key="t", title="T", x="segment", y="customers", x_title="X", y_title="Y", table_formats={"share": "pct"})
+
+
+def test_table_view_applies_table_formats():
+    at = AppTest.from_function(_share_chart_script).run()
+    at.toggle(key="t_table_view").set_value(True).run()
+    styler = at.dataframe[0].proto.arrow_data.styler
+    shown = dataframe_util.convert_arrow_bytes_to_pandas_df(styler.display_values)  # the text the grid paints
+    assert shown["share"].tolist() == ["20.4%"]  # without formats a float column defaults to money: "0"
 
 
 def _text_layer(s):

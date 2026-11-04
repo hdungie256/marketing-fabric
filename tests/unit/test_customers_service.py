@@ -99,11 +99,18 @@ def test_win_back_selects_high_value_lapsed_only():
     assert svc.win_back(df, category="Apparel").empty
 
 
+def test_win_back_criteria_match_the_win_back_list():
+    df = frame()
+    assert svc.match(df, **svc.criteria(win_back=True))["customer_id"].tolist() == [4]
+    assert svc.match(df, **svc.criteria(category="Nest", win_back=True)).empty
+
+
 def test_criteria_and_audience_id_shape():
     assert svc.criteria(segment="Lost", category="Nest", min_orders=1) == {
         "segment": "Lost",
         "category": "Nest",
         "min_orders": 1,
+        "win_back": False,
     }
     assert len(svc.new_audience_id()) == 32
 
