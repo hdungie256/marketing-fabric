@@ -44,8 +44,14 @@ def render() -> None:
             metric(term_id, kpi[term_id], kpi["_refreshed_at"], kind=kind)
     st.subheader("By Campaign")
     headers = {term_id: fabric_control.term(term_id)["display_name"] for term_id, _ in CARDS}
+    share = f"Share of {headers['attributed_gross_value']}"
+    shown = rows[["campaign_id", "campaign_name", *headers]].assign(
+        **{share: svc.gross_value_share(df, chosen["period"], rows)}
+    )
     table(
-        rows[["campaign_id", "campaign_name", *headers]].rename(columns={"campaign_id": "Campaign", **headers}),
+        shown.rename(columns={"campaign_id": "Campaign", **headers}),
         dataset_id=svc.DATASET,
         campaign_col="Campaign",
+        formats={share: "pct"},
     )
+    st.caption(f"{share}: the campaign's part of the all-campaign total for the period.")

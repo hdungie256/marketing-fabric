@@ -60,3 +60,12 @@ def test_top_skus_merges_a_sku_whose_description_changed():
     )
     top = svc.top_skus(rows, "gross_value")
     assert len(top) == 1 and top["gross_value"].iloc[0] == 30.0
+
+
+def test_campaigns_come_from_this_mart():
+    assert svc.campaigns(frame(ROWS)) == [("ALL", "All campaigns"), ("CMP19_01", "New-year Apparel")]
+
+
+def test_share_sums_to_one():
+    sums = svc.top_categories(frame(ROWS), "gross_value")
+    assert svc.share(sums, "gross_value").sum() == 1

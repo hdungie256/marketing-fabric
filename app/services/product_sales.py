@@ -6,10 +6,19 @@ from app.shell import DataSource
 from pipelines.jobs.marts.campaign.campaign_overview.transforms import periods
 
 DATASET = "mart_campaign.product_sales"
+ALL = "ALL"
+TOP_SKUS = [5, 10, 20]
+TREND_CATEGORIES = [3, 4, 6]
 
 
 def load(source: DataSource) -> pd.DataFrame:
     return source.read(DATASET).astype({"gross_value": "float64"})
+
+
+def campaigns(df: pd.DataFrame) -> list[tuple[str, str]]:
+    """Campaign picker from this mart's own rows (not the Overview mart's)."""
+    names = df.drop_duplicates("campaign_id").set_index("campaign_id")["campaign_name"]
+    return [(ALL, names[ALL]), *((c, names[c]) for c in sorted(names.index) if c != ALL)]
 
 
 def _periods(df: pd.DataFrame):
@@ -41,8 +50,16 @@ def top_categories(rows: pd.DataFrame, by: str) -> pd.DataFrame:
     return sums.sort_values(by, ascending=False).reset_index(drop=True)
 
 
-def trend(rows: pd.DataFrame, n: int = 4) -> pd.DataFrame:
-    top = top_categories(rows, "gross_value")["canonical_category"].head(n)
+def share(sums: pd.DataFrame, by: str) -> pd.Series:
+    """Each row's share of the column total (presentation ratio over additive sums)."""
+    total = sums[by].sum()
+    if not total:
+        return pd.Series(float("nan"), index=sums.index)
+    return sums[by] / total
+
+
+def trend(rows: pd.DataFrame, n: int = 4, by: str = "gross_value") -> pd.DataFrame:
+    top = top_categories(rows, by)["canonical_category"].head(n)
     kept = rows[rows["canonical_category"].isin(top)]
     out = kept.groupby(["month", "canonical_category"], as_index=False)[["gross_value", "quantity"]].sum()
     return out.assign(month=pd.to_datetime(out["month"]))

@@ -1,7 +1,6 @@
 import streamlit as st
 
 import fabric_control
-from app.services import campaign_overview as overview
 from app.services import new_returning as svc
 from app.shell import Filter, chart, current_source, empty_state, filter_bar, metric, table
 
@@ -11,8 +10,8 @@ CARDS = ["first_observed_buyers", "returning_buyers", "attributed_buyers"]
 
 def render() -> None:
     df = svc.load(current_source())
-    periods = dict(overview.periods(df))
-    names = dict(overview.campaigns(df))
+    periods = dict(svc.periods(df))
+    names = dict(svc.campaigns(df))
     chosen = filter_bar(
         KEY,
         [
@@ -21,13 +20,13 @@ def render() -> None:
                 "campaign",
                 "Campaign",
                 list(names),
-                format_func=lambda c: names[c] if c == overview.ALL else f"{names[c]} · {c}",
+                format_func=lambda c: names[c] if c == svc.ALL else f"{names[c]} · {c}",
             ),
         ],
     )
-    kpi, rows = overview.select(df, chosen["period"], chosen["campaign"])
+    kpi, rows = svc.select(df, chosen["period"], chosen["campaign"])
     if kpi["attributed_buyers"] == 0:
-        if chosen["campaign"] == overview.ALL:
+        if chosen["campaign"] == svc.ALL:
             empty_state("No attributed buyers in this period.")
         else:
             empty_state(
@@ -51,10 +50,13 @@ def render() -> None:
         table_dataset_id=svc.DATASET,
     )
     headers = {term_id: fabric_control.term(term_id)["display_name"] for term_id in CARDS}
+    share = "% First Observed"
+    shown = rows[["campaign_id", "campaign_name", *headers]].assign(**{share: svc.first_observed_share(rows)})
     table(
-        rows[["campaign_id", "campaign_name", *headers]].rename(columns={"campaign_id": "Campaign", **headers}),
+        shown.rename(columns={"campaign_id": "Campaign", **headers}),
         dataset_id=svc.DATASET,
         campaign_col="Campaign",
+        formats={share: "pct"},
         info_terms={
             "First Observed Buyers": "first_observed_buyers",
             "Returning Buyers": "returning_buyers",

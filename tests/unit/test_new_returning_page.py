@@ -93,3 +93,21 @@ def test_campaign_without_buyers_shows_empty_state():
     assert "No attributed buyers for CMP19_01 in this period." in " ".join(m.value for m in at.markdown)
     assert "Clear the Campaign filter to see all." in [c.value for c in at.caption]
     assert not at.dataframe
+
+
+def test_table_shows_first_observed_percentage():
+    at = AppTest.from_function(_script).run()
+    assert not at.exception
+    assert "% First Observed" in at.dataframe[0].value.columns
+
+
+def test_pickers_come_from_this_mart_not_overview(monkeypatch):
+    from app.services import campaign_overview
+
+    def boom(*args, **kwargs):
+        raise AssertionError("New vs Returning must not use the Overview service")
+
+    for name in ("periods", "campaigns", "select"):
+        monkeypatch.setattr(campaign_overview, name, boom)
+    at = AppTest.from_function(_script).run()
+    assert not at.exception

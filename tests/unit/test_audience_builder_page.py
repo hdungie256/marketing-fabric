@@ -34,8 +34,9 @@ class Source:
 
 
 class FakeConn:
-    def __init__(self):
+    def __init__(self, names=()):
         self.rows = []
+        self.names = [n.lower() for n in names]
 
     def __enter__(self):
         return self
@@ -58,12 +59,17 @@ class FakeConn:
 
         return Cursor()
 
-    def execute(self, sql):
+    def execute(self, sql, params=None):
+        hit = params is not None and params[0].strip().lower() in self.names
+
         class Cursor:
             description = []
 
             def fetchall(self):
                 return []
+
+            def fetchone(self):
+                return (1,) if hit else None
 
         return Cursor()
 
@@ -95,6 +101,8 @@ def test_live_count_updates_and_zero_match_shows_hint():
 
 def test_save_audience_requires_name_then_toasts(monkeypatch):
     import app.pages.customer.audience_builder as page
+
+    monkeypatch.setenv("APP_DATA_MODE", "pg")
 
     saved = {}
     monkeypatch.setattr(
@@ -131,3 +139,44 @@ def test_win_back_prefill_arrives_in_builder(monkeypatch):
     at = AppTest.from_function(_prefilled).run()
     assert not at.exception
     assert "**1 customers match**" in [m.value for m in at.markdown]
+
+
+def test_duplicate_audience_name_is_refused(monkeypatch):
+    import app.pages.customer.audience_builder as page
+
+    monkeypatch.setenv("APP_DATA_MODE", "pg")
+    saved = []
+    monkeypatch.setattr(svc, "save_audience", lambda conn, name, crit, count, by: saved.append(name) or "abc")
+    monkeypatch.setattr(page, "connect_reader", lambda: FakeConn(names=["Win-back Fun"]))
+    at = AppTest.from_function(_script).run()
+    at.text_input(key="audience_builder-name").input("  win-back fun ").run()
+    at.button(key="FormSubmitter:audience_builder-save-Save audience").click().run()
+    assert not at.exception
+    assert any("already exists" in e.value for e in at.error)
+    assert saved == []
+
+
+def test_fixture_mode_disables_save_with_reason():
+    at = AppTest.from_function(_script).run()
+    assert not at.exception
+    assert at.button(key="FormSubmitter:audience_builder-save-Save audience").disabled
+    assert audience_builder.FIXTURE_SAVE_NOTE in [c.value for c in at.caption]
+
+
+def test_min_orders_is_a_filter_kept_for_the_session():
+    at = AppTest.from_function(_script).run()
+    at.number_input(key="_filter_audience_builder_min_orders").set_value(2).run()
+    assert not at.exception
+    assert "**1 customers match**" in [m.value for m in at.markdown]
+    assert at.session_state["_shell_filters"]["audience_builder"]["min_orders"] == 2
+
+
+def test_customer_list_hides_profile_columns(monkeypatch):
+    class Profiled:
+        def read(self, dataset_id):
+            return frame().assign(gender="F", location="Hanoi", tenure_months=3, provenance="original")
+
+    monkeypatch.setattr(audience_builder, "current_source", lambda: Profiled())
+    at = AppTest.from_function(_script).run()
+    assert not at.exception
+    assert not set(svc.DETAIL_HIDDEN) & set(at.dataframe[0].value.columns)

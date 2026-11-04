@@ -27,6 +27,9 @@ SEGMENT_ORDER = [
 ]
 
 MONEY = ("monetary_value",)
+# CRM profile and lineage columns: kept in the mart, left out of the on-screen customer lists so the
+# list fits the page. Dropped (not selected) so `<column>__denied` and `_` columns still reach the table.
+DETAIL_HIDDEN = ("gender", "location", "tenure_months", "provenance")
 
 
 def load(source: DataSource) -> pd.DataFrame:
@@ -70,6 +73,12 @@ def match(df: pd.DataFrame, segment: str = ALL, category: str = ALL, min_orders:
     return out.sort_values("customer_id").reset_index(drop=True)
 
 
+def detail(rows: pd.DataFrame) -> pd.DataFrame:
+    """Customer list for display: the RFM columns without the CRM profile and lineage columns."""
+    hidden = [c for c in rows.columns if c in DETAIL_HIDDEN or c.removesuffix("__denied") in DETAIL_HIDDEN]
+    return rows.drop(columns=hidden)
+
+
 def win_back(df: pd.DataFrame, category: str = ALL) -> pd.DataFrame:
     """Lapsed high-value buyers: (F = 5 or M = 5) and R = 1 (FR-33a)."""
     out = df[((df["frequency_score"] == 5) | (df["monetary_score"] == 5)) & (df["recency_score"] == 1)]
@@ -96,6 +105,15 @@ def save_audience(conn: Any, name: str, crit: dict[str, Any], count: int, by: st
             (audience_id, name, json.dumps(crit, sort_keys=True), count, by),
         )
     return audience_id
+
+
+def name_taken(conn: Any, name: str) -> bool:
+    """True when a saved audience already uses this name (case and surrounding spaces ignored)."""
+    cursor = conn.execute(
+        "SELECT 1 FROM app_v.segments WHERE lower(btrim(name)) = lower(btrim(%s)) LIMIT 1",
+        (name,),
+    )
+    return cursor.fetchone() is not None
 
 
 def read_audiences(conn: Any) -> pd.DataFrame:

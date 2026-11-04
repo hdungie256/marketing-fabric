@@ -36,11 +36,15 @@ def metric(
         add_stale(state["datasets"])
 
     with st.container(key=f"metric-{'stale-' if state['stale'] else ''}{term_id}"):
-        label, info = st.columns([6, 1])
-        with label:
-            st.markdown(term["display_name"])
-        with info:
-            if st.button("ⓘ", key=f"metric-info-{term_id}", help=f"About {term['display_name']}"):
+        with st.container(key=f"kpi-label-{term_id}", horizontal=True, vertical_alignment="center", gap="small"):
+            st.markdown(term["display_name"], width="stretch")
+            if st.button(
+                ":material/info:",
+                key=f"metric-info-{term_id}",
+                help=f"About {term['display_name']}",
+                type="tertiary",
+                width="content",
+            ):
                 definition_dialog(term_id)
         with st.container(key=f"kpi-value-{term_id}"):
             st.markdown(FORMATTERS[kind](value))

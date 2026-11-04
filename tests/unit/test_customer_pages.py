@@ -89,3 +89,20 @@ def test_win_back_button_prefills_audience_builder():
     at.button(key="win_back-to-builder").click().run()
     assert not at.exception
     assert any("prefilled" in t.value for t in at.toast)
+
+
+def test_rfm_filter_sits_above_the_chart_and_fixture_mode_is_disclosed(monkeypatch):
+    monkeypatch.setenv("APP_DATA_MODE", "fixture")
+    at = AppTest.from_function(_rfm_script).run()
+    assert not at.exception
+    assert rfm_segments.FIXTURE_NOTE in [c.value for c in at.caption]
+    at.selectbox(key="_filter_rfm_segments_segment").set_value("Lost").run()
+    assert at.dataframe[1].value["customer_id"].tolist() == [3]
+    assert "**Lost · 1 buyers**" in [m.value for m in at.markdown]
+
+
+def test_rfm_fixture_note_hidden_on_live_data(monkeypatch):
+    monkeypatch.setenv("APP_DATA_MODE", "pg")
+    at = AppTest.from_function(_rfm_script).run()
+    assert not at.exception
+    assert rfm_segments.FIXTURE_NOTE not in [c.value for c in at.caption]
