@@ -22,7 +22,7 @@ def render() -> None:
         empty_state("No lapsed high-value customers for this filter.", "Widen the category filter.")
         return
     table(
-        rows,
+        svc.detail(rows),
         dataset_id=svc.DATASET,
         formats={"monetary_value": "money"},
         info_terms={"segment": "rfm_segment"},

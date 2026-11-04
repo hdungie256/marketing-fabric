@@ -115,3 +115,15 @@ def test_stale_saved_filter_falls_back_to_first_option():
     at = AppTest.from_function(script).run()
     assert not at.exception
     assert at.selectbox(key="_filter_campaign_comparison_compare_by").value == "campaign"
+
+
+def test_table_leads_with_the_charted_metric_and_notes_r6_r7():
+    from app.pages.campaign import comparison
+
+    at = AppTest.from_function(_script).run()
+    at.selectbox(key="_filter_campaign_comparison_metric").set_value("attributed_orders").run()
+    assert not at.exception
+    columns = list(at.dataframe[0].value.columns)
+    assert columns.index(TERMS["attributed_orders"][0]) < columns.index(TERMS["attributed_gross_value"][0])
+    footnotes = [t.value for t in at.caption]
+    assert all(note in footnotes for note in comparison.NOTES)

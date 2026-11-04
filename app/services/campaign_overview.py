@@ -30,3 +30,11 @@ def select(df: pd.DataFrame, period_id: str, campaign_id: str) -> tuple[pd.Serie
         raise KeyError(f"{DATASET}: no row for ({period_id}, {campaign_id})")
     table = rows[rows["campaign_id"] != ALL] if campaign_id == ALL else kpi
     return kpi.iloc[0], table.sort_values("campaign_id")
+
+
+def gross_value_share(df: pd.DataFrame, period_id: str, table: pd.DataFrame) -> pd.Series:
+    """Each row's share of the period's all-campaign attributed gross value (presentation ratio)."""
+    total = df[(df["period_id"] == period_id) & (df["campaign_id"] == ALL)]["attributed_gross_value"].sum()
+    if not total:
+        return pd.Series(float("nan"), index=table.index)
+    return table["attributed_gross_value"] / total

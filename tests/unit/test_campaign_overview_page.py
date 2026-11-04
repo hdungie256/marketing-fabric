@@ -120,3 +120,12 @@ def test_unknown_term_shows_error_banner(monkeypatch):
     monkeypatch.setattr(fabric_control, "term", lambda t: None)
     at = AppTest.from_function(_script).run()
     assert "Could not load this page" in " ".join(e.value for e in at.error)
+
+
+def test_campaign_table_shows_share_of_period_gross_value():
+    at = AppTest.from_function(_script).run()
+    assert not at.exception
+    table = at.dataframe[0].value
+    share = [c for c in table.columns if c.startswith("Share of")]
+    assert len(share) == 1
+    assert all(0 <= v <= 1 for v in table[share[0]])

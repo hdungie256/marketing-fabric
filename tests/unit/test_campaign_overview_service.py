@@ -85,3 +85,15 @@ def test_select_one_campaign_returns_only_it():
 def test_select_missing_row_raises():
     with pytest.raises(KeyError, match="2019-Q3"):
         svc.select(svc.load(Source()), "2019-Q3", "ALL")
+
+
+def test_gross_value_share_is_against_the_period_all_row():
+    df = pd.DataFrame(
+        {
+            "period_id": ["FY2019"] * 3,
+            "campaign_id": ["ALL", "CMP19_01", "CMP19_02"],
+            "attributed_gross_value": [200.0, 50.0, 150.0],
+        }
+    )
+    table = df[df["campaign_id"] != "ALL"]
+    assert svc.gross_value_share(df, "FY2019", table).tolist() == [0.25, 0.75]

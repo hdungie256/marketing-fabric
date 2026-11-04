@@ -1,3 +1,4 @@
+import hashlib
 from collections.abc import Callable
 from typing import Any
 
@@ -100,15 +101,28 @@ def table(
     formats: dict[str, str] | None = None,
     info_terms: dict[str, str] | None = None,
     highlight: Callable[[pd.Series], bool] | None = None,
+    widths: dict[str, str] | None = None,
 ) -> None:
+    """`widths` caps a column ("small" | "medium" | "large") so a long text column does not push the
+    last columns off screen."""
     masked = _cached_masked_columns(session.role(), dataset_id) if dataset_id else frozenset()
     out, formatters, config = prepare_table(df, masked, campaign_col, formats)
+    for column, width in (widths or {}).items():
+        if column in out.columns:
+            config[column] = {**config.get(column, {}), "width": width}
     styler = out.style.format(formatters)
     if highlight:
         styler = styler.apply(
             lambda row: [f"background-color: {ACCENT_TINT}" if highlight(row) else ""] * len(row), axis=1
         )
     st.dataframe(styler, column_config=config, hide_index=True, width="stretch")
-    for column, term_id in (info_terms or {}).items():
-        if column in out.columns and st.button(f"ⓘ {column}", key=f"table-info-{column}"):
-            definition_dialog(term_id)
+    infos = [(column, term_id) for column, term_id in (info_terms or {}).items() if column in out.columns]
+    if infos:
+        with st.container(
+            key=f"table-info-row-{hashlib.md5('|'.join(c for c, _ in infos).encode()).hexdigest()[:8]}",
+            horizontal=True,
+            gap="small",
+        ):
+            for column, term_id in infos:
+                if st.button(f"ⓘ {column}", key=f"table-info-{column}", width="content"):
+                    definition_dialog(term_id)

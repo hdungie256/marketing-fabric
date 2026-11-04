@@ -94,3 +94,14 @@ def test_all_campaigns_discloses_unattributed_sales():
     assert "Includes sales not attributed to any campaign." in [c.value for c in at.caption]
     at.selectbox(key="_filter_products_categories_campaign").set_value("CMP19_01").run()
     assert "Includes sales not attributed to any campaign." not in [c.value for c in at.caption]
+
+
+def test_top_n_and_share_column():
+    at = AppTest.from_function(_script).run()
+    at.selectbox(key="_filter_products_categories_top_n").set_value(5).run()
+    assert not at.exception
+    assert "Top 5 SKUs by Gross Value" in " ".join(m.value for m in at.markdown)
+    categories = at.dataframe[0].value
+    assert "Share of Gross Value" in categories.columns
+    at.selectbox(key="_filter_products_categories_trend_n").set_value(3).run()
+    assert "Monthly trend — top 3 categories by Gross Value" in " ".join(m.value for m in at.markdown)

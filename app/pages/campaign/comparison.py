@@ -1,9 +1,15 @@
+import streamlit as st
+
 import fabric_control
 from app.services import comparison as svc
 from app.shell import NOTE_TEXT, Filter, add_footnote, chart, current_source, filter_bar, table
 
 KEY = "campaign_comparison"
 COMPARE_BY = {"campaign": "Campaign", "channel": "Channel"}
+NOTES = [
+    "Attributed value is not incremental revenue caused by the campaign (R6).",
+    "Spend efficiency is reported as Attributed Value / Spend Ratio, never as ROAS (R7).",
+]
 
 
 def render() -> None:
@@ -32,23 +38,25 @@ def render() -> None:
         horizontal=True,
         table_dataset_id=svc.DATASET,
     )
+    # the chart shows the chosen metric; the table shows all four, chosen one first
+    metrics = [metric, *(m for m in svc.METRICS if m != metric)]
+    st.markdown(f"**All metrics by {compare}**")
+    st.caption(f"Charted above: {labels[metric]}.")
     if chosen["compare_by"] == "campaign":
-        shown = rows[["group_id", "group_name", "channel", *svc.METRICS]].rename(
+        shown = rows[["group_id", "group_name", "channel", *metrics]].rename(
             columns={"group_id": "Campaign", "group_name": "campaign_name", "channel": "Channel", **labels}
         )
         campaign_col = "Campaign"
     else:
-        shown = rows[["group_name", *svc.METRICS]].rename(columns={"group_name": "Channel", **labels})
+        shown = rows[["group_name", *metrics]].rename(columns={"group_name": "Channel", **labels})
         campaign_col = None
     table(
         shown,
         dataset_id=svc.DATASET,
         campaign_col=campaign_col,
-        info_terms={
-            "Attributed Gross Value": "attributed_gross_value",
-            "Attributed Orders": "attributed_orders",
-            "Attributed Buyers": "attributed_buyers",
-            "Average Order Value": "average_order_value",
-        },
+        info_terms={labels[m]: m for m in metrics},
+        widths={"Campaign": "medium"},
     )
     add_footnote(NOTE_TEXT["currency_unverified"])
+    for note in NOTES:
+        add_footnote(note)

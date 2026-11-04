@@ -171,3 +171,27 @@ def test_read_audiences_returns_frame():
         columns=["audience_id", "name", "criteria", "customer_count", "created_by", "created_at"],
     )
     assert svc.read_audiences(conn)["name"].tolist() == ["Win-back"]
+
+
+def test_detail_drops_profile_columns_but_keeps_denied_flags():
+    df = frame().assign(gender="F", location="Hanoi", tenure_months=3, provenance="original", customer_id__denied=False)
+    shown = svc.detail(df)
+    assert not set(svc.DETAIL_HIDDEN) & set(shown.columns)
+    assert {"customer_id", "segment", "customer_id__denied"} <= set(shown.columns)
+
+
+def test_name_taken_queries_case_insensitively():
+    seen = {}
+
+    class Conn:
+        def execute(self, sql, params):
+            seen["sql"], seen["params"] = sql, params
+
+            class Cursor:
+                def fetchone(self):
+                    return (1,)
+
+            return Cursor()
+
+    assert svc.name_taken(Conn(), "Win-back Fun")
+    assert "lower(btrim(name))" in seen["sql"] and seen["params"] == ("Win-back Fun",)

@@ -123,3 +123,29 @@ def test_labels_on_stacked_bars_follow_the_stack():
     df = pd.DataFrame({"x": ["a", "a"], "y": [1, 2], "s": ["First", "Returning"]})
     layer = _text_layer(build_chart(df, x="x", y="y", x_title="X", y_title="Y", series="s", horizontal=True).to_dict())
     assert layer["encoding"]["x"]["stack"] == "zero"
+
+
+def _measure_axis(s, channel="y"):
+    return next(enc[channel]["axis"] for enc in _encodings(s) if channel in enc and "axis" in enc[channel])
+
+
+def test_count_measure_gets_whole_number_ticks():
+    counts = spec(pd.DataFrame({"x": ["a", "b"], "y": [1, 1]}))
+    money = spec(pd.DataFrame({"x": ["a", "b"], "y": [1.5, 2.25]}))
+    assert _measure_axis(counts)["format"] == ",d" and _measure_axis(counts)["tickMinStep"] == 1
+    assert "format" not in _measure_axis(money)
+
+
+def test_stacked_bars_and_labels_share_the_legend_order():
+    df = pd.DataFrame({"x": ["a", "a"], "y": [103, 13], "s": ["First", "Returning"]})
+    s = build_chart(df, x="x", y="y", x_title="X", y_title="Y", series="s", horizontal=True).to_dict()
+    bar, text = _layers(s)[0]["encoding"], _text_layer(s)["encoding"]
+    assert bar["order"] == text["order"]
+    assert text["detail"]["field"] == "s"
+
+
+def test_multi_series_lines_are_dashed_and_unlabelled():
+    df = pd.DataFrame({"x": [1, 2, 1, 2], "y": [1, 2, 3, 4], "s": ["a", "a", "b", "b"]})
+    s = spec(df, series="s", kind="line")
+    assert any("strokeDash" in enc for enc in _encodings(s))
+    assert not has_text_layer(s)
