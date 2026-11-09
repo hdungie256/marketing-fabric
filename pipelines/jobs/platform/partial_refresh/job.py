@@ -22,13 +22,17 @@ def run_step(step: dict) -> bool:
     return True
 
 
-def main(event: dict) -> None:
-    plan = fc.refresh_plan(fc.affected_by(event))
+def run_plan(plan: list[dict]) -> None:
+    """Run every step in this process with one shared SparkSession; platform/full_refresh uses it too."""
     for step in plan:
         print(f"{step['job_id']} {json.dumps(step['scope'])} after {step['needs']}", flush=True)
     failed = [step["job_id"] for step in plan if not run_step(step)]
     if failed:
         raise SystemExit(f"did not succeed: {', '.join(failed)}")
+
+
+def main(event: dict) -> None:
+    run_plan(fc.refresh_plan(fc.affected_by(event)))
 
 
 if __name__ == "__main__":

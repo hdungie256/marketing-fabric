@@ -115,6 +115,7 @@ services:
       FABRIC_NETWORK: marketing-fabric_default
       FABRIC_SECRETS_VOLUME: marketing-fabric_om-secrets
       FABRIC_ROOT: /opt/fabric
+      FABRIC_FULL_REFRESH_PER_JOB: ${FABRIC_FULL_REFRESH_PER_JOB:-0}
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__CORE__PARALLELISM: 4
       AIRFLOW_ADMIN_USER: ${AIRFLOW_ADMIN_USER}
