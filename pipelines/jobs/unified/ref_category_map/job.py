@@ -19,6 +19,7 @@ def main(scope: dict) -> None:
         fc.report_data_quality(result)
         fc.gate(result)
         io.write_delta(OUTPUTS[0], df, run.run_id, replace_where=None if scope["mode"] == "full" else scope)
+        fc.emit_lineage(JOB_ID, INPUTS, OUTPUTS)
 
 
 if __name__ == "__main__":

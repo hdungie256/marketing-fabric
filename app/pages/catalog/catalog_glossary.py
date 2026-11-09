@@ -8,7 +8,7 @@ import streamlit as st
 import fabric_control
 from app.shell import empty_state, table
 from app.shell.components.definition_dialog import definition_dialog
-from app.shell.components.lineage_graph import lineage_graph, render_detail
+from app.shell.components.lineage_graph import SOURCE_DEPTH, lineage_graph, render_detail
 
 KEY = "catalog_glossary"
 BROWSE_COLUMNS = ["dataset_id", "layer", "description", "owner", "sources", "provenance", "score", "status"]
@@ -48,7 +48,7 @@ def render_search(q: str) -> None:
     else:
         item = next(i for i in fabric_control.catalog() if i["dataset_id"] == selected["id"])
         render_detail(item)
-        lineage_graph(selected["id"], depth=1, key=f"{KEY}-selected")
+        lineage_graph(selected["id"], depth=SOURCE_DEPTH, key=f"{KEY}-selected")
 
 
 def render() -> None:

@@ -10,7 +10,7 @@ import streamlit as st
 
 import fabric_control
 from app.shell.badges import badge_synthetic
-from app.shell.components.lineage_graph import lineage_graph
+from app.shell.components.lineage_graph import SOURCE_DEPTH, lineage_graph
 from app.shell.components.status_chip import status_chip
 from app.shell.format import fmt_time
 from app.shell.notes import NOTE_TEXT
@@ -62,6 +62,6 @@ def definition_dialog(term_id: str) -> None:
     with definition:
         render_definition(term)
     with lineage:
-        lineage_graph(term["dataset_id"], depth=2, key=f"dlg-{term_id}")
+        lineage_graph(term["dataset_id"], depth=SOURCE_DEPTH, key=f"dlg-{term_id}")
     with quality:
         render_quality(term)

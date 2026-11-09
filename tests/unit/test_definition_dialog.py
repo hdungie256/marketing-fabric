@@ -47,7 +47,11 @@ GRAPH = {
 def stubs(monkeypatch):
     monkeypatch.setattr("fabric_control.term", lambda term_id: RATIO_TERM if term_id == RATIO_TERM["term_id"] else None)
     monkeypatch.setattr("fabric_control.status", lambda dataset_id: {"stale": False})
-    monkeypatch.setattr("fabric_control.lineage", lambda dataset_id, depth=1: GRAPH)
+    calls = []
+    monkeypatch.setattr(
+        "fabric_control.lineage", lambda dataset_id, depth=1: calls.append((dataset_id, depth)) or GRAPH
+    )
+    return calls
 
 
 def _metric_script():
@@ -89,6 +93,8 @@ def test_table_info_button_opens_definition_dialog(stubs):
     at.button(key="table-info-ratio").click().run()
     assert not at.exception
     assert sorted(t.label for t in at.tabs) == ["Definition", "Lineage", "Quality"]
+    assert stubs == [("mart_finance.budget_daily", 3)]  # deep enough to reach the raw sources
+    assert len(at.get("graphviz_chart")) == 1
 
 
 def test_unknown_term_dialog_shows_error(stubs):
