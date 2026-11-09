@@ -7,8 +7,9 @@ are, and what they do not show. Raw numbers live in `benchmark/results/`.
 
 **Choice: keep Spark.** At the demo's size and up to ×100 both engines finish the same job in seconds with identical
 output, so speed does not decide. Spark wins on integration: it runs the demo's own transforms (no second copy of the
-business logic), it is already in the `fabric-jobs` image, and Delta Lake, OpenLineage and GX all have Spark
-integrations the platform uses. Flink would add a second image and a SQL copy of every rule to keep in sync.
+business logic), it is already in the `fabric-jobs` image, and the platform's Delta Lake and GX integrations run on
+Spark. Lineage does not depend on the engine: `fabric_control.emit_lineage()` posts it over REST from each job's
+declared inputs and outputs. Flink would add a second image and a SQL copy of every rule to keep in sync.
 
 ### What was run
 
@@ -55,7 +56,7 @@ integrations the platform uses. Flink would add a second image and a SQL copy of
 | New code for the benchmark | 38 lines (`spark_job.py`) | 85 lines (`flink_job.py`, SQL included) |
 | Business logic | 175 lines reused from the demo transforms | rewritten as SQL in those 85 lines |
 | Image | existing `fabric-jobs` image | new `flink-bench` image, 2.6 GB; `apache-flink` has no arm64 wheel, so it is compiled with `build-essential` |
-| Platform fit | Delta Lake, OpenLineage and GX Spark integrations already in use | none of these wired; would need connectors for Delta and lineage |
+| Platform fit | Delta Lake and GX integrations already run on Spark | neither wired; would need a Delta connector and a GX port (lineage is posted over REST either way) |
 
 Pitfalls found while porting, each of which would silently change results: `NTILE` returns `BIGINT` in Flink (cast to
 `INT`); the filesystem sink appends unless the insert is `INSERT OVERWRITE`; quintile ties need the same total order
