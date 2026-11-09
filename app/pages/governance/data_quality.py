@@ -48,6 +48,12 @@ def render_exceptions() -> None:
     for column, (status, count) in zip(chips, counts.items(), strict=True):
         with column:
             status_chip(STATUS_CHIP.get(status, "neutral"), f"{status}: {count}")
+    coupon = triage.coupon_status_counts(framed)
+    if coupon:
+        st.caption(
+            f"{coupon.get('Used', 0)} of {sum(coupon.values())} lines are Used "
+            "(coupon status shown for reference, R17)."
+        )
     table(framed, dataset_id="mart_shared.exceptions")
     markable = framed.loc[framed["status"] != triage.RESOLVED, "exception_id"].tolist()
     chosen = st.multiselect("Exceptions", markable, key=f"{KEY}-triage")

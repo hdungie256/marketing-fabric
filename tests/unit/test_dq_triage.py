@@ -37,6 +37,14 @@ def exc_frame():
     )
 
 
+def test_scoreboard_with_results_but_no_failing_rule():
+    dq = dq_frame()
+    dq["passed"] = True
+    board = triage.scoreboard(dq)
+    assert set(board["failing"]) == {""}
+    assert len(board) == dq["dataset_id"].nunique()
+
+
 def test_with_status_defaults_new_and_keeps_resolved():
     statuses = pd.DataFrame([("e1", "seen"), ("gone", "accepted")], columns=["exception_id", "status"])
     out = triage.with_status(exc_frame(), statuses)
@@ -157,3 +165,37 @@ def test_class_filter_shows_no_statuses_of_other_classes(monkeypatch):
     assert not at.exception
     shown = at.dataframe[0].value
     assert dict(zip(shown["exception_id"], shown["status"], strict=True)) == {"e1": "seen", "gone": triage.RESOLVED}
+
+
+def test_coupon_status_counts_reads_mismatch_detail_only():
+    frame = pd.DataFrame(
+        [
+            ("e1", "shared_transaction_id", "customers=2"),
+            ("e2", "coupon_plan_mismatch", "month=1; category=Fun; coupon_status=Used"),
+            ("e3", "coupon_plan_mismatch", "month=2; category=Fun; coupon_status=Not Used"),
+            ("e4", "coupon_plan_mismatch", "month=3; category=Fun"),
+        ],
+        columns=["exception_id", "class", "detail"],
+    )
+    assert triage.coupon_status_counts(frame) == {"Used": 1, "Not Used": 1}
+    assert triage.coupon_status_counts(exc_frame()) == {}
+
+
+def test_dq_page_counts_used_mismatch_lines(monkeypatch):
+    exceptions = pd.DataFrame(
+        [
+            ("e2", "coupon_plan_mismatch", "month=1; category=Fun; coupon_status=Used"),
+            ("e3", "coupon_plan_mismatch", "month=2; category=Fun; coupon_status=Not Used"),
+        ],
+        columns=["exception_id", "class", "detail"],
+    )
+    views = {
+        "ops_v.dq_results": dq_frame(),
+        "mart_shared_v.exceptions": exceptions,
+        "app_v.exception_status": pd.DataFrame(columns=["exception_id", "status"]),
+    }
+    monkeypatch.setattr(triage, "connect_reader", lambda: FakeConn())
+    monkeypatch.setattr(triage, "read_view", lambda conn, view: views[view])
+    at = AppTest.from_function(_page_script).run()
+    assert not at.exception
+    assert any("1 of 2 lines are Used" in c.value for c in at.caption)

@@ -46,7 +46,8 @@ def coupon_mismatches(sales: DataFrame, plan: DataFrame, mapping: dict[str, str]
     """Sales lines whose (month, canonical category) has no coupon plan row (FR-8, AC02, R13).
 
     Coupon status and repeated shipping are storage conventions (R17) and are
-    never criteria here: only the plan join decides.
+    never criteria here: only the plan join decides. The line's coupon status is
+    copied into detail so the steward can count Used lines (BR14).
     """
     from pyspark.sql import functions as F
 
@@ -64,6 +65,8 @@ def coupon_mismatches(sales: DataFrame, plan: DataFrame, mapping: dict[str, str]
         F.lit(MISMATCH_CLASS).alias("class"),
         F.col("sales_line_id").alias("natural_key"),
         F.lit(MISMATCH_DATASET).alias("dataset_id"),
-        F.format_string("month=%s; category=%s", F.col("_month"), F.col("_canonical")).alias("detail"),
+        F.format_string(
+            "month=%s; category=%s; coupon_status=%s", F.col("_month"), F.col("_canonical"), F.col("coupon_status")
+        ).alias("detail"),
         F.lit(detected_at).cast("timestamp").alias("detected_at"),
     )

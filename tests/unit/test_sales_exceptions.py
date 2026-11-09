@@ -74,6 +74,7 @@ def test_mismatch_is_plan_join_only(spark, sales, plan):
     assert set(found) == {"L3"}
     assert found["L3"].dataset_id == "unified/order_lines"
     assert "category=Fun" in found["L3"].detail
+    assert "coupon_status=Used" in found["L3"].detail
 
 
 def test_merge_unions_classes_with_provenance(spark, sales, plan):
