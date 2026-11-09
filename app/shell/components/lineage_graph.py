@@ -56,7 +56,8 @@ def lineage_dot(graph: dict[str, list], selected: str) -> str:
     lines = [
         "digraph lineage {",
         '  graph [rankdir=LR, bgcolor="transparent"];',
-        '  node [shape=box, style="rounded,filled", fontname="sans-serif", fontsize=11, color="#5B6472"];',
+        # Helvetica metrics size the boxes; the browser draws the labels in the app font, which is narrower
+        '  node [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=11, color="#5B6472"];',
     ]
     for bucket in columns:
         lines.append("  { rank=same;")
