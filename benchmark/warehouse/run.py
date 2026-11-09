@@ -52,6 +52,17 @@ def psql(sql: str) -> str:
     return out.stdout.strip()
 
 
+def server_peak_mib() -> int:
+    """Peak memory of the warehouse Postgres container since it started (cgroup memory.peak)."""
+    out = subprocess.run(
+        ["docker", "exec", "bench-warehouse", "cat", "/sys/fs/cgroup/memory.peak"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return round(int(out.stdout) / 1048576)
+
+
 def start() -> None:
     subprocess.run(["docker", "rm", "-f", "bench-warehouse"], capture_output=True)
     subprocess.run(["docker", "network", "create", "fabric-bench"], capture_output=True)
@@ -102,6 +113,8 @@ def main() -> None:
                 "batch_s": result["job_s"],
                 "load_s": result["load_s"],
                 "transform_s": result["transform_s"],
+                "job_peak_mib": round(result["peak_bytes"] / 1048576),
+                "server_peak_mib": server_peak_mib(),
                 "checks_passed": sum(checks.values()),
                 "checks_total": len(checks),
                 "failed_checks": ";".join(k for k, ok in checks.items() if not ok),

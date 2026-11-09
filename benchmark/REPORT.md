@@ -198,21 +198,22 @@ workbooks, drop and reload five staging tables, rebuild the BR01 and BR10 tables
 `benchmark/warehouse/marts.sql`. There is no metadata, lineage, quality gate or access policy. BR16 is the same edit
 the fabric's e2e test makes (`CMP19_05`, 2019-11-12, allocated spend 1,356.33 → 1,156.33): change the source value,
 run the batch again. Each scenario ran 3 times in a fresh `--cpus=2 --memory=4g` container
-(`benchmark/results/warehouse.csv`).
+(`benchmark/results/warehouse.csv`, rerun 2026-11-09 to add peak memory).
 
 ### Results
 
 | | Traditional warehouse | Data Fabric |
 |---|---|---|
 | Data-layer code for BR01, BR10, BR16 | 93 lines (ETL + SQL) | about 1,180 lines: jobs 614, BR16 edit API / impact analysis / scoped writes / change log / DAG 401, contracts 165; plus the shared platform (`fabric_control`, `pipelines/io`) |
-| Full batch | 2.0–2.3 s (load 2.0–2.3, SQL < 0.1) | full refresh target < 10 min (NFR-4); not measured on this machine |
-| Reaction to the BR16 spend edit | 1.8–2.0 s, but only when someone reruns the batch; every table is rebuilt | partial refresh of the affected campaign's datasets only, < 2 min asserted by `tests/e2e/test_br16.py`; not measured on this machine |
+| Full batch | 1.7–1.8 s (load 1.7, SQL < 0.1) | full refresh target < 10 min (NFR-4); not measured on this machine |
+| Reaction to the BR16 spend edit | 1.7–2.0 s, but only when someone reruns the batch; every table is rebuilt | partial refresh of the affected campaign's datasets only, < 2 min asserted by `tests/e2e/test_br16.py`; not measured on this machine |
 | Correctness (§6 marks and BR16 deltas) | 7/7 checks pass before and after the edit | same marks enforced by DQ gates and reconcile tests |
 | Can a number be traced to its source? | no: no lineage, glossary or definitions; only by reading SQL | yes: lineage in OpenMetadata, glossary terms and the Definition dialog on every metric |
 | What changed after an edit? | not recorded; old values are overwritten | `ops.metric_change_log` with old → new per metric and event; Change History page |
 | Unrelated metrics keep their refresh time | no: every table is recreated | yes: key-scoped writes leave other rows and `_refreshed_at` untouched (BR16 AC) |
 | Bad data blocked before it reaches a page | no | critical DQ rules gate the write; pages show "Using previous version" |
 | Column-level access (FR-20) | no: one login sees every column | policy views per role: UG03 cannot read SKU cost |
+| Peak memory | ETL job 99–169 MiB; Postgres server at most 171 MiB over the six runs (cgroup `memory.peak`) | not measured; the core profile's `mem_limit` values sum to 11.5 GB with one `fabric-jobs` container |
 
 The 7 checks: 1,290 attributed orders; online spend 695,646.47; allocated 98,569.53 → 98,369.53; unallocated
 597,076.94 → 597,276.94; no day where allocated + unallocated ≠ online spend; the edited day's unallocated
