@@ -86,6 +86,7 @@ def test_search_dataset_hit_shows_detail_and_graph(monkeypatch):
     at.button(key="catalog-hit-dataset-unified/orders").click().run()
     assert not at.exception
     assert at.subheader[0].value == "unified/orders"
+    assert "unified/orders" in at.get("graphviz_chart")[0].proto.spec
 
 
 def test_br13_ratio_term_is_searchable_with_not_roas_and_synthetic():
