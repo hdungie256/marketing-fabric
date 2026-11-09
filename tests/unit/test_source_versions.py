@@ -54,7 +54,36 @@ def lake(monkeypatch, tables, passed):
     monkeypatch.setattr(io, "read_delta", lambda d, version=None: tables[d])
     monkeypatch.setattr(io.ops, "passed_loads", lambda d: passed[d])
     monkeypatch.setattr(io.lineage, "raw_ancestors", lambda ids, w, i: sorted(tables))
+    monkeypatch.setattr(io.ops, "PASSED_VERSIONS", {})
     return io
+
+
+class Conn:
+    """Stands in for the ops.load_reconciliation connection."""
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+    def execute(self, *args):
+        pass
+
+
+def reconciled(dataset_id: str) -> dict:
+    from pipelines.io import ops
+
+    return {column: None for column in ops.COLUMNS} | {"dataset_id": dataset_id, "passed": True}
+
+
+def test_reconciliation_drops_only_its_raw_from_the_version_memo(monkeypatch):
+    from pipelines.io import ops
+
+    monkeypatch.setattr(ops, "PASSED_VERSIONS", {"raw/crm/customers": 4, "raw/sales/sales_lines": 7})
+    monkeypatch.setattr(ops, "connect", Conn)
+    ops.write_reconciliation(reconciled("raw/crm/customers"), "dag:ingest/crm")
+    assert ops.PASSED_VERSIONS == {"raw/sales/sales_lines": 7}
 
 
 def test_source_versions_takes_max_of_passed_loads_per_raw(monkeypatch, spark):
@@ -66,6 +95,29 @@ def test_source_versions_takes_max_of_passed_loads_per_raw(monkeypatch, spark):
     result = io.source_versions(["unified/attribution"])
     assert result == {"raw/campaign/attribution": 3, "raw/campaign/campaigns": 2}  # a9 failed reconciliation
     assert list(result) == sorted(result)
+
+
+def test_source_versions_reads_each_raw_once_until_a_load_is_reconciled(monkeypatch, spark):
+    tables = {
+        "raw/campaign/attribution": raw_frame(spark, ("a1", 1), ("a3", 3)),
+        "raw/campaign/campaigns": raw_frame(spark, ("c2", 2), ("c5", 5)),
+    }
+    passed = {"raw/campaign/attribution": ["a1", "a3"], "raw/campaign/campaigns": ["c2"]}
+    io = lake(monkeypatch, tables, passed)
+    reads = []
+    monkeypatch.setattr(io, "read_delta", lambda d, version=None: reads.append(d) or tables[d])
+    first = io.source_versions(["unified/attribution"])
+    assert (
+        io.source_versions(["unified/attribution"])
+        == first
+        == {"raw/campaign/attribution": 3, "raw/campaign/campaigns": 2}
+    )
+    assert reads == sorted(tables)  # the second job's call read nothing
+    passed["raw/campaign/campaigns"].append("c5")  # a new load of campaigns passes reconciliation
+    monkeypatch.setattr(io.ops, "connect", Conn)
+    io.ops.write_reconciliation(reconciled("raw/campaign/campaigns"), "dag:ingest/campaign")
+    assert io.source_versions(["unified/attribution"])["raw/campaign/campaigns"] == 5
+    assert reads[2:] == ["raw/campaign/campaigns"]
 
 
 def test_source_versions_rejects_raw_without_passed_load(monkeypatch, spark):

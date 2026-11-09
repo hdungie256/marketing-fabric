@@ -70,4 +70,5 @@ def test_partial_refresh_outranks_every_full_refresh_task():
     options = {k.arg: ast.literal_eval(k.value) for k in call.keywords}
     assert options["weight_rule"] == "absolute"
     # under the default downstream rule a full_refresh task weighs at most its task count: jobs + 3 trailing tasks
+    # (FABRIC_FULL_REFRESH_PER_JOB=1). By default platform/full_refresh holds the slot for the whole run.
     assert options["priority_weight"] > len(job_graph(ROOT)) + 3

@@ -12,6 +12,11 @@ COLUMNS = (
     "passed",
     "reason",
 )
+# Raw dataset -> highest _source_version among its passed loads, for io.source_versions(). Kept for the process, so
+# the marts of one platform/full_refresh or platform/partial_refresh read each raw table once. Only
+# write_reconciliation() changes which loads passed, and it drops that dataset's entry. ponytail: a reconciliation
+# written by another process is not seen; the one-slot fabric_writes pool keeps writers to one at a time.
+PASSED_VERSIONS: dict[str, int] = {}
 
 
 def connect():
@@ -21,6 +26,7 @@ def connect():
 
 
 def write_reconciliation(check: dict[str, Any], run_id: str) -> None:
+    PASSED_VERSIONS.pop(check["dataset_id"], None)
     values = [check[c] for c in COLUMNS]
     updates = ", ".join(f"{c} = EXCLUDED.{c}" for c in (*COLUMNS[2:], "run_id"))
     with connect() as conn:
