@@ -37,6 +37,14 @@ def exc_frame():
     )
 
 
+def test_scoreboard_with_results_but_no_failing_rule():
+    dq = dq_frame()
+    dq["passed"] = True
+    board = triage.scoreboard(dq)
+    assert set(board["failing"]) == {""}
+    assert len(board) == dq["dataset_id"].nunique()
+
+
 def test_with_status_defaults_new_and_keeps_resolved():
     statuses = pd.DataFrame([("e1", "seen"), ("gone", "accepted")], columns=["exception_id", "status"])
     out = triage.with_status(exc_frame(), statuses)

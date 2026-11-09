@@ -53,13 +53,14 @@ def scoreboard(dq: pd.DataFrame) -> pd.DataFrame:
     if dq.empty:
         return pd.DataFrame(columns=["dataset_id", "score_pct", "status", "failing"])
     latest = dq.sort_values("checked_at").groupby("dataset_id").tail(1)
+    bad = dq.merge(latest[["dataset_id", "checked_at"]], on=["dataset_id", "checked_at"]).query("passed == False")
+    # A DataFrame, not groupby().apply(): with no failing rule that returned an empty frame and rename() raised.
     failing = (
-        dq.merge(latest[["dataset_id", "checked_at"]], on=["dataset_id", "checked_at"])
-        .query("passed == False")
-        .groupby("dataset_id")[["rule_id", "severity"]]
-        .apply(lambda g: "; ".join(f"{r.rule_id} ({r.severity})" for r in g.itertuples()), include_groups=False)
+        pd.DataFrame({"dataset_id": bad["dataset_id"], "failing": bad["rule_id"] + " (" + bad["severity"] + ")"})
+        .groupby("dataset_id", as_index=False)["failing"]
+        .agg("; ".join)
     )
-    out = latest[["dataset_id", "score_pct", "status"]].merge(failing.rename("failing"), on="dataset_id", how="left")
+    out = latest[["dataset_id", "score_pct", "status"]].merge(failing, on="dataset_id", how="left")
     out["failing"] = out["failing"].fillna("")
     return out.sort_values("dataset_id").reset_index(drop=True)
 
