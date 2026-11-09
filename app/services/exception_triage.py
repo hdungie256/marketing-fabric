@@ -78,6 +78,15 @@ def with_status(exceptions: pd.DataFrame, statuses: pd.DataFrame) -> pd.DataFram
     return merged
 
 
+def coupon_status_counts(exceptions: pd.DataFrame) -> dict[str, int]:
+    """Coupon status of coupon_plan_mismatch lines, read from detail; for reference only, never a criterion (R17)."""
+    if "detail" not in exceptions:
+        return {}
+    detail = exceptions.loc[exceptions["class"].eq("coupon_plan_mismatch"), "detail"]
+    found = detail.str.extract(r"coupon_status=([^;]+)", expand=False).dropna()
+    return {status: int(count) for status, count in found.value_counts().items()}
+
+
 def mark_status(conn: Any, exception_ids: list[str], status: str, by: str, known_ids: set[str]) -> int:
     """Upsert triage statuses. Only ids present in the mart may be marked."""
     if status not in ("seen", "accepted"):
