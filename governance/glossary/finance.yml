@@ -26,6 +26,7 @@ terms:
     owner_slice: finance
     dataset_id: mart_shared.spend_reconciliation
     column: unallocated
+    source_columns: [online_spend, allocated]
     definition: Online spend of a day that no campaign received.
     formula: daily online_spend − SUM(allocated) of that day; allocated + unallocated = online spend, difference 0.
     rules: [R8]
@@ -36,6 +37,7 @@ terms:
     owner_slice: finance
     dataset_id: mart_finance.budget_daily
     column: attributed_gross_value
+    source_columns: [allocated]
     definition: Attributed gross value per unit of allocated spend for the selected campaigns and days.
     formula: SUM(attributed_gross_value) / SUM(allocated); a ratio of sums, never an average of daily ratios.
     rules: [R6, R7, R8]
@@ -47,6 +49,7 @@ terms:
     owner_slice: finance
     dataset_id: mart_finance.budget_daily
     column: allocated
+    source_columns: [attributed_orders]
     definition: Allocated spend per attributed order for the selected campaigns and days.
     formula: SUM(allocated) / SUM(attributed_orders).
     rules: [R6, R8]
@@ -68,6 +71,7 @@ terms:
     owner_slice: finance
     dataset_id: mart_finance.contribution
     column: estimated_contribution
+    source_columns: [attributed_gross_value, reference_cogs, campaign_cost]
     definition: What a campaign's attributed sales leave after reference cost of goods and campaign cost.
     formula: attributed gross value − reference cost of goods − campaign cost (allocated spend).
     rules: [R6, R8, R11]

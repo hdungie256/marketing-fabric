@@ -35,6 +35,7 @@ terms:
     owner_slice: campaign
     dataset_id: mart_campaign.campaign_overview
     column: average_order_value
+    source_columns: [attributed_gross_value, attributed_orders]
     definition: Attributed gross value per attributed order in the period.
     formula: attributed_gross_value / attributed_orders, rounded to 2 decimals.
     rules: [R10]
@@ -55,6 +56,7 @@ terms:
     owner_slice: campaign
     dataset_id: mart_campaign.new_returning
     column: returning_buyers
+    source_columns: [attributed_buyers, first_observed_buyers]
     definition: Attributed buyers in the period whose first observed order was earlier.
     formula: attributed_buyers − first_observed_buyers of mart_campaign.new_returning.
     rules: [R6, R9]
@@ -66,6 +68,7 @@ terms:
     owner_slice: campaign
     dataset_id: mart_campaign.target_achievement
     column: achievement
+    source_columns: [actual, target_value]
     definition: How far a campaign got toward its own goal.
     formula: "actual / target_value, where actual is the campaign's own target metric summed over its evaluation window. Continue ≥ 100%, Adjust 70% – < 100%, Stop < 70%."
     rules: [R14, R6]

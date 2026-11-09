@@ -14,7 +14,8 @@ def _describe_term(term_id: str, term: dict[str, Any]) -> str:
         term["definition"],
         "",
         f"Formula: {term['formula']}",
-        f"Source: {term['dataset_id']}.{term['column']} ({registry[term['dataset_id']]['om_fqn']})",
+        f"Source: {', '.join(term['dataset_id'] + '.' + c for c in term['source_columns'])}"
+        f" ({registry[term['dataset_id']]['om_fqn']})",
         f"Rules: {', '.join(term['rules'])}",
         f"Owner slice: {term['owner_slice']}",
         f"Provenance: {term['provenance']}",

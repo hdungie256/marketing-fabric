@@ -83,7 +83,9 @@ def load_terms(directory: Path | None = None, registry: dict[str, dict] | None =
                 raise GlossaryError(
                     f"duplicate term {item['display_name']!r} (id {tid!r}) in {terms[tid]['_file']} and {filename}"
                 )
-            for field in ("rules", "limitations", "notes"):
+            for field in ("rules", "limitations", "notes", "source_columns"):
+                if field not in item:
+                    continue
                 if not isinstance(item[field], list):
                     raise GlossaryError(f"{filename}: term {tid!r} field {field} must be a list")
                 bad = [v for v in item[field] if not isinstance(v, str)]
@@ -98,11 +100,13 @@ def load_terms(directory: Path | None = None, registry: dict[str, dict] | None =
                 names = {name for name, _ in columns(load_schema(item["dataset_id"]))}
             except ContractError as e:
                 raise GlossaryError(f"{filename}: term {tid!r} has no schema contract: {e}") from e
-            if item["column"] not in names:
-                raise GlossaryError(
-                    f"{filename}: term {tid!r} links unknown column {item['dataset_id']}.{item['column']!r}"
-                )
-            terms[tid] = {**item, "term_id": tid, "_file": filename}
+            source_columns = list(dict.fromkeys([item["column"], *item.get("source_columns", [])]))
+            for column in source_columns:
+                if column not in names:
+                    raise GlossaryError(
+                        f"{filename}: term {tid!r} links unknown column {item['dataset_id']}.{column!r}"
+                    )
+            terms[tid] = {**item, "source_columns": source_columns, "term_id": tid, "_file": filename}
     return terms
 
 

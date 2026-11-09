@@ -14,6 +14,7 @@ RATIO_TERM = {
     "formula": "SUM(attributed_gross_value) / SUM(allocated)",
     "dataset_id": "mart_finance.budget_daily",
     "column": "attributed_gross_value",
+    "source_columns": ["attributed_gross_value", "allocated"],
     "rules": ["R6", "R7", "R8"],
     "limitations": ["Not ROAS (R7): attribution is a sample rule."],
     "owner_slice": "finance",
@@ -78,6 +79,7 @@ def test_metric_info_button_opens_definition_dialog(stubs):
     assert "Attributed Value / Spend Ratio" in text
     assert "SUM(attributed_gross_value) / SUM(allocated)" in text
     assert "mart_finance.budget_daily.attributed_gross_value" in text
+    assert "mart_finance.budget_daily.allocated" in text
     assert "Not ROAS" in text
 
 

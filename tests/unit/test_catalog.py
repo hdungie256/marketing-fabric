@@ -38,10 +38,12 @@ TERMS = [
     {
         **TERM,
         "display_name": "Attributed Value / Spend Ratio",
-        "definition": "Attributed gross value divided by spend, not ROAS",
+        "definition": "Attributed gross value divided by spend",
         "formula": "attributed_gross_value / spend",
         "dataset_id": "unified/orders",
         "column": "gross_value",
+        "source_columns": ["attributed_orders"],
+        "limitations": ["Not ROAS (R7)."],
     },
 ]
 COLUMNS = ["attributed_orders", "gross_value"]
@@ -162,7 +164,10 @@ def test_term_with_dataset_metadata(offline):
     assert (term["provenance"], term["synthetic"]) == ("synthetic", True)
     assert term["status"] == fc.NOT_MEASURED
     assert not [key for key in term if key.startswith("_")]
-    assert fc.term("attributed_value_per_spend_ratio")["synthetic"] is False
+    assert term["source_columns"] == ["attributed_orders"]
+    ratio = fc.term("attributed_value_per_spend_ratio")
+    assert ratio["synthetic"] is False
+    assert ratio["source_columns"] == ["gross_value", "attributed_orders"]
 
 
 def test_missing_term(offline):
@@ -173,7 +178,7 @@ def test_search_datasets_and_terms(offline):
     hits = fc.search("Attributed Value / Spend Ratio")
     assert [(h["kind"], h["id"]) for h in hits] == [("term", "attributed_value_per_spend_ratio")]
     assert {h["id"] for h in fc.search("ATTRIBUTION")} == {"raw/campaign/attribution", "unified/attribution"}
-    assert fc.search("roas")[0]["name"] == "Attributed Value / Spend Ratio"
+    assert [h["name"] for h in fc.search("roas")] == ["Attributed Value / Spend Ratio"]
     assert fc.search("  ") == []
     assert fc.search("no such thing") == []
 

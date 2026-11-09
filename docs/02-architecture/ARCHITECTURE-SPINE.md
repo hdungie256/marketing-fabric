@@ -341,6 +341,7 @@ flowchart LR
   - **Term ID** = the metric's canonical column name: `snake_case` of the English display name, with `/` → `_per_` (e.g. `attributed_value_per_spend_ratio`).
   - **Term fields:**
     - `display_name`, `owner_slice`, `dataset_id`, `column`;
+    - optional `source_columns`: further columns of the same `dataset_id` that the formula reads;
     - `rules: [R…]`;
     - `limitations`, `notes: [currency_unverified | retrospective_target | estimate_not_profit | attributed_not_incremental | first_in_observed_history]`.
   - **Declaration.** Each term is declared in exactly one `governance/glossary/<slice>.yml` file. Terms for metrics in `mart_shared` live in `platform.yml`, or in the file of the slice that owns that table. `sync_glossary()` fails on duplicate IDs or duplicate display names.

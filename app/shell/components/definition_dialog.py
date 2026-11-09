@@ -24,7 +24,8 @@ def render_definition(term: dict) -> None:
     st.markdown(f":blue[{term['display_name']}]")
     st.write(term["definition"])
     st.markdown(f"**Formula:** {term['formula']}")
-    st.markdown(f"**Source:** `{term['dataset_id']}.{term['column']}`")
+    sources = ", ".join(f"`{term['dataset_id']}.{c}`" for c in term.get("source_columns") or [term["column"]])
+    st.markdown(f"**Source columns:** {sources}")
     st.markdown(f"**Rules:** {', '.join(term.get('rules') or [])}")
     st.markdown("**Limitations:**")
     for item in term.get("limitations") or []:
