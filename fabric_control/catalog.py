@@ -132,7 +132,8 @@ def search(q: str) -> list[dict[str, Any]]:
         if needle in d.lower() or needle in e.get("description", "").lower()
     ]
     for key, entry in sorted(load_terms(registry=registry).items()):
-        text = " ".join(str(entry.get(f, "")) for f in ("display_name", "definition", "formula")).lower()
+        fields = [entry.get(f, "") for f in ("display_name", "definition", "formula")] + entry.get("limitations", [])
+        text = " ".join(map(str, fields)).lower()
         if needle in key or needle in text:
             hits.append(
                 {"kind": "term", "id": key, "name": entry["display_name"], "description": entry.get("definition", "")}

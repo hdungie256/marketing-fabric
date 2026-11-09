@@ -85,6 +85,26 @@ def test_missing_field_and_dangling_links_fail(tmp_path):
         load_terms(tmp_path)
 
 
+def test_source_columns_list_primary_first_and_must_exist(tmp_path):
+    (tmp_path / "glossary").mkdir()
+    write_glossary(tmp_path / "glossary" / "a.yml", [TERM])
+    assert load_terms(tmp_path)["gross_value"]["source_columns"] == ["gross_value"]
+    write_glossary(tmp_path / "glossary" / "a.yml", [{**TERM, "source_columns": ["shipping_fee", "gross_value"]}])
+    assert load_terms(tmp_path)["gross_value"]["source_columns"] == ["gross_value", "shipping_fee"]
+    write_glossary(tmp_path / "glossary" / "a.yml", [{**TERM, "source_columns": ["nope"]}])
+    with pytest.raises(GlossaryError, match="unknown column unified/orders.'nope'"):
+        load_terms(tmp_path)
+    write_glossary(tmp_path / "glossary" / "a.yml", [{**TERM, "source_columns": "shipping_fee"}])
+    with pytest.raises(GlossaryError, match="source_columns must be a list"):
+        load_terms(tmp_path)
+
+
+def test_repo_ratio_terms_list_both_formula_columns():
+    terms = load_terms()
+    assert terms["attributed_value_per_spend_ratio"]["source_columns"] == ["attributed_gross_value", "allocated"]
+    assert terms["cost_per_attributed_order"]["source_columns"] == ["allocated", "attributed_orders"]
+
+
 def project(tmp_path):
     (tmp_path / "contracts" / "datasets").mkdir(parents=True)
     datasets = [
@@ -154,6 +174,7 @@ def test_sync_glossary_online_pushes_terms_with_source_linkage(online_repo, monk
     pushed = {c[1][1]: c[1][3] for c in calls if c[0] == "term"}
     assert set(pushed) >= {"gross_value", "estimated_unit_cost"}
     assert "unified/orders.gross_value" in pushed["gross_value"]
+    assert "mart_finance.budget_daily.allocated" in pushed["attributed_value_per_spend_ratio"]
 
 
 def test_sync_tags_online_pushes_taxonomy_once_per_classification(online_repo, monkeypatch):

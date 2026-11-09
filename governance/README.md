@@ -17,3 +17,13 @@ actions: {default: 'mask:partial', UG02: allow}
 ```
 
 List who can read a dataset in `access_matrix.yml`. Then run `make migrate`.
+
+A glossary term in `glossary/<slice>.yml` links one primary `column` of its `dataset_id`.
+When the formula reads more columns of the same dataset, list them in `source_columns`:
+
+```yaml
+column: attributed_gross_value
+source_columns: [allocated]
+```
+
+Every listed column must exist in the dataset's schema contract.

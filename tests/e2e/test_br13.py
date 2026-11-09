@@ -9,8 +9,10 @@ def test_search_ratio_term_and_definition():
     term = fabric_control.term("attributed_value_per_spend_ratio")
     assert term["display_name"] == "Attributed Value / Spend Ratio"
     assert term["formula"] and term["dataset_id"] and term["column"] and term["owner_slice"]
+    assert term["source_columns"] == ["attributed_gross_value", "allocated"]
     assert any("roas" in item.lower() for item in term["limitations"])
     assert term["synthetic"] is True
+    assert [h["id"] for h in fabric_control.search("ROAS") if h["kind"] == "term"] == [term["term_id"]]
 
 
 def test_catalog_browses_all_layers():

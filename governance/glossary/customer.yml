@@ -31,6 +31,7 @@ terms:
     owner_slice: customer
     dataset_id: mart_customer.rfm
     column: segment
+    source_columns: [recency_score, frequency_score, monetary_score]
     definition: Quintile-based recency/frequency/monetary segment at as-of 2019-12-31.
     formula: R/F/M quintiles 1-5 over 2019 buyers, first-match segment rule (Champions, Can't Lose, At Risk, Loyal, Potential Loyalist, Recent First Buyers, Needs Attention, Hibernating, Lost).
     rules: [R5, R18]
@@ -44,6 +45,7 @@ terms:
     owner_slice: customer
     dataset_id: mart_customer.rfm
     column: recency_score
+    source_columns: [recency_days]
     definition: Quintile score of days since the last order to 2019-12-31; 5 is most recent.
     formula: ntile(5) over recency_days ASC with customer_id tie-break, score = 6 - bucket.
     rules: [R5, R18]
@@ -54,6 +56,7 @@ terms:
     owner_slice: customer
     dataset_id: mart_customer.rfm
     column: frequency_score
+    source_columns: [frequency_orders]
     definition: Quintile score of technical-order count; 5 is most orders.
     formula: ntile(5) over frequency_orders DESC with customer_id tie-break, score = 6 - bucket.
     rules: [R1, R18]
@@ -64,6 +67,7 @@ terms:
     owner_slice: customer
     dataset_id: mart_customer.rfm
     column: monetary_score
+    source_columns: [monetary_value]
     definition: Quintile score of gross value; 5 is highest value.
     formula: ntile(5) over monetary_value DESC with customer_id tie-break, score = 6 - bucket.
     rules: [R2, R18]

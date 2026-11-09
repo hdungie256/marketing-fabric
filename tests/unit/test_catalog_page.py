@@ -95,5 +95,19 @@ def test_br13_ratio_term_is_searchable_with_not_roas_and_synthetic():
     term = fabric_control.term("attributed_value_per_spend_ratio")
     assert term["display_name"] == "Attributed Value / Spend Ratio"
     assert term["formula"] and term["dataset_id"] and term["column"] and term["owner_slice"]
+    assert term["source_columns"] == ["attributed_gross_value", "allocated"]
     assert any("roas" in item.lower() for item in term["limitations"])
     assert term["synthetic"] is True
+    assert [h["id"] for h in fabric_control.search("ROAS") if h["kind"] == "term"] == [term["term_id"]]
+
+
+def test_roas_search_opens_ratio_term_with_not_roas_caution(monkeypatch):
+    monkeypatch.setattr("fabric_control.status", lambda dataset_id: {"stale": False})
+    monkeypatch.setattr("fabric_control.lineage", lambda dataset_id, depth=1: {"nodes": [], "edges": []})
+    at = AppTest.from_function(_page_script).run()
+    at.text_input(key="catalog_glossary-q").input("ROAS").run()
+    at.button(key="catalog-hit-term-attributed_value_per_spend_ratio").click().run()
+    assert not at.exception
+    text = " ".join(m.value for m in at.markdown)
+    assert "Not ROAS" in text
+    assert "`mart_finance.budget_daily.attributed_gross_value`, `mart_finance.budget_daily.allocated`" in text
